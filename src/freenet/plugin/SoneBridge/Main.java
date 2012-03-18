@@ -20,8 +20,10 @@ import freenet.plugin.SoneBridge.controller.SetupPageController;
 import freenet.plugin.web.FileReaderToadlet;
 import freenet.pluginmanager.FredPlugin;
 import freenet.pluginmanager.FredPluginL10n;
+import freenet.pluginmanager.FredPluginRealVersioned;
 import freenet.pluginmanager.FredPluginTalker;
 import freenet.pluginmanager.FredPluginThreadless;
+import freenet.pluginmanager.FredPluginVersioned;
 import freenet.pluginmanager.PluginNotFoundException;
 import freenet.pluginmanager.PluginRespirator;
 import freenet.pluginmanager.PluginTalker;
@@ -30,7 +32,7 @@ import freenet.support.api.Bucket;
 import freenet.support.plugins.helpers1.PluginContext;
 import freenet.support.plugins.helpers1.WebInterface;
 
-public class Main implements FredPlugin, FredPluginThreadless, FredPluginTalker, FredPluginL10n {
+public class Main implements FredPlugin, FredPluginThreadless, FredPluginTalker, FredPluginL10n, FredPluginVersioned {
 
 	private PluginRespirator pr;
 	private PluginTalker talker;
@@ -180,4 +182,9 @@ public class Main implements FredPlugin, FredPluginThreadless, FredPluginTalker,
 		
 	}
 
+
+	@Override
+	public String getVersion() {
+		return "2012-03-18";
+	}
 }
