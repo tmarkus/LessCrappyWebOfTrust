@@ -50,12 +50,17 @@ public class Main implements FredPlugin, FredPluginThreadless, FredPluginTalker,
 		{
 			LOGGER.info("Received message: " + sfs.get("Message"));
 		
+			if (sfs.get("Message").equals("Error"))
+			{
+				LOGGER.severe(sfs.get("ErrorMessage"));
+			}
+			
 			if (sfs.get("Message").equals("ListLocalSones"))
 			{
 				for(int i=0; i < sfs.getInt("LocalSones.Count"); i++)
 				{
-					LOGGER.info(sfs.get("LocalSones."+i+".NiceName"));
-					LOGGER.info((sfs.get("LocalSones."+i+".ID")));
+					//LOGGER.info(sfs.get("LocalSones."+i+".NiceName"));
+					//LOGGER.info((sfs.get("LocalSones."+i+".ID")));
 				
 					localSones.put(sfs.get("LocalSones."+i+".NiceName"), sfs.get("LocalSones."+i+".ID"));
 				}
