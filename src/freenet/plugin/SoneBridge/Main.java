@@ -35,7 +35,7 @@ import freenet.support.api.HTTPRequest;
 import freenet.support.plugins.helpers1.PluginContext;
 import freenet.support.plugins.helpers1.WebInterface;
 
-public class Main implements FredPlugin, FredPluginThreadless, FredPluginTalker, FredPluginL10n, FredPluginVersioned{
+public class Main implements FredPlugin, FredPluginThreadless, FredPluginTalker, FredPluginL10n, FredPluginVersioned, FredPluginHTTP{
 
 	private PluginRespirator pr;
 	private PluginTalker talker;
@@ -189,5 +189,20 @@ public class Main implements FredPlugin, FredPluginThreadless, FredPluginTalker,
 	@Override
 	public String getVersion() {
 		return "2012-03-18";
+	}
+
+
+	@Override
+	public String handleHTTPGet(HTTPRequest request) throws PluginHTTPException {
+		return "<html><body><head><title>Forward page...</title></head>" +
+				"<a href=\""+basePath+"/setup\">Click here to visit the setup page.</a>" +
+				"</body></html>";
+	}
+
+
+	@Override
+	public String handleHTTPPost(HTTPRequest arg0) throws PluginHTTPException {
+		// TODO Auto-generated method stub
+		return null;
 	}
 }
