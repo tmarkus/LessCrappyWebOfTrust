@@ -168,15 +168,9 @@ public class TwitterTracker implements Runnable {
 	}
 
 	private long processTweets(List<Tweet> tweets, String sone_id, boolean pretend, boolean prefix_username) {
-		
-			//SimpleDateFormat parser = new SimpleDateFormat("EEE MMM dd HH:mm:ss Z yyyy");
-			//Date last_updated = parser.parse(tweets.get(tweets.size() - 1).created_at);
 
 		for (int i = tweets.size() - 1; i >= 0; i--) {
 				Tweet tweet = tweets.get(i);
-			//		System.out.println(tweet.created_at);
-				//	System.out.println(tweet.text);
-				
 		
 					//send tweet to sone
 					if (!pretend)

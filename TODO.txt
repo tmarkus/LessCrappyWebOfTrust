@@ -1,4 +1,4 @@
 
 
-- map freenet URIs to some user specified gateway (e.g. theseeker)
+- map freenet URIs to some user specified gateway (e.g. theseeker's)
 - support tumblr to EXPORT Sone messages

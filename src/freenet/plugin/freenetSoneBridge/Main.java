@@ -49,19 +49,18 @@ public class Main implements FredPlugin, FredPluginThreadless, FredPluginTalker,
 	
 		try
 		{
+			LOGGER.fine("Received message: " + sfs.get("Message"));
 		
-		LOGGER.fine("Received message: " + sfs.get("Message"));
-	
-		if (sfs.get("Message").equals("ListLocalSones"))
-		{
-			for(int i=0; i < sfs.getInt("LocalSones.Count"); i++)
+			if (sfs.get("Message").equals("ListLocalSones"))
 			{
-				LOGGER.fine(sfs.get("LocalSones."+i+".NiceName"));
-				LOGGER.fine((sfs.get("LocalSones."+i+".ID")));
-			
-				localSones.put(sfs.get("LocalSones."+i+".NiceName"), sfs.get("LocalSones."+i+".ID"));
+				for(int i=0; i < sfs.getInt("LocalSones.Count"); i++)
+				{
+					LOGGER.fine(sfs.get("LocalSones."+i+".NiceName"));
+					LOGGER.fine((sfs.get("LocalSones."+i+".ID")));
+				
+					localSones.put(sfs.get("LocalSones."+i+".NiceName"), sfs.get("LocalSones."+i+".ID"));
+				}
 			}
-		}
 		}
 		catch(FSParseException ex)
 		{
@@ -89,7 +88,7 @@ public class Main implements FredPlugin, FredPluginThreadless, FredPluginTalker,
 			Gson gson = new Gson();
 			conf = gson.fromJson(in, Configuration.class);
 		}
-		catch(FileNotFoundException e)
+		catch(FileNotFoundException e) //new config
 		{
 			System.out.println("Configuration file " + Configuration.CONFIGURATION_FILENAME + " not found. Starting from scratch.");
 			conf = new Configuration();
@@ -99,12 +98,9 @@ public class Main implements FredPlugin, FredPluginThreadless, FredPluginTalker,
 		//setup the basic tracker
 		tracker = new TwitterTracker(conf, talker);
 
-		LOGGER.info("Twitter tracker created and returned");
-		
-
-		LOGGER.info("Setting up webinterface");
 		
 		//setup web interface
+		LOGGER.info("Setting up webinterface");
 		PluginContext pluginContext = new PluginContext(pr);
 		this.webInterface = new WebInterface(pluginContext);
 
@@ -138,7 +134,6 @@ public class Main implements FredPlugin, FredPluginThreadless, FredPluginTalker,
 		//start the tracker;
 		LOGGER.info("Starting tracker.");
 		new Thread(tracker).start();    
-
 		
 		//get a list of sone ids
 		SimpleFieldSet sfs = new SimpleFieldSet(true);
@@ -160,7 +155,7 @@ public class Main implements FredPlugin, FredPluginThreadless, FredPluginTalker,
 		for (FileReaderToadlet pageToadlet : toadlets) {
 			toadletContainer.unregister(pageToadlet);
 		}
-		toadletContainer.getPageMaker().removeNavigationCategory("SoneBridge");
+		//toadletContainer.getPageMaker().removeNavigationCategory("SoneBridge");
 		
 		if (webInterface != null) webInterface.kill();
 	}
