@@ -124,7 +124,7 @@ public class TwitterTracker implements Runnable {
 					}
 					
 					
-					LOGGER.info("Accessing URL: " + url);
+					LOGGER.fine("Accessing URL: " + url);
 					OAuthRequest request2 = new OAuthRequest(Verb.GET, url);
 					service.signRequest(accessToken, request2);
 					Response response2 = request2.send();
@@ -151,7 +151,7 @@ public class TwitterTracker implements Runnable {
 					}
 					catch(JsonSyntaxException ex)
 					{
-						LOGGER.info("No new tweets since the latest query or some error ocurred :(");
+						LOGGER.fine("No new tweets since the latest query or some error ocurred :(");
 					}
 				}
 			
