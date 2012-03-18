@@ -39,7 +39,6 @@ public class Main implements FredPlugin, FredPluginThreadless, FredPluginTalker,
 	private WebInterface webInterface;
 	Configuration conf;
 	private List<FileReaderToadlet> toadlets = new ArrayList<FileReaderToadlet>();
-	
 	private Map<String, String> localSones = new HashMap<String, String>();
 	
 	private final static Logger LOGGER = Logger.getLogger(Main.class.getName());
@@ -49,14 +48,14 @@ public class Main implements FredPlugin, FredPluginThreadless, FredPluginTalker,
 	
 		try
 		{
-			LOGGER.fine("Received message: " + sfs.get("Message"));
+			LOGGER.info("Received message: " + sfs.get("Message"));
 		
 			if (sfs.get("Message").equals("ListLocalSones"))
 			{
 				for(int i=0; i < sfs.getInt("LocalSones.Count"); i++)
 				{
-					LOGGER.fine(sfs.get("LocalSones."+i+".NiceName"));
-					LOGGER.fine((sfs.get("LocalSones."+i+".ID")));
+					LOGGER.info(sfs.get("LocalSones."+i+".NiceName"));
+					LOGGER.info((sfs.get("LocalSones."+i+".ID")));
 				
 					localSones.put(sfs.get("LocalSones."+i+".NiceName"), sfs.get("LocalSones."+i+".ID"));
 				}
