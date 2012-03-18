@@ -19,20 +19,23 @@ import freenet.plugin.SoneBridge.controller.ManagePageController;
 import freenet.plugin.SoneBridge.controller.SetupPageController;
 import freenet.plugin.web.FileReaderToadlet;
 import freenet.pluginmanager.FredPlugin;
+import freenet.pluginmanager.FredPluginHTTP;
 import freenet.pluginmanager.FredPluginL10n;
 import freenet.pluginmanager.FredPluginRealVersioned;
 import freenet.pluginmanager.FredPluginTalker;
 import freenet.pluginmanager.FredPluginThreadless;
 import freenet.pluginmanager.FredPluginVersioned;
+import freenet.pluginmanager.PluginHTTPException;
 import freenet.pluginmanager.PluginNotFoundException;
 import freenet.pluginmanager.PluginRespirator;
 import freenet.pluginmanager.PluginTalker;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
+import freenet.support.api.HTTPRequest;
 import freenet.support.plugins.helpers1.PluginContext;
 import freenet.support.plugins.helpers1.WebInterface;
 
-public class Main implements FredPlugin, FredPluginThreadless, FredPluginTalker, FredPluginL10n, FredPluginVersioned {
+public class Main implements FredPlugin, FredPluginThreadless, FredPluginTalker, FredPluginL10n, FredPluginVersioned{
 
 	private PluginRespirator pr;
 	private PluginTalker talker;
