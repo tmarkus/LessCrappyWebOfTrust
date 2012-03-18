@@ -55,7 +55,7 @@
 		<mkdir dir="${dist}"/>
 		<jar jarfile="${dist}/bridge.jar" basedir="${build}">
 			<manifest>
-				<attribute name="Plugin-Main-Class" value="freenet.plugin.freenetSoneBridge.Main"/>
+				<attribute name="Plugin-Main-Class" value="freenet.plugin.SoneBridge.Main"/>
 				<section name="common">
 					<attribute name="Implementation-Title" value="Freenet-Sone-Bridge"/>
 				</section>
