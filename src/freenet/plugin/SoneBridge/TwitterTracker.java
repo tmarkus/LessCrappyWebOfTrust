@@ -189,9 +189,6 @@ public class TwitterTracker implements Runnable {
 						else					text = "@" + tweet.from_user + ": " + tweet.text.trim().replace("\n", "");
 						
 						//expand the urls if they are in the tweet
-						System.out.println("Number of URLS: " + tweet.entities.urls.size());
-						
-						
 						if (tweet.entities != null && tweet.entities.urls != null)
 						{
 							for(TwitterURLData urlData : tweet.entities.urls)
