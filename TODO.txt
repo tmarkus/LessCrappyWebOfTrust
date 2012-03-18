@@ -1,4 +1,2 @@
-- convert t.co links to the full URLs
-
 - map freenet URIs to some user specified gateway (e.g. theseeker's)
 - support tumblr to EXPORT Sone messages
