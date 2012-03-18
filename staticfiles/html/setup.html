@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+<title>oAUTH setup page</title>
+</head>
+
+<body>
+
+<div id="done">
+
+You know what? Everything seems to be setup. \o/ <br />
+If it does fail, try and remove the configuration file and start from scratch. <br />
+You can now go to <a href="/SoneBridge/manage">manage</a> to manage your SoneBridge!.
+</div>
+
+
+<div id="setup">
+Please click the following account activation link (will open a new tab/window to the Twitter website):
+
+<a target="_blank" id="url">Lookup out of band (OOB) security code</a>
+
+
+<form method="POST" action="/SoneBridge/setup/post">
+<fieldset>
+<legend>oauth OOB authentication details</legend>
+
+Code: <input type="text" name="oob" />
+</fieldset>
+
+<input type="submit">
+
+</form>
+</div>
+
+
+</body>
+</html>

@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+<title>Manage pattern to Sone identities</title>
+</head>
+
+<body>
+
+<h1>Manage tracked twitter users or hashtags</h1>
+
+<p>
+Add either @username or #hashtag as a pattern in the box. thanks.
+</p
+
+<div id="main">
+
+	<div id="existing_patterns">
+	</div>
+
+	<form method="POST" action="/SoneBridge/manage">
+		<fieldset>
+			<legend>New pattern</legend>
+			Sone Identity: <select name="identity" id="new_pattern_identity"></select>
+			Pattern: <input type="text" name="pattern" />
+		</fieldset>
+		<input type="submit" value="Add"/>
+	</form>
+</div>
+
+</body>
+</html>
