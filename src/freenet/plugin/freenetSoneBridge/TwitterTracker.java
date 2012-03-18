@@ -85,6 +85,7 @@ public class TwitterTracker implements Runnable {
 					
 					String url = null;
 					String type = null;
+					boolean prefix_username = false;
 					
 					// request current tweets from user
 					if (pattern.startsWith("@"))
@@ -96,6 +97,8 @@ public class TwitterTracker implements Runnable {
 					else //a regular search query for either a hashtag or something similar
 					{
 						type = "SEARCH";
+						prefix_username = true;
+						
 						URI uri;
 						try {
 							uri = new URI(
@@ -139,7 +142,7 @@ public class TwitterTracker implements Runnable {
 							tweets = sr.results;
 						}
 						
-						long since_id = processTweets(tweets, sone_id, !conf.sinces.containsKey(pattern));
+						long since_id = processTweets(tweets, sone_id, !conf.sinces.containsKey(pattern), prefix_username);
 						if (since_id > 0) conf.sinces.put(pattern, since_id);
 						conf.save();
 					}
@@ -164,7 +167,7 @@ public class TwitterTracker implements Runnable {
 		}
 	}
 
-	private long processTweets(List<Tweet> tweets, String sone_id, boolean pretend) {
+	private long processTweets(List<Tweet> tweets, String sone_id, boolean pretend, boolean prefix_username) {
 		
 			//SimpleDateFormat parser = new SimpleDateFormat("EEE MMM dd HH:mm:ss Z yyyy");
 			//Date last_updated = parser.parse(tweets.get(tweets.size() - 1).created_at);
@@ -182,7 +185,16 @@ public class TwitterTracker implements Runnable {
 						sfs.putOverwrite("Message", "CreatePost");
 						sfs.putOverwrite("Identifier", "TwitterTracker");
 						sfs.putOverwrite("Sone", sone_id);
-						sfs.putOverwrite("Text", tweet.text.trim().replace("\n", ""));
+						
+						if (!prefix_username)
+						{
+							sfs.putOverwrite("Text", tweet.text.trim().replace("\n", ""));	
+						}
+						else
+						{
+							sfs.putOverwrite("Text", "@" + tweet.from_user + ": " + tweet.text.trim().replace("\n", ""));
+						}
+						
 						talker.send(sfs, null);
 					}
 		}

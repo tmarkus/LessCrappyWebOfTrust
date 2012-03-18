@@ -8,5 +8,6 @@ public class Tweet {
 	public String text;
 	public HashMap<String, String> user;
 	public long id;
+	public String from_user;
 	
 }
