@@ -53,7 +53,7 @@ public class Main implements FredPlugin, FredPluginThreadless, FredPluginTalker,
 	
 		try
 		{
-			LOGGER.info("Received message: " + sfs.get("Message"));
+			LOGGER.fine("Received message: " + sfs.get("Message"));
 		
 			if (sfs.get("Message").equals("Error"))
 			{
