@@ -1,4 +1,5 @@
-
+- convert t.co links to the full URLs
+- improve display of Sone identities on the manage page
 
 - map freenet URIs to some user specified gateway (e.g. theseeker's)
 - support tumblr to EXPORT Sone messages
