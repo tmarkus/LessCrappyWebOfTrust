@@ -1,4 +1,4 @@
-package freenet.plugin.freenetSoneBridge;
+package freenet.plugin.SoneBridge.datamodel.twitter;
 
 import java.util.List;
 

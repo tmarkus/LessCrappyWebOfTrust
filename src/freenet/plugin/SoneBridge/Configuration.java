@@ -1,4 +1,4 @@
-package freenet.plugin.freenetSoneBridge;
+package freenet.plugin.SoneBridge;
 
 import java.io.BufferedWriter;
 import java.io.FileWriter;
@@ -61,6 +61,7 @@ public class Configuration {
 	public void clearPattern(String pattern)
 	{
 		patternMap.remove(pattern);
+		sinces.remove(pattern);
 	}
 
 	public Map<String, String> getPatterns()

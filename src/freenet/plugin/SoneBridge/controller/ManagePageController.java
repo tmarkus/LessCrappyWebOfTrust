@@ -12,7 +12,7 @@ import org.jsoup.nodes.Element;
 import freenet.client.HighLevelSimpleClient;
 import freenet.clients.http.ToadletContext;
 import freenet.clients.http.ToadletContextClosedException;
-import freenet.plugin.freenetSoneBridge.Configuration;
+import freenet.plugin.SoneBridge.Configuration;
 import freenet.support.api.HTTPRequest;
 
 public class ManagePageController extends freenet.plugin.web.HTMLFileReaderToadlet {

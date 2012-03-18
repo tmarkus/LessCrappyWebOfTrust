@@ -9,7 +9,7 @@ import org.jsoup.nodes.Document;
 import freenet.client.HighLevelSimpleClient;
 import freenet.clients.http.ToadletContext;
 import freenet.clients.http.ToadletContextClosedException;
-import freenet.plugin.freenetSoneBridge.TwitterTracker;
+import freenet.plugin.SoneBridge.TwitterTracker;
 import freenet.support.api.HTTPRequest;
 
 public class SetupPageController extends freenet.plugin.web.HTMLFileReaderToadlet {

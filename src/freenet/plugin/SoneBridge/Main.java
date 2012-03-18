@@ -1,4 +1,4 @@
-package freenet.plugin.freenetSoneBridge;
+package freenet.plugin.SoneBridge;
 
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;

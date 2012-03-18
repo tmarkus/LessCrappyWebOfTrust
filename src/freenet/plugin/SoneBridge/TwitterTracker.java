@@ -1,4 +1,4 @@
-package freenet.plugin.freenetSoneBridge;
+package freenet.plugin.SoneBridge;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -19,6 +19,9 @@ import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
 import com.google.gson.reflect.TypeToken;
 
+import freenet.plugin.SoneBridge.datamodel.twitter.Tweet;
+import freenet.plugin.SoneBridge.datamodel.twitter.TwitterSearchResult;
+import freenet.plugin.SoneBridge.datamodel.twitter.TwitterURLData;
 import freenet.pluginmanager.PluginTalker;
 import freenet.support.SimpleFieldSet;
 
@@ -121,7 +124,7 @@ public class TwitterTracker implements Runnable {
 					}
 					
 					
-					LOGGER.fine("Accessing URL: " + url);
+					LOGGER.info("Accessing URL: " + url);
 					OAuthRequest request2 = new OAuthRequest(Verb.GET, url);
 					service.signRequest(accessToken, request2);
 					Response response2 = request2.send();
@@ -148,7 +151,7 @@ public class TwitterTracker implements Runnable {
 					}
 					catch(JsonSyntaxException ex)
 					{
-						LOGGER.fine("No new tweets since the latest query or some error ocurred :(");
+						LOGGER.info("No new tweets since the latest query or some error ocurred :(");
 					}
 				}
 			
@@ -180,15 +183,18 @@ public class TwitterTracker implements Runnable {
 						sfs.putOverwrite("Identifier", "TwitterTracker");
 						sfs.putOverwrite("Sone", sone_id);
 						
-						if (!prefix_username)
+						String text = "";
+						
+						if (!prefix_username)	text = tweet.text.trim().replace("\n", "");
+						else					text = "@" + tweet.from_user + ": " + tweet.text.trim().replace("\n", "");
+						
+						//expand the urls if they are in the tweet
+						for(TwitterURLData urlData : tweet.entities.urls)
 						{
-							sfs.putOverwrite("Text", tweet.text.trim().replace("\n", ""));	
-						}
-						else
-						{
-							sfs.putOverwrite("Text", "@" + tweet.from_user + ": " + tweet.text.trim().replace("\n", ""));
+							text = text.replace(urlData.url, urlData.expanded_url);
 						}
 						
+						sfs.putOverwrite("Text", text);
 						talker.send(sfs, null);
 					}
 		}
