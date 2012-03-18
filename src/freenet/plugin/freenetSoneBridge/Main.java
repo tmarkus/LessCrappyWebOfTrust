@@ -123,7 +123,11 @@ public class Main implements FredPlugin, FredPluginThreadless, FredPluginTalker,
 		}
 		
 		//setup the manage page
-		ManagePageController managePage = new ManagePageController(pr.getHLSimpleClient(), "/staticfiles/html/manage.html", basePath+"/manage", conf);
+		ManagePageController managePage = new ManagePageController(pr.getHLSimpleClient(),
+																	"/staticfiles/html/manage.html",
+																	basePath+"/manage",
+																	conf,
+																	localSones);
 		managePage.setLocalSones(localSones);
 		
 		setupPage.setTracker(tracker);

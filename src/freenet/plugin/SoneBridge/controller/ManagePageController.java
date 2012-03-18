@@ -3,6 +3,7 @@ package freenet.plugin.SoneBridge.controller;
 import java.io.IOException;
 import java.net.URI;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -19,9 +20,10 @@ public class ManagePageController extends freenet.plugin.web.HTMLFileReaderToadl
 	private Configuration conf;
 	private Map<String, String> localSones; 
 	
-	public ManagePageController(HighLevelSimpleClient client, String filepath, String URLPath, Configuration conf) {
+	public ManagePageController(HighLevelSimpleClient client, String filepath, String URLPath, Configuration conf, Map<String, String> localSones) {
 		super(client, filepath, URLPath);
 		this.conf = conf;
+		this.localSones = localSones;
 	}
 
 	public void setConf(Configuration conf)
@@ -44,7 +46,7 @@ public class ManagePageController extends freenet.plugin.web.HTMLFileReaderToadl
 				form.attr("action", "/SoneBridge/manage");
 				Element fieldset = doc.createElement("fieldset");
 				fieldset.appendChild(doc.createElement("legend").text("Existing pattern"));
-				fieldset.appendChild(doc.createElement("p").text(pattern + " -> " + conf.getPatterns().get(pattern)));
+				fieldset.appendChild(doc.createElement("p").text(pattern + " -> " + lookupSoneNiceName(conf.getPatterns().get(pattern)) + "(" + conf.getPatterns().get(pattern) +")"));
 				fieldset.appendChild(doc.createElement("input").attr("type", "submit").attr("value", "Remove"));
 				
 				fieldset.appendChild(doc.createElement("input").attr("type", "hidden").attr("name", "action").attr("value", "delete"));
@@ -71,6 +73,16 @@ public class ManagePageController extends freenet.plugin.web.HTMLFileReaderToadl
 			ex.printStackTrace();
 		}
 	}
+	
+	public String lookupSoneNiceName(String id)
+	{
+		for(Entry<String, String> pair : localSones.entrySet())
+		{
+			if (pair.getValue().equals(id)) return pair.getKey();
+		}
+		return "UNKNOWN";
+	}
+	
 	
 	public void handleMethodPOST(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException
 	{
