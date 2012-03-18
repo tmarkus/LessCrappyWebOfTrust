@@ -1,6 +1,8 @@
 === Intro ===
 
-This is a plugin to transfer Twitter tweets (search requests and user timelines) to the Sone freenet plugin.
+This is a plugin to transfer Twitter tweets (search requests and user timelines) to the Sone freenet plugin [1].
+The obvious usecase is to get access to twitter accounts / tweets  which are locally filtered in the jurisdiction that interested users are in. They 
+are thus able to still access these tweets through Freenet's social networking plugin Sone.
 
 === INSTALL ===
 
@@ -16,3 +18,6 @@ At present it checks twitter every 60 seconds.
 
 WARNING: This is an initial alpha, no guarantees of any kind.
 LICENSE: GPLv3
+
+
+[1] https://github.com/Bombe/Sone
