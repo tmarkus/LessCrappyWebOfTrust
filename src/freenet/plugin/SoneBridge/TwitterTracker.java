@@ -94,7 +94,11 @@ public class TwitterTracker implements Runnable {
 					if (pattern.startsWith("@"))
 					{
 						type = "USER";
-						url = "https://api.twitter.com/1/statuses/user_timeline.json?include_rts=true&exclude_replies=true&screen_name="
+						url = "https://api.twitter.com/1/statuses/user_timeline.json?" +
+								"include_rts=true&" +
+								"exclude_replies=true&" +
+								"include_entities=true&" +
+								"screen_name="
 								+ pattern.replace("@", "") + "";
 					}
 					else //a regular search query for either a hashtag or something similar
@@ -181,7 +185,7 @@ public class TwitterTracker implements Runnable {
 	 * @param prefix_username
 	 * 			The username with which each tweet should be prefixed
 	 * @return
-	 * 			The id of the most recent tweet processed.
+	 * 			The id of the most recent tweet processed.	
 	 */
 	
 	private long processTweets(List<Tweet> tweets, String sone_id, boolean pretend, boolean prefix_username) {
