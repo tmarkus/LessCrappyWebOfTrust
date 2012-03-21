@@ -170,6 +170,20 @@ public class TwitterTracker implements Runnable {
 		}
 	}
 
+	/**
+	 * Process a list of tweets (repeats them in Sone)
+	 * @param tweets
+	 * 			The list of tweets
+	 * @param sone_id
+	 * 			The sone id that should repeat the tweet
+	 * @param pretend
+	 * 			Whether to pretend sending it to Sone or not
+	 * @param prefix_username
+	 * 			The username with which each tweet should be prefixed
+	 * @return
+	 * 			The id of the most recent tweet processed.
+	 */
+	
 	private long processTweets(List<Tweet> tweets, String sone_id, boolean pretend, boolean prefix_username) {
 
 		for (int i = tweets.size() - 1; i >= 0; i--) {
@@ -185,6 +199,7 @@ public class TwitterTracker implements Runnable {
 						
 						String text = "";
 						
+						//prefix tweets with username if this is a search query
 						if (!prefix_username)	text = tweet.text.trim().replace("\n", "");
 						else					text = "@" + tweet.from_user + ": " + tweet.text.trim().replace("\n", "");
 						
