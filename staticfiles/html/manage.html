@@ -2,37 +2,25 @@
 
 <html>
 <head>
-<title>Manage pattern to Sone identities</title>
+<title>LCWoT - main page</title>
 </head>
 
 <body>
 
-<h1>Manage twitter @users or #hashtags to repeat</h1>
+<h1>Here are some statistics to oogle</h1>
 
-<p>
-All the messages from the twitter user will be repeated by the selected Sone identity. 
-This won't include the name of the twitter handle for tweets that you yourself create on Twitter.
-Tweets for a search requset (hashtag or regular string) will be posted by the selected Sone identity and will all be prefixed with the twitter handle of the original message.
-</p>
 
-<p>
-Add either @username or #hashtag as a pattern in the box.
-</p
-
-<div id="main">
-
-	<div id="existing_patterns">
-	</div>
-
-	<form method="POST" action="/SoneBridge/manage">
-		<fieldset>
-			<legend>New pattern</legend>
-			Sone Identity: <select name="identity" id="new_pattern_identity"></select>
-			Pattern: <input type="text" name="pattern" />
-		</fieldset>
-		<input type="submit" value="Add"/>
-	</form>
+<div id="stats">
 </div>
+
+<div id="generate">
+
+<form action="manage" method="post">
+<input type="hidden" name="action" value="generate">
+<input type="submit" value="(re)-generate the web of trust from the current data">
+</form>
+</div>
+
 
 </body>
 </html>
