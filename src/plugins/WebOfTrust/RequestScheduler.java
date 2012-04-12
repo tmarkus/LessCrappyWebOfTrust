@@ -9,6 +9,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
+import plugins.WebOfTrust.datamodel.IVertex;
+
 import thomasmarkus.nl.freenet.graphdb.EdgeWithProperty;
 import thomasmarkus.nl.freenet.graphdb.H2Graph;
 import freenet.client.FetchContext;
@@ -124,13 +126,13 @@ public class RequestScheduler implements Runnable {
 				else
 				{
 					//find random own identity
-					List<Long> own_vertices = graph.getVertexByPropertyValue("ownIdentity", "true");
+					List<Long> own_vertices = graph.getVertexByPropertyValue(IVertex.OWN_IDENTITY, "true");
 					long own_vertex = own_vertices.get( ran.nextInt(own_vertices.size()));
 					Map<String, List<String>> own_props = graph.getVertexProperties(own_vertex);
 					String own_id = own_props.get("id").get(0);
 					
 					//Some identity with a score of 0 or higher
-					List<Long> vertices = graph.getVerticesWithPropertyValueLargerThan("score."+own_id, -1);
+					List<Long> vertices = graph.getVerticesWithPropertyValueLargerThan(IVertex.TRUST+"."+own_id, -1);
 					
 					//get random vertex from that list
 					long vertex = vertices.get( ran.nextInt(vertices.size()));
@@ -139,7 +141,7 @@ public class RequestScheduler implements Runnable {
 					Map<String, List<String>> props = graph.getVertexProperties(vertex);
 					
 					//add URI to the backlog
-					addBacklog(new FreenetURI(props.get("requestURI").get(0)));
+					addBacklog(new FreenetURI(props.get(IVertex.REQUEST_URI).get(0)));
 				}
 			}
 			catch(SQLException e)

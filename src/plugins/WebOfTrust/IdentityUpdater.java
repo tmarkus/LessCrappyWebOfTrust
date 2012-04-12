@@ -1,5 +1,6 @@
 package plugins.WebOfTrust;
 
+import java.net.MalformedURLException;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
@@ -92,7 +93,7 @@ public class IdentityUpdater implements ClientGetCallback{
 			long current_edition = freenetURI.getEdition();
 
 			//setup identiy and store it in the graphstore
-			long identity = getIdentity(freenetURI, current_edition);
+			long identity = getOwnIdentity(freenetURI, current_edition);
 
 			//always update:
 			graph.updateVertexProperty(identity, IVertex.NAME, identityName);
@@ -178,8 +179,8 @@ public class IdentityUpdater implements ClientGetCallback{
 		}
 	}
 
-	private long getPeerIdentity(final FreenetURI peerIdentityKey)
-			throws SQLException {
+	private long getPeerIdentity(final FreenetURI peerIdentityKey)	throws SQLException 
+	{
 		List<Long> identityMatches = graph.getVertexByPropertyValue("id", Utils.getIDFromKey(peerIdentityKey));
 		long peer;
 
@@ -199,15 +200,16 @@ public class IdentityUpdater implements ClientGetCallback{
 			graph.updateVertexProperty(peer, "firstSeen", Long.toString(System.currentTimeMillis()));
 		}
 		
-		graph.updateVertexProperty(peer, "requestURI", peerIdentityKey.toASCIIString());
+		updateKeyEditions(peerIdentityKey, peerIdentityKey.getEdition(), peer);
 		return peer;
 	}
 
-	private void SetProperties(long identity, NodeList elementsByTagName) throws SQLException {
-		//add all the (new) contexts
-		for(int i=0; i < elementsByTagName.getLength(); i++)
+	private void SetProperties(long identity, NodeList propertiesXML) throws SQLException 
+	{
+		//add all the (new) properties
+		for(int i=0; i < propertiesXML.getLength(); i++)
 		{
-			Node context = elementsByTagName.item(i);
+			Node context = propertiesXML.item(i);
 			final NamedNodeMap attr = context.getAttributes();
 			final String name = attr.getNamedItem("Name").getNodeValue();
 			final String value = attr.getNamedItem("Value").getNodeValue();
@@ -216,10 +218,10 @@ public class IdentityUpdater implements ClientGetCallback{
 		}
 	}
 
-	private long getIdentity(FreenetURI identityKey, long current_edition) throws SQLException {
+	private long getOwnIdentity(FreenetURI identityKey, long current_edition) throws SQLException {
 		
-		String identityID = Utils.getIDFromKey(identityKey);
-		List<Long> matches = graph.getVertexByPropertyValue("id", identityID);
+		final String identityID = Utils.getIDFromKey(identityKey);
+		final List<Long> matches = graph.getVertexByPropertyValue("id", identityID);
 		long identity;
 
 		if (matches.size() > 0) {	//existing identity
@@ -230,11 +232,31 @@ public class IdentityUpdater implements ClientGetCallback{
 
 			graph.updateVertexProperty(identity, IVertex.ID, identityID);
 			graph.updateVertexProperty(identity, IVertex.EDITION, Long.toString(current_edition));
+			
+			//update the request and insert editions based on the edition
 			if (isOwnIdentity) graph.updateVertexProperty(identity, "ownIdentity", Boolean.toString(true));
 		}
-		
-		graph.updateVertexProperty(identity, "requestURI", identityKey.toASCIIString());
+
+		updateKeyEditions(identityKey, current_edition, identity);
 		return identity;
+	}
+
+	private void updateKeyEditions(FreenetURI identityKey,
+			long current_edition, long identity) throws SQLException {
+		//update the request and insert keys with the most recent known edition
+		graph.updateVertexProperty(identity, "requestURI", identityKey.setSuggestedEdition(current_edition).toASCIIString());
+		Map<String, List<String>> props = graph.getVertexProperties(identity);
+		if (props.containsKey(IVertex.INSERT_URI))
+		{
+			FreenetURI insertURI;
+			try {
+				insertURI = new FreenetURI(props.get(IVertex.INSERT_URI).get(0));
+				insertURI.setSuggestedEdition(current_edition);
+				graph.updateVertexProperty(identity, IVertex.INSERT_URI, insertURI.toASCIIString());
+			} catch (MalformedURLException e) {
+				e.printStackTrace();
+			}
+		}
 	}
 
 	private void SetContexts(long identity, NodeList contextsXML) throws SQLException 

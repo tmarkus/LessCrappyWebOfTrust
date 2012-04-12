@@ -1,7 +1,3 @@
- - rename `score' for vertices to 'trust' everywhere.
- - use score only for edges 
- - use helper class for future edge_property_names and the same for vertices
- 
 -update the request and (possibly) the insert ids with a new edition if we encounter it (thus rebuild it from the edition number)
 -- current edition number looks okay..., but the URIs are outdated
 

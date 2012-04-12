@@ -2,6 +2,6 @@ package plugins.WebOfTrust.datamodel;
 
 public class IEdge {
 
-	public static String SCORE = "score";
-	public static String COMMENT = "comment";
+	public final static String SCORE = "score";
+	public final static String COMMENT = "comment";
 }
