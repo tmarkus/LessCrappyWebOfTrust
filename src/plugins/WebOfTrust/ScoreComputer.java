@@ -8,6 +8,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import plugins.WebOfTrust.datamodel.IEdge;
+import plugins.WebOfTrust.datamodel.IVertex;
+
 import thomasmarkus.nl.freenet.graphdb.EdgeWithProperty;
 import thomasmarkus.nl.freenet.graphdb.H2Graph;
 
@@ -33,7 +36,7 @@ public class ScoreComputer {
 	{
 		//the trust for rank+1 is the sum of (capacity*score) for all the rank peers
 		Set<Long> seen_vertices = new HashSet<Long>();
-		Set<Long> pool = new HashSet<Long>(graph.getVertexByPropertyValue("id", ownIdentityID));
+		Set<Long> pool = new HashSet<Long>(graph.getVertexByPropertyValue(IVertex.ID, ownIdentityID));
 
 		Map<Long, Integer> vertexToScore = new HashMap<Long, Integer>();
 		
@@ -50,7 +53,7 @@ public class ScoreComputer {
 				if (!vertexToScore.containsKey(vertex_id) || vertexToScore.get(vertex_id) > 0)
 				{
 					System.out.print(".");
-					List<EdgeWithProperty> edges = graph.getOutgoingEdgesWithProperty(vertex_id, "score");
+					List<EdgeWithProperty> edges = graph.getOutgoingEdgesWithProperty(vertex_id, IEdge.SCORE);
 
 					if (rank == 0) vertexToScore.put(vertex_id, 100);
 					
@@ -75,9 +78,10 @@ public class ScoreComputer {
 			//store the calculated scores for the nodes in the graph db
 			for(Long vertex_id : pool)
 			{
-				graph.updateVertexProperty(vertex_id, "score."+ownIdentityID,  Long.toString(normalize(vertexToScore, vertex_id)));
+				graph.updateVertexProperty(vertex_id, IVertex.TRUST+"."+ownIdentityID,  Long.toString(normalize(vertexToScore, vertex_id)));
 			}
-
+			
+			//don't consider identities with trust values of 0 and lower for trust propagation for the next rank
 			Iterator<Long> next_pool_iter = next_pool.iterator();
 			while(next_pool_iter.hasNext())
 			{

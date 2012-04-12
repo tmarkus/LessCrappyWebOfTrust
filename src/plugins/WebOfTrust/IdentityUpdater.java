@@ -9,6 +9,9 @@ import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
+import plugins.WebOfTrust.datamodel.IEdge;
+import plugins.WebOfTrust.datamodel.IVertex;
+
 import thomasmarkus.nl.freenet.graphdb.Edge;
 import thomasmarkus.nl.freenet.graphdb.H2Graph;
 
@@ -92,8 +95,8 @@ public class IdentityUpdater implements ClientGetCallback{
 			long identity = getIdentity(freenetURI, current_edition);
 
 			//always update:
-			graph.updateVertexProperty(identity, "name", identityName);
-			graph.updateVertexProperty(identity, "publishedTrustlist", publishesTrustList);
+			graph.updateVertexProperty(identity, IVertex.NAME, identityName);
+			graph.updateVertexProperty(identity, IVertex.PUBLISHES_TRUSTLIST, publishesTrustList);
 			SetContexts(identity, doc.getElementsByTagName("Context"));
 			SetProperties(identity, doc.getElementsByTagName("Property"));
 			
@@ -144,7 +147,7 @@ public class IdentityUpdater implements ClientGetCallback{
 							graph.updateEdgeProperty(edge, "comment", trustComment);
 
 							//update the trust value/score
-							graph.updateEdgeProperty(edge, "score", Byte.toString(Byte.parseByte(attr.getNamedItem("Value").getNodeValue())));
+							graph.updateEdgeProperty(edge, IEdge.SCORE, Byte.toString(Byte.parseByte(attr.getNamedItem("Value").getNodeValue())));
 
 							//TODO: update the trust values for all identities (actually... just the ones we would like to fetch now..)
 							//ScoreComputer sc = new ScoreComputer(graph);
@@ -153,10 +156,10 @@ public class IdentityUpdater implements ClientGetCallback{
 							//fetch the new identity if the USK value we're referred to seeing is newer than the one we are already aware of
 							final long current_ref_edition = peerIdentityKey.getEdition();
 							final Map<String, List<String>> peerProperties = graph.getVertexProperties(peer);
-							if (peerProperties == null || !peerProperties.containsKey("edition") || 
-									(Long.parseLong(graph.getVertexProperties(peer).get("edition").get(0)) < current_ref_edition))
+							if (peerProperties == null || !peerProperties.containsKey(IVertex.EDITION) || 
+									(Long.parseLong(graph.getVertexProperties(peer).get(IVertex.EDITION).get(0)) < current_ref_edition))
 							{
-								graph.updateVertexProperty(peer, "edition", Long.toString(current_ref_edition));
+								graph.updateVertexProperty(peer, IVertex.EDITION, Long.toString(current_ref_edition));
 								fetchIdentity(peerIdentityKey);
 							}
 						}
@@ -169,12 +172,10 @@ public class IdentityUpdater implements ClientGetCallback{
 				}
 			}
 		}
-
 		catch(Exception ex)
 		{
 			ex.printStackTrace();
 		}
-
 	}
 
 	private long getPeerIdentity(final FreenetURI peerIdentityKey)
@@ -189,10 +190,10 @@ public class IdentityUpdater implements ClientGetCallback{
 		}
 		else  {	//or create a new one
 			peer = graph.createVertex();
-			graph.updateVertexProperty(peer, "id", Utils.getIDFromKey(peerIdentityKey));
+			graph.updateVertexProperty(peer, IVertex.ID, Utils.getIDFromKey(peerIdentityKey));
 
 			//default to edition 0, because we want to ensure fetching the identity
-			graph.updateVertexProperty(peer, "edition", "-1");
+			graph.updateVertexProperty(peer, IVertex.EDITION, "-1");
 
 			//store when we first saw the identity
 			graph.updateVertexProperty(peer, "firstSeen", Long.toString(System.currentTimeMillis()));
@@ -227,8 +228,8 @@ public class IdentityUpdater implements ClientGetCallback{
 		else  { //or create a new one
 			identity = graph.createVertex();
 
-			graph.updateVertexProperty(identity, "id", identityID);
-			graph.updateVertexProperty(identity, "edition", Long.toString(current_edition));
+			graph.updateVertexProperty(identity, IVertex.ID, identityID);
+			graph.updateVertexProperty(identity, IVertex.EDITION, Long.toString(current_edition));
 			if (isOwnIdentity) graph.updateVertexProperty(identity, "ownIdentity", Boolean.toString(true));
 		}
 		
@@ -236,15 +237,15 @@ public class IdentityUpdater implements ClientGetCallback{
 		return identity;
 	}
 
-	private void SetContexts(long identity, NodeList elementsByTagName) throws SQLException 
+	private void SetContexts(long identity, NodeList contextsXML) throws SQLException 
 	{
 		//remove all old contexts
 		graph.removeVertexProperty(identity, "contextName");
 		
 		//add all the (new) contexts
-		for(int i=0; i < elementsByTagName.getLength(); i++)
+		for(int i=0; i < contextsXML.getLength(); i++)
 		{
-			Node context = elementsByTagName.item(i);
+			Node context = contextsXML.item(i);
 			final NamedNodeMap attr = context.getAttributes();
 			final String name = attr.getNamedItem("Name").getNodeValue();
 
