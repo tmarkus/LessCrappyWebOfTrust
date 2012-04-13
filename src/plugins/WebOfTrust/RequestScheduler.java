@@ -216,10 +216,6 @@ public class RequestScheduler implements Runnable {
 					{
 						return; //skip, because we want to add the same uri with an older edition, which doesn't make sense.	
 					}
-					else
-					{
-						iter.remove();
-					}
 				}
 			} catch (MalformedURLException e) {
 				e.printStackTrace();
