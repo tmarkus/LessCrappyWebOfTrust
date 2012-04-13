@@ -1,19 +1,18 @@
--update the request and (possibly) the insert ids with a new edition if we encounter it (thus rebuild it from the edition number)
--- current edition number looks okay..., but the URIs are outdated
-
-- export own identity graph content as XML
 - insert WoT XML file
 - insert WoT XML files IF changes have been made to our own trust scores
 
+- check whether we remove edges on an update? I think we're currently only increasingly adding them? NEVER remove vertices though...
 - fix getIdentitiesbyScore inefficiency (optimize using graph db call)
 - set score appropriately and efficiently for getIdentitiesByScore
  
 - give each identity a score of 0 by default for the complete WoT
 - incremental score recomputation on identity update
+- don't update the identity if the retrieved edition isn't newer than the one we have already stored.
 
 - create NEW ownIdentity using auto-generated keys
 - view details about own identity on page (basically the same as normal identity, but with moar buttons)
 - create page where you can search for an identity and go to its identity info page (listing all identities is CRAZY)
 - Add controls for changing trust values AND even removing the connection to an identity entirely!
+- Beautify HTML pages for various actions
 
 - add event pushing framework thingy

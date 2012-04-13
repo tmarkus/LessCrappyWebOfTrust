@@ -49,7 +49,6 @@ public class IdentityUpdater implements ClientGetCallback{
 		//deregister our request
 		rs.removeInFlight(cg);
 
-		System.out.println(fe.getMessage());		
 		if (fe.mode == FetchException.PERMANENT_REDIRECT)
 		{
 			rs.addBacklog(fe.newURI);
@@ -100,6 +99,7 @@ public class IdentityUpdater implements ClientGetCallback{
 			graph.updateVertexProperty(identity, IVertex.PUBLISHES_TRUSTLIST, publishesTrustList);
 			SetContexts(identity, doc.getElementsByTagName("Context"));
 			SetProperties(identity, doc.getElementsByTagName("Property"));
+			graph.updateVertexProperty(identity, IVertex.LAST_FETCHED, Long.toString(System.currentTimeMillis()));
 			
 			//Add all the identities that this identity trusts in turn
 			Node list = doc.getElementsByTagName("TrustList").item(0);
@@ -107,9 +107,6 @@ public class IdentityUpdater implements ClientGetCallback{
 			if (list != null)
 			{
 				NodeList children = list.getChildNodes();
-
-				//System.out.println("Number of identities that this identity trusts: " + children.getLength());
-				List<Edge> trustMatches = graph.getEdgesByProperty("truster", identityID);
 
 				for(int i=0; i < children.getLength(); i++)
 				{
@@ -129,23 +126,18 @@ public class IdentityUpdater implements ClientGetCallback{
 							String trusteeID = Utils.getIDFromKey(peerIdentityKey);
 
 							long edge = -1;
-							for(Edge candidate_edge : trustMatches)
+							
+							try
 							{
-								if (candidate_edge.getProperties().get("trustee").contains(trusteeID))
-								{
-									edge = candidate_edge.id;
-								}
+								edge = graph.getEdgeByVerticesAndProperty(identity, peer, IEdge.SCORE);	
 							}
-
-							if (edge == -1) //new edge
+							catch(SQLException e) //edge doesn't exist
 							{
 								edge = graph.addEdge(identity, peer);
-								graph.updateEdgeProperty(edge, "truster",identityID);
-								graph.updateEdgeProperty(edge, "trustee", trusteeID);
 							}
 
 							//always update the trust 
-							graph.updateEdgeProperty(edge, "comment", trustComment);
+							graph.updateEdgeProperty(edge, IEdge.COMMENT, trustComment);
 
 							//update the trust value/score
 							graph.updateEdgeProperty(edge, IEdge.SCORE, Byte.toString(Byte.parseByte(attr.getNamedItem("Value").getNodeValue())));
@@ -187,7 +179,6 @@ public class IdentityUpdater implements ClientGetCallback{
 		//existing identity
 		if (identityMatches.size() > 0) {
 			peer = identityMatches.get(0);
-			graph.updateVertexProperty(peer, "lastFetched", Long.toString(System.currentTimeMillis()));								
 		}
 		else  {	//or create a new one
 			peer = graph.createVertex();

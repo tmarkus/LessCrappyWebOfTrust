@@ -103,6 +103,8 @@ public class FCPInterface {
 				if (selection.equals("+")) select = 0;
 				else if (selection.equals("0")) select = -1;
 
+
+				long own_identity_vertex = 0; //TODO: FIX, gives strange results when no own identities are present
 				//find `random' ownIdentity if none is specified
 				if (trusterID == null || trusterID.equals("null")) //TODO: this requires updates below... we should get the identities trusted by ANY ownIdentity
 				{
@@ -111,6 +113,7 @@ public class FCPInterface {
 					{
 						Map<String, List<String>> props = graph.getVertexProperties(vertex);
 						trusterID = props.get("id").get(0);
+						own_identity_vertex = vertex;
 					}
 				}
 				
@@ -119,7 +122,8 @@ public class FCPInterface {
 				int i = 0;
 				for(int vertex_index=0; vertex_index < vertices.size(); vertex_index++)
 				{
-					Map<String, List<String>> properties = graph.getVertexProperties(vertices.get(vertex_index));
+					long identity_vertex = vertices.get(vertex_index);
+					Map<String, List<String>> properties = graph.getVertexProperties(identity_vertex);
 					
 					//check whether the identity has the context we need
 					//TODO: This should be done as part of the query
@@ -142,9 +146,20 @@ public class FCPInterface {
 
 						sfs.putOverwrite("ScoreOwner" + i, properties.get("id").get(0));
 
-						//TODO: this is the actual score assigned by the trusterID, I think? not sure...
-						sfsReply.putOverwrite("Score" + i, properties.get("score."+trusterID).get(0));
-						sfs.putOverwrite("Rank" + i, properties.get("score."+trusterID).get(0)); //TODO: rank isn't stored yet by score computation
+						try //TODO: make this more efficient, horribly slow now
+						{
+							long edge = graph.getEdgeByVerticesAndProperty(own_identity_vertex, identity_vertex, IEdge.SCORE);
+							String score = graph.getEdeProperties(edge).get(IEdge.SCORE).get(0);
+							
+							sfsReply.putOverwrite("Score" + i, score);
+						}
+						catch(SQLException e) //no score relation
+						{
+							sfsReply.putOverwrite("Score" + i, "null");
+						}
+						
+						
+						//sfs.putOverwrite("Rank" + i, properties.get("score."+trusterID).get(0)); //TODO: rank isn't stored yet by score computation
 						if (includeTrustValue)
 						{
 							sfsReply.putOverwrite("Trust" + i, properties.get(IVertex.TRUST+"."+trusterID).get(0));	

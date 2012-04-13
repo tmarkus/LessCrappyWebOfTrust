@@ -26,6 +26,8 @@ public class RequestScheduler implements Runnable {
 	private static final int MAX_MAINTENANCE_REQUESTS = 1; 
 	private static final double PROBABILITY_OF_FETCHING_DIRECTLY_TRUSTED_IDENTITY = 0.8;
 	
+	private static final long MAX_TIME_SINCE_LAST_INSERT = 5*(60 * 1000);  //5 minute
+	
 	private WebOfTrust main;
 	private final H2Graph graph;
 	private HighLevelSimpleClient hl;
@@ -70,6 +72,37 @@ public class RequestScheduler implements Runnable {
 		
 			//schedule random identity updates if there is no other activity at the time
 			maintenance();
+			
+			insertOwnIdentities();
+		}
+	}
+
+	private void insertOwnIdentities() {
+		
+		try
+		{
+			List<Long> own_identities = graph.getVertexByPropertyValue(IVertex.OWN_IDENTITY, "true");
+			for(long own_identity : own_identities)
+			{
+				Map<String, List<String>> props = graph.getVertexProperties(own_identity);
+				
+				long timestamp = 0;
+				if(props.containsKey(IVertex.LAST_INSERT))
+				{
+					timestamp = Long.parseLong(props.get(IVertex.LAST_INSERT).get(0));	
+				}
+				
+				if ((System.currentTimeMillis() - MAX_TIME_SINCE_LAST_INSERT) > timestamp)
+				{
+					String id = props.get(IVertex.ID).get(0);
+					OwnIdentityInserter ii = new OwnIdentityInserter(graph, id, hl, main);
+					ii.run();
+				}
+			}
+		}
+		catch(SQLException e)
+		{
+			e.printStackTrace();
 		}
 	}
 
@@ -125,7 +158,7 @@ public class RequestScheduler implements Runnable {
 				}
 				else
 				{
-					//find random own identity
+					//find random identity
 					List<Long> own_vertices = graph.getVertexByPropertyValue(IVertex.OWN_IDENTITY, "true");
 					long own_vertex = own_vertices.get( ran.nextInt(own_vertices.size()));
 					Map<String, List<String>> own_props = graph.getVertexProperties(own_vertex);

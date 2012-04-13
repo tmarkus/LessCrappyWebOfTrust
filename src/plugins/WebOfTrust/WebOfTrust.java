@@ -60,6 +60,11 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		return this.hl;
 	}
 
+	public PluginRespirator getPR()
+	{
+		return this.pr;
+	}
+	
 	@Override
 	public void runPlugin(PluginRespirator pr) {
 
@@ -176,7 +181,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 
 	@Override
 	public String getVersion() {
-		return "2012-04-06";
+		return "2012-04-13";
 	}
 
 
