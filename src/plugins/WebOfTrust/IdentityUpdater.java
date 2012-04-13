@@ -94,7 +94,7 @@ public class IdentityUpdater implements ClientGetCallback{
 			
 			if (current_edition > getCurrentStoredEdition(identity)) //what we are fetching should be newer, if not, don't even bother updating everything
 			{
-				System.out.println("Updating identity, because of newer edition: " + freenetURI.toASCIIString());
+				//System.out.println("Updating identity, because of newer edition: " + freenetURI.toASCIIString());
 				updateKeyEditions(freenetURI, current_edition, identity); //always update the keys no matter what
 				
 				//always update:
@@ -153,10 +153,15 @@ public class IdentityUpdater implements ClientGetCallback{
 								//fetch the new identity if the USK value we're referred to seeing is newer than the one we are already aware of
 								final long current_ref_edition = peerIdentityKey.getEdition();
 								final Map<String, List<String>> peerProperties = graph.getVertexProperties(peer);
-								if (peerProperties == null || !peerProperties.containsKey(IVertex.EDITION) || 
-										(Long.parseLong(graph.getVertexProperties(peer).get(IVertex.EDITION).get(0)) < current_ref_edition))
+								long stored_edition = -1;
+								if (peerProperties != null && peerProperties.containsKey(IVertex.EDITION))
 								{
-									graph.updateVertexProperty(peer, IVertex.EDITION, Long.toString(current_ref_edition));
+									stored_edition = Long.parseLong(graph.getVertexProperties(peer).get(IVertex.EDITION).get(0));
+								}
+								
+								if(stored_edition < current_ref_edition)
+								{
+									//update peer key to latest know edition
 									fetchIdentity(peerIdentityKey);
 								}
 							}
