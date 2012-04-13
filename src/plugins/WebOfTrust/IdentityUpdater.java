@@ -162,6 +162,9 @@ public class IdentityUpdater implements ClientGetCallback{
 								if(stored_edition < current_ref_edition)
 								{
 									//update peer key to latest know edition
+									graph.updateVertexProperty(peer, IVertex.REQUEST_URI, peerIdentityKey.toASCIIString());
+									
+									//start fetching it
 									fetchIdentity(peerIdentityKey);
 								}
 							}

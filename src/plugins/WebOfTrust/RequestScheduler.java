@@ -11,6 +11,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 
+import plugins.WebOfTrust.datamodel.IEdge;
 import plugins.WebOfTrust.datamodel.IVertex;
 
 import thomasmarkus.nl.freenet.graphdb.EdgeWithProperty;
@@ -29,7 +30,7 @@ public class RequestScheduler implements Runnable {
 	private static final double PROBABILITY_OF_FETCHING_DIRECTLY_TRUSTED_IDENTITY = 0.8;
 
 	private static final long MAX_TIME_SINCE_LAST_INSERT = (10 * 1000);
-	private static final long MINIMAL_SLEEP_TIME = (5 * 1000);
+	private static final long MINIMAL_SLEEP_TIME = (1 * 1000);
 
 	private WebOfTrust main;
 	private final H2Graph graph;
@@ -144,21 +145,27 @@ public class RequestScheduler implements Runnable {
 				double random = ran.nextDouble();
 				if (random < PROBABILITY_OF_FETCHING_DIRECTLY_TRUSTED_IDENTITY) //fetch random directly connected identity
 				{
-					List<Long> vertices = graph.getVertexByPropertyValue("ownIdentity", "true");
+					List<Long> vertices = graph.getVertexByPropertyValue(IVertex.OWN_IDENTITY, "true");
 					for(long vertex_id : vertices)
 					{
-						List<EdgeWithProperty> edges = graph.getOutgoingEdgesWithProperty(vertex_id, "score");
+						List<EdgeWithProperty> edges = graph.getOutgoingEdgesWithProperty(vertex_id, IEdge.SCORE);
 
 						//get a random edge
 						if (edges.size() > 0)
 						{
+							System.out.println("looking for a random edge from an ownidentity...");
+							
 							EdgeWithProperty edge = edges.get( ran.nextInt(edges.size()) );
 
 							//get the node to which that edge is pointing
 							Map<String, List<String>> props = graph.getVertexProperties(edge.vertex_to);
 
 							//add the requestURI to the backlog
-							addBacklog(new FreenetURI(props.get("requestURI").get(0)));
+							if (props.containsKey(IVertex.REQUEST_URI))
+							{
+								System.out.println("Added to backlog..");
+								addBacklog(new FreenetURI(props.get(IVertex.REQUEST_URI).get(0)));	
+							}
 						}
 					}
 				}
