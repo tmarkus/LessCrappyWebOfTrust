@@ -85,19 +85,20 @@ public class IdentityUpdater implements ClientGetCallback{
 		try
 		{
 			Node ownIdentity = doc.getElementsByTagName("Identity").item(0);
-			String identityName = ownIdentity.getAttributes().getNamedItem("Name").getNodeValue();
-			String publishesTrustList = ownIdentity.getAttributes().getNamedItem("PublishesTrustList").getNodeValue();
-
-			final String identityID = Utils.getIDFromKey(freenetURI);
+			final String identityName = ownIdentity.getAttributes().getNamedItem("Name").getNodeValue();
+			final String publishesTrustList = ownIdentity.getAttributes().getNamedItem("PublishesTrustList").getNodeValue();
 			long current_edition = freenetURI.getEdition();
 
 			//setup identiy and possibly store it in the graphstore
-			long identity = getOwnIdentity(freenetURI, current_edition);
-			updateKeyEditions(freenetURI, current_edition, identity); //always update the keys no matter what
+			final long identity = getOwnIdentity(freenetURI, current_edition);
+			
+			System.out.println("Got data for: " + freenetURI.toASCIIString());
+			System.out.println("Currently stored edition: " + getCurrentStoredEdition(identity));
 			
 			if (current_edition > getCurrentStoredEdition(identity)) //what we are fetching should be newer, if not, don't even bother updating everything
 			{
 				System.out.println("Updating identity, because of newer edition: " + freenetURI.toASCIIString());
+				updateKeyEditions(freenetURI, current_edition, identity); //always update the keys no matter what
 				
 				//always update:
 				graph.updateVertexProperty(identity, IVertex.NAME, identityName);
@@ -198,7 +199,6 @@ public class IdentityUpdater implements ClientGetCallback{
 			graph.updateVertexProperty(peer, "firstSeen", Long.toString(System.currentTimeMillis()));
 		}
 		
-		updateKeyEditions(peerIdentityKey, peerIdentityKey.getEdition(), peer);
 		return peer;
 	}
 
@@ -231,8 +231,6 @@ public class IdentityUpdater implements ClientGetCallback{
 			
 			//update the request and insert editions based on the edition
 			if (isOwnIdentity) graph.updateVertexProperty(identity, IVertex.OWN_IDENTITY, Boolean.toString(true));
-		
-			updateKeyEditions(identityKey, current_edition, identity);
 		}
 		
 		return identity;
