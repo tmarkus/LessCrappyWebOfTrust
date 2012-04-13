@@ -27,7 +27,7 @@ public class RequestScheduler implements Runnable {
 	private static final double PROBABILITY_OF_FETCHING_DIRECTLY_TRUSTED_IDENTITY = 0.8;
 	
 	private static final long MAX_TIME_SINCE_LAST_INSERT = (10 * 1000);
-	private static final long MINIMAL_SLEEP_TIME = (30 * 1000);
+	private static final long MINIMAL_SLEEP_TIME = (5 * 1000);
 	
 	private WebOfTrust main;
 	private final H2Graph graph;
@@ -74,7 +74,7 @@ public class RequestScheduler implements Runnable {
 			//schedule random identity updates if there is no other activity at the time
 			maintenance();
 			
-			insertOwnIdentities();
+			//insertOwnIdentities();
 		}
 	}
 
@@ -148,13 +148,16 @@ public class RequestScheduler implements Runnable {
 						List<EdgeWithProperty> edges = graph.getOutgoingEdgesWithProperty(vertex_id, "score");
 						
 						//get a random edge
-						EdgeWithProperty edge = edges.get( ran.nextInt(edges.size()) );
-						
-						//get the node to which that edge is pointing
-						Map<String, List<String>> props = graph.getVertexProperties(edge.vertex_to);
-						
-						//add the requestURI to the backlog
-						addBacklog(new FreenetURI(props.get("requestURI").get(0)));
+						if (edges.size() > 0)
+						{
+							EdgeWithProperty edge = edges.get( ran.nextInt(edges.size()) );
+							
+							//get the node to which that edge is pointing
+							Map<String, List<String>> props = graph.getVertexProperties(edge.vertex_to);
+							
+							//add the requestURI to the backlog
+							addBacklog(new FreenetURI(props.get("requestURI").get(0)));
+						}
 					}
 				}
 				else
@@ -168,14 +171,17 @@ public class RequestScheduler implements Runnable {
 					//Some identity with a score of 0 or higher
 					List<Long> vertices = graph.getVerticesWithPropertyValueLargerThan(IVertex.TRUST+"."+own_id, -1);
 					
-					//get random vertex from that list
-					long vertex = vertices.get( ran.nextInt(vertices.size()));
-					
-					//get properties of that vertex
-					Map<String, List<String>> props = graph.getVertexProperties(vertex);
-					
-					//add URI to the backlog
-					addBacklog(new FreenetURI(props.get(IVertex.REQUEST_URI).get(0)));
+					if(vertices.size() > 0)
+					{
+						//get random vertex from that list
+						long vertex = vertices.get( ran.nextInt(vertices.size()));
+						
+						//get properties of that vertex
+						Map<String, List<String>> props = graph.getVertexProperties(vertex);
+						
+						//add URI to the backlog
+						addBacklog(new FreenetURI(props.get(IVertex.REQUEST_URI).get(0)));
+					}
 				}
 			}
 			catch(SQLException e)

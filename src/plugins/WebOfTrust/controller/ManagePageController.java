@@ -12,6 +12,7 @@ import org.jsoup.nodes.Element;
 
 import plugins.WebOfTrust.WebOfTrust;
 import plugins.WebOfTrust.ScoreComputer;
+import plugins.WebOfTrust.datamodel.IVertex;
 
 import thomasmarkus.nl.freenet.graphdb.H2Graph;
 
@@ -78,10 +79,12 @@ public class ManagePageController extends freenet.plugin.web.HTMLFileReaderToadl
 			for(long identity : graph.getVertexByPropertyValue("ownIdentity", "true"))
 			{
 				Map<String, List<String>> props = graph.getVertexProperties(identity);
-				stats_div.append("<li>" + props.get("name").get(0) + "  (" + props.get("id").get(0) + ")</li>");	
+				if (props.containsKey(IVertex.NAME))
+				{
+					stats_div.append("<li>" + props.get(IVertex.NAME).get(0) + "  (" + props.get("id").get(0) + ")</li>");	
+				}
 			}
 			stats_div.append("</ul><br />");
-
 			
 			stats_div.append("URIs currently in flight: "  + "<br />");
 			stats_div.append("<ul>");
