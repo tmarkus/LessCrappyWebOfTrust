@@ -26,7 +26,8 @@ public class RequestScheduler implements Runnable {
 	private static final int MAX_MAINTENANCE_REQUESTS = 1; 
 	private static final double PROBABILITY_OF_FETCHING_DIRECTLY_TRUSTED_IDENTITY = 0.8;
 	
-	private static final long MAX_TIME_SINCE_LAST_INSERT = 5*(60 * 1000);  //5 minute
+	private static final long MAX_TIME_SINCE_LAST_INSERT = (10 * 1000);
+	private static final long MINIMAL_SLEEP_TIME = (30 * 1000);
 	
 	private WebOfTrust main;
 	private final H2Graph graph;
@@ -59,7 +60,7 @@ public class RequestScheduler implements Runnable {
 		{
 			//chill out a bit
 			try {
-				Thread.sleep(1000);
+				Thread.sleep(MINIMAL_SLEEP_TIME);
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
@@ -124,7 +125,7 @@ public class RequestScheduler implements Runnable {
 	 * Cleanup ClientGetters which have finished or have been cancelled.
 	 */
 	
-	private void cleanup() {
+	private synchronized void cleanup() {
 		Iterator<ClientGetter> iter = inFlight.iterator();
 		while(iter.hasNext())
 		{

@@ -1,18 +1,27 @@
+- don't insert some more properties (score.IDENTITY for example, because this exposes ALL our identities we have)
+-- use introspection to get all the fields from the IVertex / Iedge classes (pretty, yay!)
+-- doesn't fix score properties though... maybe match on 'score.'
+- rebuild WoT database to account for field changes etc etc
 - insert WoT XML file
-- insert WoT XML files IF changes have been made to our own trust scores
+ 
 
 - check whether we remove edges on an update? I think we're currently only increasingly adding them? NEVER remove vertices though...
-- fix getIdentitiesbyScore inefficiency (optimize using graph db call)
-- set score appropriately and efficiently for getIdentitiesByScore
- 
-- give each identity a score of 0 by default for the complete WoT
-- incremental score recomputation on identity update
-- don't update the identity if the retrieved edition isn't newer than the one we have already stored.
-
+- give each identity a default trust value of 0 for the complete WoT when calculating the trust values
 - create NEW ownIdentity using auto-generated keys
+- test whether everything breaks and whether trust values for identities make sense (maybe trust digger3, but distrust a random identity, then check with Sone if they appear or not?)
+
+
 - view details about own identity on page (basically the same as normal identity, but with moar buttons)
 - create page where you can search for an identity and go to its identity info page (listing all identities is CRAZY)
 - Add controls for changing trust values AND even removing the connection to an identity entirely!
 - Beautify HTML pages for various actions
+
+RELEASE FOR BETA TESTING
+
+- fix getIdentitiesbyScore inefficiency (optimize using graph db call)
+ 
+- incremental score recomputation on identity update
+- don't update the identity if the retrieved edition isn't newer than the one we have already stored.
+
 
 - add event pushing framework thingy

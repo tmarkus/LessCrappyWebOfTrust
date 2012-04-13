@@ -91,75 +91,82 @@ public class IdentityUpdater implements ClientGetCallback{
 			final String identityID = Utils.getIDFromKey(freenetURI);
 			long current_edition = freenetURI.getEdition();
 
-			//setup identiy and store it in the graphstore
+			//setup identiy and possibly store it in the graphstore
 			long identity = getOwnIdentity(freenetURI, current_edition);
-
-			//always update:
-			graph.updateVertexProperty(identity, IVertex.NAME, identityName);
-			graph.updateVertexProperty(identity, IVertex.PUBLISHES_TRUSTLIST, publishesTrustList);
-			SetContexts(identity, doc.getElementsByTagName("Context"));
-			SetProperties(identity, doc.getElementsByTagName("Property"));
-			graph.updateVertexProperty(identity, IVertex.LAST_FETCHED, Long.toString(System.currentTimeMillis()));
+			updateKeyEditions(freenetURI, current_edition, identity); //always update the keys no matter what
 			
-			//Add all the identities that this identity trusts in turn
-			Node list = doc.getElementsByTagName("TrustList").item(0);
-
-			if (list != null)
+			if (current_edition > getCurrentStoredEdition(identity)) //what we are fetching should be newer, if not, don't even bother updating everything
 			{
-				NodeList children = list.getChildNodes();
+				System.out.println("Updating identity, because of newer edition: " + freenetURI.toASCIIString());
+				
+				//always update:
+				graph.updateVertexProperty(identity, IVertex.NAME, identityName);
+				graph.updateVertexProperty(identity, IVertex.PUBLISHES_TRUSTLIST, publishesTrustList);
+				SetContexts(identity, doc.getElementsByTagName("Context"));
+				SetProperties(identity, doc.getElementsByTagName("Property"));
+				graph.updateVertexProperty(identity, IVertex.LAST_FETCHED, Long.toString(System.currentTimeMillis()));
+				
+				
+				//Add all the identities that this identity trusts in turn
+				Node list = doc.getElementsByTagName("TrustList").item(0);
 
-				for(int i=0; i < children.getLength(); i++)
+				if (list != null)
 				{
-					Node element = children.item(i);
+					NodeList children = list.getChildNodes();
 
-					if (element.getNodeType() != Node.TEXT_NODE)
+					for(int i=0; i < children.getLength(); i++)
 					{
-						try
+						Node element = children.item(i);
+
+						if (element.getNodeType() != Node.TEXT_NODE)
 						{
-							final NamedNodeMap attr = element.getAttributes();
-							final FreenetURI peerIdentityKey = new FreenetURI(attr.getNamedItem("Identity").getNodeValue());
-							final String trustComment = attr.getNamedItem("Comment").getNodeValue();
-
-							long peer = getPeerIdentity(peerIdentityKey);
-
-							//add the trust relation, but first check whether the edge exists or not...
-							String trusteeID = Utils.getIDFromKey(peerIdentityKey);
-
-							long edge = -1;
-							
 							try
 							{
-								edge = graph.getEdgeByVerticesAndProperty(identity, peer, IEdge.SCORE);	
+								final NamedNodeMap attr = element.getAttributes();
+								final FreenetURI peerIdentityKey = new FreenetURI(attr.getNamedItem("Identity").getNodeValue());
+								final String trustComment = attr.getNamedItem("Comment").getNodeValue();
+
+								long peer = getPeerIdentity(peerIdentityKey);
+
+								//add the trust relation, but first check whether the edge exists or not...
+								String trusteeID = Utils.getIDFromKey(peerIdentityKey);
+
+								long edge = -1;
+								
+								try
+								{
+									edge = graph.getEdgeByVerticesAndProperty(identity, peer, IEdge.SCORE);	
+								}
+								catch(SQLException e) //edge doesn't exist
+								{
+									edge = graph.addEdge(identity, peer);
+								}
+
+								//always update the trust 
+								graph.updateEdgeProperty(edge, IEdge.COMMENT, trustComment);
+
+								//update the trust value/score
+								graph.updateEdgeProperty(edge, IEdge.SCORE, Byte.toString(Byte.parseByte(attr.getNamedItem("Value").getNodeValue())));
+
+								//TODO: update the trust values for all identities (actually... just the ones we would like to fetch now..)
+								//ScoreComputer sc = new ScoreComputer(graph);
+								//call the sc for all the identities
+
+								//fetch the new identity if the USK value we're referred to seeing is newer than the one we are already aware of
+								final long current_ref_edition = peerIdentityKey.getEdition();
+								final Map<String, List<String>> peerProperties = graph.getVertexProperties(peer);
+								if (peerProperties == null || !peerProperties.containsKey(IVertex.EDITION) || 
+										(Long.parseLong(graph.getVertexProperties(peer).get(IVertex.EDITION).get(0)) < current_ref_edition))
+								{
+									graph.updateVertexProperty(peer, IVertex.EDITION, Long.toString(current_ref_edition));
+									fetchIdentity(peerIdentityKey);
+								}
 							}
-							catch(SQLException e) //edge doesn't exist
+							catch(NullPointerException e)
 							{
-								edge = graph.addEdge(identity, peer);
+								e.printStackTrace();
+								System.out.println("Oops, failed to retrieve attributes.");
 							}
-
-							//always update the trust 
-							graph.updateEdgeProperty(edge, IEdge.COMMENT, trustComment);
-
-							//update the trust value/score
-							graph.updateEdgeProperty(edge, IEdge.SCORE, Byte.toString(Byte.parseByte(attr.getNamedItem("Value").getNodeValue())));
-
-							//TODO: update the trust values for all identities (actually... just the ones we would like to fetch now..)
-							//ScoreComputer sc = new ScoreComputer(graph);
-							//call the sc for all the identities
-
-							//fetch the new identity if the USK value we're referred to seeing is newer than the one we are already aware of
-							final long current_ref_edition = peerIdentityKey.getEdition();
-							final Map<String, List<String>> peerProperties = graph.getVertexProperties(peer);
-							if (peerProperties == null || !peerProperties.containsKey(IVertex.EDITION) || 
-									(Long.parseLong(graph.getVertexProperties(peer).get(IVertex.EDITION).get(0)) < current_ref_edition))
-							{
-								graph.updateVertexProperty(peer, IVertex.EDITION, Long.toString(current_ref_edition));
-								fetchIdentity(peerIdentityKey);
-							}
-						}
-						catch(NullPointerException e)
-						{
-							e.printStackTrace();
-							System.out.println("Oops, failed to retrieve attributes.");
 						}
 					}
 				}
@@ -212,7 +219,7 @@ public class IdentityUpdater implements ClientGetCallback{
 	private long getOwnIdentity(FreenetURI identityKey, long current_edition) throws SQLException {
 		
 		final String identityID = Utils.getIDFromKey(identityKey);
-		final List<Long> matches = graph.getVertexByPropertyValue("id", identityID);
+		final List<Long> matches = graph.getVertexByPropertyValue(IVertex.ID, identityID);
 		long identity;
 
 		if (matches.size() > 0) {	//existing identity
@@ -220,32 +227,51 @@ public class IdentityUpdater implements ClientGetCallback{
 		}
 		else  { //or create a new one
 			identity = graph.createVertex();
-
 			graph.updateVertexProperty(identity, IVertex.ID, identityID);
-			graph.updateVertexProperty(identity, IVertex.EDITION, Long.toString(current_edition));
 			
 			//update the request and insert editions based on the edition
-			if (isOwnIdentity) graph.updateVertexProperty(identity, "ownIdentity", Boolean.toString(true));
+			if (isOwnIdentity) graph.updateVertexProperty(identity, IVertex.OWN_IDENTITY, Boolean.toString(true));
+		
+			updateKeyEditions(identityKey, current_edition, identity);
 		}
-
-		updateKeyEditions(identityKey, current_edition, identity);
+		
 		return identity;
 	}
 
-	private void updateKeyEditions(FreenetURI identityKey,
-			long current_edition, long identity) throws SQLException {
-		//update the request and insert keys with the most recent known edition
-		graph.updateVertexProperty(identity, "requestURI", identityKey.setSuggestedEdition(current_edition).toASCIIString());
-		Map<String, List<String>> props = graph.getVertexProperties(identity);
-		if (props.containsKey(IVertex.INSERT_URI))
+	private long getCurrentStoredEdition(long vertex_id) throws SQLException
+	{
+		Map<String, List<String>> props = graph.getVertexProperties(vertex_id);
+		
+		if (props.containsKey(IVertex.EDITION))
 		{
-			FreenetURI insertURI;
-			try {
-				insertURI = new FreenetURI(props.get(IVertex.INSERT_URI).get(0));
-				insertURI.setSuggestedEdition(current_edition);
-				graph.updateVertexProperty(identity, IVertex.INSERT_URI, insertURI.toASCIIString());
-			} catch (MalformedURLException e) {
-				e.printStackTrace();
+			return Long.parseLong(props.get(IVertex.EDITION).get(0));
+		}
+		else
+		{
+			return -1;
+		}
+	}
+	
+	private void updateKeyEditions(FreenetURI identityKey, long current_edition, long identity) throws SQLException 
+	{
+		if (current_edition > getCurrentStoredEdition(identity))
+		{
+			Map<String, List<String>> props = graph.getVertexProperties(identity);
+			graph.updateVertexProperty(identity, IVertex.EDITION, Long.toString(current_edition));	
+
+			//update the request and insert keys with the most recent known edition
+			graph.updateVertexProperty(identity, "requestURI", identityKey.setSuggestedEdition(current_edition).toASCIIString());
+
+			//update the insert uri if we have one
+			if (props.containsKey(IVertex.INSERT_URI))
+			{
+				try {
+					FreenetURI insertURI = new FreenetURI(props.get(IVertex.INSERT_URI).get(0));
+					insertURI.setSuggestedEdition(current_edition);
+					graph.updateVertexProperty(identity, IVertex.INSERT_URI, insertURI.toASCIIString());
+				} catch (MalformedURLException e) {
+					e.printStackTrace();
+				}
 			}
 		}
 	}
