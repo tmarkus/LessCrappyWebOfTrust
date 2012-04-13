@@ -12,6 +12,8 @@ import org.jsoup.nodes.Element;
 
 import plugins.WebOfTrust.WebOfTrust;
 import plugins.WebOfTrust.ScoreComputer;
+import plugins.WebOfTrust.datamodel.IEdge;
+import plugins.WebOfTrust.datamodel.IVertex;
 
 import thomasmarkus.nl.freenet.graphdb.Edge;
 import thomasmarkus.nl.freenet.graphdb.H2Graph;
@@ -69,10 +71,13 @@ public class ShowIdentityController extends freenet.plugin.web.HTMLFileReaderToa
 				Map<String, List<String>> peer_identity_props = graph.getVertexProperties(edge.vertex_to);
 				Map<String, List<String>> edge_properties = edge.getProperties();
 				
-				String trustValue = edge_properties.get("score").get(0);
-				String trustComment = edge_properties.get("comment").get(0);
-				String peerName = peer_identity_props.get("name").get(0);
-				String peerID = peer_identity_props.get("id").get(0);
+				String trustValue = edge_properties.get(IEdge.SCORE).get(0);
+				String trustComment = edge_properties.get(IEdge.COMMENT).get(0);
+				
+				String peerName;
+				if (peer_identity_props.containsKey(IVertex.NAME))	peerName = peer_identity_props.get(IVertex.NAME).get(0);
+				else												peerName = "(Not yet downloaded)";
+				String peerID = peer_identity_props.get(IVertex.ID).get(0);
 				
 				info_div.select("ol").append("<li>"+peerName+"("+peerID+"): Trust score: " + trustValue + "  comment: " + trustComment+"</li>");
 			}
