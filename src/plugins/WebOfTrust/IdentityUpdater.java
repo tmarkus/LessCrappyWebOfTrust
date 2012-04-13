@@ -92,9 +92,6 @@ public class IdentityUpdater implements ClientGetCallback{
 			//setup identiy and possibly store it in the graphstore
 			final long identity = getOwnIdentity(freenetURI, current_edition);
 			
-			System.out.println("Got data for: " + freenetURI.toASCIIString());
-			System.out.println("Currently stored edition: " + getCurrentStoredEdition(identity));
-			
 			if (current_edition > getCurrentStoredEdition(identity)) //what we are fetching should be newer, if not, don't even bother updating everything
 			{
 				System.out.println("Updating identity, because of newer edition: " + freenetURI.toASCIIString());
