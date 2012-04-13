@@ -11,6 +11,8 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 
+import com.sun.swing.internal.plaf.synth.resources.synth;
+
 import plugins.WebOfTrust.datamodel.IEdge;
 import plugins.WebOfTrust.datamodel.IVertex;
 
@@ -208,40 +210,44 @@ public class RequestScheduler implements Runnable {
 
 	public synchronized void addBacklog(FreenetURI uri)
 	{
-		uri.setSuggestedEdition(-uri.getEdition()); //note: negative edition!
+		synchronized (backlog) {
+			uri.setSuggestedEdition(-uri.getEdition()); //note: negative edition!
 
-		Iterator<String> iter = backlog.iterator();
-		while(iter.hasNext())
-		{
-			String existingURIString = iter.next();
-			try {
-				FreenetURI existingURI = new FreenetURI(existingURIString);
+			Iterator<String> iter = backlog.iterator();
+			while(iter.hasNext())
+			{
+				String existingURIString = iter.next();
+				try {
+					FreenetURI existingURI = new FreenetURI(existingURIString);
 
-				if (existingURI.equalsKeypair(uri))
-				{
-					if (existingURI.getEdition() > uri.getEdition())
+					if (existingURI.equalsKeypair(uri))
 					{
-						return; //skip, because we want to add the same uri with an older edition, which doesn't make sense.	
+						if (existingURI.getEdition() > uri.getEdition())
+						{
+							return; //skip, because we want to add the same uri with an older edition, which doesn't make sense.	
+						}
 					}
+				} catch (MalformedURLException e) {
+					e.printStackTrace();
 				}
-			} catch (MalformedURLException e) {
-				e.printStackTrace();
 			}
+			backlog.add(uri.toASCIIString());	
 		}
-		backlog.add(uri.toASCIIString());	
 	}
 
-	public FreenetURI getBacklogItem()
+	public synchronized FreenetURI getBacklogItem()
 	{
-		Iterator<String> iter = backlog.iterator();
-		while(iter.hasNext())
-		{
-			String next = iter.next();
-			iter.remove();
-			try {
-				return new FreenetURI(next);
-			} catch (MalformedURLException e) {
-				e.printStackTrace();
+		synchronized (backlog) {
+			Iterator<String> iter = backlog.iterator();
+			while(iter.hasNext())
+			{
+				String next = iter.next();
+				iter.remove();
+				try {
+					return new FreenetURI(next);
+				} catch (MalformedURLException e) {
+					e.printStackTrace();
+				}
 			}
 		}
 		return null;
@@ -259,12 +265,17 @@ public class RequestScheduler implements Runnable {
 
 	public synchronized void addInFlight(ClientGetter cg)
 	{
-		inFlight.add(cg);
+		synchronized (inFlight) {
+			inFlight.add(cg);	
+		}
+		
 	}
 
 	public synchronized void removeInFlight(ClientGetter cg)
 	{
-		inFlight.remove(cg);
+		synchronized (inFlight) {
+			inFlight.remove(cg);
+		}
 	}
 
 	public synchronized int getNumInFlight()
