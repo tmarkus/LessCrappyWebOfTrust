@@ -3,11 +3,13 @@ package plugins.WebOfTrust;
 import java.net.MalformedURLException;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.Set;
 
 import plugins.WebOfTrust.datamodel.IVertex;
 
@@ -34,7 +36,7 @@ public class RequestScheduler implements Runnable {
 	private HighLevelSimpleClient hl;
 	
 	private List<ClientGetter> inFlight = new ArrayList<ClientGetter>();
-	private List<String> backlog = new LinkedList<String>();
+	private Set<String> backlog = new HashSet<String>();
 	private final Random ran = new Random();
 	
 	private IdentityUpdaterRequestClient rc;
@@ -164,23 +166,27 @@ public class RequestScheduler implements Runnable {
 				{
 					//find random identity
 					List<Long> own_vertices = graph.getVertexByPropertyValue(IVertex.OWN_IDENTITY, "true");
-					long own_vertex = own_vertices.get( ran.nextInt(own_vertices.size()));
-					Map<String, List<String>> own_props = graph.getVertexProperties(own_vertex);
-					String own_id = own_props.get("id").get(0);
 					
-					//Some identity with a score of 0 or higher
-					List<Long> vertices = graph.getVerticesWithPropertyValueLargerThan(IVertex.TRUST+"."+own_id, -1);
-					
-					if(vertices.size() > 0)
+					if (own_vertices.size() > 0)
 					{
-						//get random vertex from that list
-						long vertex = vertices.get( ran.nextInt(vertices.size()));
+						long own_vertex = own_vertices.get( ran.nextInt(own_vertices.size()));
+						Map<String, List<String>> own_props = graph.getVertexProperties(own_vertex);
+						String own_id = own_props.get("id").get(0);
 						
-						//get properties of that vertex
-						Map<String, List<String>> props = graph.getVertexProperties(vertex);
+						//Some identity with a score of 0 or higher
+						List<Long> vertices = graph.getVerticesWithPropertyValueLargerThan(IVertex.TRUST+"."+own_id, -1);
 						
-						//add URI to the backlog
-						addBacklog(new FreenetURI(props.get(IVertex.REQUEST_URI).get(0)));
+						if(vertices.size() > 0)
+						{
+							//get random vertex from that list
+							long vertex = vertices.get( ran.nextInt(vertices.size()));
+							
+							//get properties of that vertex
+							Map<String, List<String>> props = graph.getVertexProperties(vertex);
+							
+							//add URI to the backlog
+							addBacklog(new FreenetURI(props.get(IVertex.REQUEST_URI).get(0)));
+						}
 					}
 				}
 			}
@@ -196,15 +202,47 @@ public class RequestScheduler implements Runnable {
 	public void addBacklog(FreenetURI uri)
 	{
 		uri.setSuggestedEdition(-uri.getEdition()); //note: negative edition!
-		backlog.add(uri.toASCIIString());
+
+		synchronized (backlog) {
+			Iterator<String> iter = backlog.iterator();
+			
+			while(iter.hasNext())
+			{
+				String existingURIString = iter.next();
+				try {
+					FreenetURI existingURI = new FreenetURI(existingURIString);
+
+					if (existingURI.equalsKeypair(uri))
+					{
+						if (existingURI.getEdition() > uri.getEdition())
+						{
+							return; //skip, because we want to add the same uri with an older edition, which doesn't make sense.	
+						}
+						else
+						{
+							iter.remove();
+						}
+					}
+				} catch (MalformedURLException e) {
+					e.printStackTrace();
+				}
+			}
+		backlog.add(uri.toASCIIString());	
+		}
 	}
 
 	public FreenetURI getBacklogItem()
 	{
-		try {
-			return new FreenetURI(backlog.remove(0));
-		} catch (MalformedURLException e) {
-			e.printStackTrace();
+		Iterator<String> iter = backlog.iterator();
+		while(iter.hasNext())
+		{
+			String next = iter.next();
+			iter.remove();
+			try {
+				return new FreenetURI(next);
+			} catch (MalformedURLException e) {
+				e.printStackTrace();
+			}
 		}
 		return null;
 	}
