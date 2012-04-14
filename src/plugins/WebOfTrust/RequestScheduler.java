@@ -110,13 +110,13 @@ public class RequestScheduler implements Runnable {
 	}
 
 	private void clearBacklog() {
-		while(getNumInFlight() < MAX_REQUESTS && getNumBackLog() > 0)
+		while(getInFlightSize() < MAX_REQUESTS && getBacklogSize() > 0)
 		{
 			FreenetURI next = getBacklogItem();
 
 			//fetch the identity
 			try {
-				addInFlight(hl.fetch(next, 200000, rc, cc, fc));
+				addInFlight(hl.fetch(next, WebOfTrust.FETCH_MAX_FILE_SIZE, rc, cc, fc));
 			} catch (FetchException e) {
 				e.printStackTrace();
 			}
@@ -137,7 +137,7 @@ public class RequestScheduler implements Runnable {
 	}
 
 	private void maintenance() {
-		if (getNumInFlight() <= MAX_MAINTENANCE_REQUESTS)
+		if (getInFlightSize() <= MAX_MAINTENANCE_REQUESTS)
 		{
 			try
 			{
@@ -252,7 +252,7 @@ public class RequestScheduler implements Runnable {
 		return inFlight;
 	}
 
-	public int getNumBackLog()
+	public int getBacklogSize()
 	{
 		return backlog.size();
 	}
@@ -272,7 +272,7 @@ public class RequestScheduler implements Runnable {
 		}
 	}
 
-	public synchronized int getNumInFlight()
+	public synchronized int getInFlightSize()
 	{
 		return inFlight.size();
 	}

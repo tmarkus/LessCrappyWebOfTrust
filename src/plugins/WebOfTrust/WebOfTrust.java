@@ -4,8 +4,8 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
-import plugins.WebOfTrust.controller.ManagePageController;
-import plugins.WebOfTrust.controller.RestoreIdentity;
+import plugins.WebOfTrust.controller.OverviewController;
+import plugins.WebOfTrust.controller.IdentityManagement;
 import plugins.WebOfTrust.controller.ShowIdentityController;
 import thomasmarkus.nl.freenet.graphdb.H2Graph;
 import freenet.client.FetchContext;
@@ -33,6 +33,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 
 	private static final String db_path = "LCWoT"; 
 	private static final String basePath = "/WebOfTrust";
+	public static final int FETCH_MAX_FILE_SIZE = 2000000; 
 	
 	private PluginRespirator pr;
 	private WebInterface webInterface;
@@ -44,6 +45,8 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	public boolean isRunning = true;
 	private FCPInterface fpi; 
 	private final static Logger LOGGER = Logger.getLogger(WebOfTrust.class.getName());
+	
+	
 	
 	public HighLevelSimpleClient getHL()
 	{
@@ -85,12 +88,12 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		this.webInterface = new WebInterface(pluginContext);
 
 		//setup the manage page
-		ManagePageController managePage = new ManagePageController(this,
+		OverviewController managePage = new OverviewController(this,
 																	pr.getHLSimpleClient(),
 																	"/staticfiles/html/manage.html",
 																	basePath+"/manage", graph);
 
-		RestoreIdentity restoreIdentityPage = new RestoreIdentity(this,
+		IdentityManagement restoreIdentityPage = new IdentityManagement(this,
 				pr.getHLSimpleClient(),
 				"/staticfiles/html/restore.html",
 				basePath+"/restore", graph);
@@ -168,7 +171,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	@Override
 	public String handleHTTPGet(HTTPRequest request) throws PluginHTTPException {
 		return "<html><body><head><title>Forward page...</title></head>" +
-				"<a href=\""+basePath+"/setup\">Click here to visit the setup page.</a>" +
+				"<a href=\""+basePath+"/manage\">Click here to visit the overview page.</a>" +
 				"</body></html>";
 	}
 
