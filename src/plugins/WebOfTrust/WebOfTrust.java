@@ -101,8 +101,13 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		toadlets.add(new OverviewController(this,
 				pr.getHLSimpleClient(),
 				"/staticfiles/html/manage.html",
-				basePath+"/manage", graph));
+				basePath+"/", graph));
 
+		toadlets.add(new OverviewController(this,
+				pr.getHLSimpleClient(),
+				"/staticfiles/html/manage.html",
+				basePath, graph));
+		
 		toadlets.add(new IdentityManagement(this,
 				pr.getHLSimpleClient(),
 				"/staticfiles/html/restore.html",
@@ -177,7 +182,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	@Override
 	public String handleHTTPGet(HTTPRequest request) throws PluginHTTPException {
 		return "<html><body><head><title>Forward page...</title></head>" +
-				"<a href=\""+basePath+"/manage\">Click here to visit the overview page.</a>" +
+				"<a href=\""+basePath+"/\">Click here to visit the overview page.</a>" +
 				"</body></html>";
 	}
 

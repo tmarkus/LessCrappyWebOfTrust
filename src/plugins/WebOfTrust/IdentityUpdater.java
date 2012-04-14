@@ -171,9 +171,6 @@ public class IdentityUpdater implements ClientGetCallback{
 
 			//store when we first saw the identity
 			graph.updateVertexProperty(peer, IVertex.FIRST_FETCHED, Long.toString(System.currentTimeMillis()));
-		
-			//assign each identity in the WoT a default trust value of 0
-			graph.updateVertexProperty(peer, IVertex.TRUST, "0");
 		}
 
 		return peer;
