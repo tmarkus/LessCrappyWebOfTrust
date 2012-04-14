@@ -60,13 +60,6 @@ public class RequestScheduler implements Runnable {
 	{
 		while(main.isRunning)
 		{
-			//chill out a bit
-			try {
-				Thread.sleep(MINIMAL_SLEEP_TIME);
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
-
 			//clear requests from the backlog
 			clearBacklog();
 
@@ -77,6 +70,22 @@ public class RequestScheduler implements Runnable {
 			maintenance();
 
 			insertOwnIdentities();
+
+			//chill out a bit
+			try {
+				Thread.sleep(MINIMAL_SLEEP_TIME);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
+		
+		//cancel all running requests
+		synchronized (inFlight) {
+			System.out.println("Cancelling all running requests...");
+			for(ClientGetter running : inFlight)
+			{
+				running.cancel(null, main.getPR().getNode().clientCore.clientContext);
+			}
 		}
 	}
 
@@ -109,7 +118,8 @@ public class RequestScheduler implements Runnable {
 		}
 	}
 
-	private void clearBacklog() {
+	private void clearBacklog() 
+	{
 		while(getInFlightSize() < MAX_REQUESTS && getBacklogSize() > 0)
 		{
 			FreenetURI next = getBacklogItem();
@@ -218,7 +228,7 @@ public class RequestScheduler implements Runnable {
 					{
 						if (existingURI.getEdition() > uri.getEdition())
 						{
-							return; //skip, because we want to add the same uri with an older edition, which doesn't make sense.	
+							return; //skip, because we want to add the same uri with an older edition, that doesn't make sense.	
 						}
 					}
 				} catch (MalformedURLException e) {
