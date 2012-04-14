@@ -25,7 +25,7 @@ public class FCPInterface {
 	}
 
 	public void handle(PluginReplySender prs, SimpleFieldSet sfs, Bucket bucket, int accessType) throws SQLException {
-		System.out.println("Received the following message type: " + sfs.get("Message") + " with identifier: " + prs.getIdentifier());
+		//System.out.println("Received the following message type: " + sfs.get("Message") + " with identifier: " + prs.getIdentifier());
 
 		try {
 			SimpleFieldSet sfsReply = new SimpleFieldSet(true);
@@ -318,7 +318,7 @@ public class FCPInterface {
 				sfsReply.putSingle("Description", "Could not match message with reply");
 			}
 
-			System.out.println("Sending message: " + sfsReply.get("Message"));
+			//System.out.println("Sending message: " + sfsReply.get("Message"));
 
 			//send the actual message
 			prs.send(sfsReply);
