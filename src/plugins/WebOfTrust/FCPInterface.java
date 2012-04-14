@@ -64,7 +64,6 @@ public class FCPInterface {
 						sfsReply.putOverwrite("Properties" + i + ".Property" + propertiesCounter++ + ".Value", property.getValue().get(0));
 					}
 				}
-				System.out.println("Generated message containing the own Identities");
 			}
 			else if (sfs.get("Message").equals("AddContext"))
 			{
