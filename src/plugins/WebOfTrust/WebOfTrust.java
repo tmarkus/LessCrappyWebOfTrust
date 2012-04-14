@@ -35,7 +35,8 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	private static final String db_path = "LCWoT"; 
 	private static final String basePath = "/WebOfTrust";
 	public static final int FETCH_MAX_FILE_SIZE = 2000000; 
-
+	public static final String namespace = "WebOfTrust";
+	
 	private PluginRespirator pr;
 	private WebInterface webInterface;
 	private final List<FileReaderToadlet> toadlets = new ArrayList<FileReaderToadlet>();

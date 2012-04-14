@@ -83,9 +83,8 @@ public class OwnIdentityInserter implements Runnable, ClientPutCallback {
 				bucket.setReadOnly();
 
 				//create XML document
-				
-				//get metadata
-				long next_edition = Long.parseLong(props.get(IVertex.EDITION).get(0)) + 1;
+				long next_edition = 0; //default
+				if (props.containsKey(IVertex.EDITION))	next_edition = Long.parseLong(props.get(IVertex.EDITION).get(0)) + 1;
 				FreenetURI nextInsertURI = new FreenetURI(props.get(IVertex.INSERT_URI).get(0)).setSuggestedEdition(next_edition);
 				
 				InsertBlock ib = new InsertBlock(bucket, null, nextInsertURI);
@@ -274,10 +273,13 @@ public class OwnIdentityInserter implements Runnable, ClientPutCallback {
 			}
 			
 			/* Create the context Elements */
-			for(String context : props.get(IVertex.CONTEXT_NAME)) {
-				Element contextElement = xmlDoc.createElement("Context");
-				contextElement.setAttribute("Name", context);
-				identityElement.appendChild(contextElement);
+			if (props.containsKey(IVertex.CONTEXT_NAME)) // do we even have contexts? :)
+			{
+				for(String context : props.get(IVertex.CONTEXT_NAME)) {
+					Element contextElement = xmlDoc.createElement("Context");
+					contextElement.setAttribute("Name", context);
+					identityElement.appendChild(contextElement);
+				}
 			}
 
 			/* Create a list of properties we SHOULD NOT insert */

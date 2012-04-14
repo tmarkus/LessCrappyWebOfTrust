@@ -118,7 +118,7 @@ public class IdentityUpdater implements ClientGetCallback{
 							final FreenetURI peerIdentityKey = new FreenetURI(attr.getNamedItem("Identity").getNodeValue());
 							final String trustComment = attr.getNamedItem("Comment").getNodeValue();
 
-							long peer = getPeerIdentity(peerIdentityKey);
+							long peer = getPeerIdentity(graph, peerIdentityKey);
 							long edge = graph.addEdge(identity, peer);
 							graph.updateEdgeProperty(edge, IEdge.COMMENT, trustComment);
 							Byte trustValue = Byte.parseByte(attr.getNamedItem("Value").getNodeValue());
@@ -152,7 +152,7 @@ public class IdentityUpdater implements ClientGetCallback{
 		}
 	}
 
-	private long getPeerIdentity(final FreenetURI peerIdentityKey)	throws SQLException 
+	public static long getPeerIdentity(H2Graph graph, final FreenetURI peerIdentityKey)	throws SQLException 
 	{
 		List<Long> identityMatches = graph.getVertexByPropertyValue(IVertex.ID, Utils.getIDFromKey(peerIdentityKey));
 		long peer;

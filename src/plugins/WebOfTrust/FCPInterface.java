@@ -25,7 +25,7 @@ public class FCPInterface {
 	}
 
 	public void handle(PluginReplySender prs, SimpleFieldSet sfs, Bucket bucket, int accessType) throws SQLException {
-		//System.out.println("Received the following message type: " + sfs.get("Message") + " with identifier: " + prs.getIdentifier());
+		System.out.println("Received the following message type: " + sfs.get("Message") + " with identifier: " + prs.getIdentifier());
 
 		try {
 			SimpleFieldSet sfsReply = new SimpleFieldSet(true);
@@ -53,8 +53,11 @@ public class FCPInterface {
 					sfsReply.putOverwrite("Nickname" + i, identityProperties.get(IVertex.NAME).get(0));
 
 					int contextCounter = 0;
-					for (String context : identityProperties.get("contextName")) {
-						sfsReply.putOverwrite("Contexts" + i + ".Context" + contextCounter++, context);
+					if (identityProperties.containsKey(IVertex.CONTEXT_NAME))
+					{
+						for (String context : identityProperties.get("contextName")) {
+							sfsReply.putOverwrite("Contexts" + i + ".Context" + contextCounter++, context);
+						}
 					}
 
 					//TODO: only include properties that aren't one of the above
@@ -101,7 +104,6 @@ public class FCPInterface {
 				int select = 0;
 				if (selection.equals("+")) select = 0;
 				else if (selection.equals("0")) select = -1;
-
 
 				long own_identity_vertex = 0; //TODO: FIX, gives strange results when no own identities are present
 				//find `random' ownIdentity if none is specified
@@ -266,21 +268,7 @@ public class FCPInterface {
 				final String trustValue = getMandatoryParameter(sfs, "Value");
 				final String trustComment = getMandatoryParameter(sfs, "Comment");
 
-				long truster = graph.getVertexByPropertyValue("id", trusterID).get(0);
-				long trustee = graph.getVertexByPropertyValue("id", trusteeID).get(0);
-
-				long edge;
-				try
-				{
-					edge = graph.getEdgeByVerticesAndProperty(truster, trustee, "score");	
-				}
-				catch(SQLException e) //edge doesn't exist
-				{
-					edge = graph.addEdge(truster, trustee);
-				}
-
-				graph.updateEdgeProperty(edge, IEdge.SCORE, trustValue);
-				graph.updateEdgeProperty(edge, IEdge.COMMENT, trustComment);
+				setTrust(graph, trusterID, trusteeID, trustValue, trustComment);
 
 				sfsReply.putOverwrite("Message", "TrustSet");
 				sfsReply.putOverwrite("Truster", trusterID);
@@ -317,7 +305,7 @@ public class FCPInterface {
 				sfsReply.putSingle("Description", "Could not match message with reply");
 			}
 
-			//System.out.println("Sending message: " + sfsReply.get("Message"));
+			System.out.println("Sending message: " + sfsReply.get("Message"));
 
 			//send the actual message
 			prs.send(sfsReply);
@@ -325,6 +313,31 @@ public class FCPInterface {
 		catch (PluginNotFoundException e) {
 			e.printStackTrace();
 		}
+		catch(Exception e)
+		{
+			e.printStackTrace();
+		}
+	}
+
+	public static void setTrust(H2Graph graph, final String trusterID, final String trusteeID,
+			final String trustValue, final String trustComment)
+			throws SQLException {
+		
+		long truster = graph.getVertexByPropertyValue("id", trusterID).get(0);
+		long trustee = graph.getVertexByPropertyValue("id", trusteeID).get(0);
+
+		long edge;
+		try
+		{
+			edge = graph.getEdgeByVerticesAndProperty(truster, trustee, "score");	
+		}
+		catch(SQLException e) //edge doesn't exist
+		{
+			edge = graph.addEdge(truster, trustee);
+		}
+
+		graph.updateEdgeProperty(edge, IEdge.SCORE, trustValue);
+		graph.updateEdgeProperty(edge, IEdge.COMMENT, trustComment);
 	}
 
 	private String getMandatoryParameter(final SimpleFieldSet sfs, final String name) throws IllegalArgumentException {
