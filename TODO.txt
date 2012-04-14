@@ -1,18 +1,14 @@
--- test whether everything breaks and whether trust values for identities make sense (maybe trust digger3, but distrust a random identity, then check with Sone if they appear or not?)
-
+- check whether multiple identities in the graph store work as expected wrt trust calculation
 - create page where you can search for an identity and go to its identity info page (listing all identities is CRAZY)
 - Add controls for changing trust values AND even removing the connection to an identity entirely!
 - Beautify HTML pages for various actions
-
-- fix link between getIdentitiesByScore and getIdentity, the name checking is pure evil?
-- view details about own identity on page (basically the same as normal identity, but with moar buttons)
--- this is the only case where we remove a vertex?
+- check whether we can output evil HTML?
 
 RELEASE FOR BETA TESTING
 
+- fix link between getIdentitiesByScore and getIdentity, the name checking is pure evil?
 - fix getIdentitiesbyScore inefficiency (optimize using graph db call)
 - incremental score recomputation on identity update
-
 
 FAR FUTURE:
 - add event pushing framework thingy
