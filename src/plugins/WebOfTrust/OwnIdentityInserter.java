@@ -1,14 +1,12 @@
 package plugins.WebOfTrust;
 
 import java.io.IOException;
-import java.io.OutputStream;
 import java.io.StringWriter;
 import java.math.BigInteger;
 import java.net.MalformedURLException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.sql.SQLException;
-import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -29,7 +27,6 @@ import javax.xml.transform.stream.StreamResult;
 import plugins.WebOfTrust.datamodel.IEdge;
 import plugins.WebOfTrust.datamodel.IVertex;
 import thomasmarkus.nl.freenet.graphdb.Edge;
-import thomasmarkus.nl.freenet.graphdb.EdgeWithProperty;
 import thomasmarkus.nl.freenet.graphdb.H2Graph;
 import javax.xml.parsers.DocumentBuilderFactory;
 
@@ -88,7 +85,7 @@ public class OwnIdentityInserter implements Runnable, ClientPutCallback {
 				bucket.setReadOnly();
 				
 				//get metadata
-				long next_edition = Long.parseLong(props.get(IVertex.EDITION).get(0))+1;
+				long next_edition = Long.parseLong(props.get(IVertex.EDITION).get(0)) + 1;
 				FreenetURI nextInsertURI = new FreenetURI(props.get(IVertex.INSERT_URI).get(0)).setSuggestedEdition(next_edition);
 				
 				InsertBlock ib = new InsertBlock(bucket, null, nextInsertURI);

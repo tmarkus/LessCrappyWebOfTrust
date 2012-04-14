@@ -2,21 +2,14 @@ package plugins.WebOfTrust;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.logging.Logger;
-
 import plugins.WebOfTrust.controller.ManagePageController;
 import plugins.WebOfTrust.controller.RestoreIdentity;
 import plugins.WebOfTrust.controller.ShowIdentityController;
-
-
 import thomasmarkus.nl.freenet.graphdb.H2Graph;
-
 import freenet.client.FetchContext;
 import freenet.client.HighLevelSimpleClient;
-import freenet.client.async.ClientGetter;
 import freenet.clients.http.ToadletContainer;
 import freenet.l10n.BaseL10n.LANGUAGE;
 import freenet.node.RequestStarter;
@@ -30,7 +23,6 @@ import freenet.pluginmanager.FredPluginVersioned;
 import freenet.pluginmanager.PluginHTTPException;
 import freenet.pluginmanager.PluginReplySender;
 import freenet.pluginmanager.PluginRespirator;
-import freenet.pluginmanager.PluginTalker;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
 import freenet.support.api.HTTPRequest;
@@ -43,10 +35,8 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	private static final String basePath = "/WebOfTrust";
 	
 	private PluginRespirator pr;
-	private PluginTalker talker;
 	private WebInterface webInterface;
 	private final List<FileReaderToadlet> toadlets = new ArrayList<FileReaderToadlet>();
-	private final Map<String, String> localSones = new HashMap<String, String>();
 	private HighLevelSimpleClient hl;
 	private H2Graph graph;
 	private RequestScheduler rs;
@@ -133,17 +123,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		
 		if (webInterface != null) webInterface.kill();
 
-		//kill all requests which are still running
-		try
-		{
-			for(ClientGetter cg : rs.getInFlight()) {
-				//cg.cancel(null, null);
-			}
-		}
-		catch(Exception e)
-		{
-			System.out.println("Something went wrong when trying to cancel a request... (probably ClientGetter.cancel() requires more information.");
-		}
+		//TODO: kill all requests which are still running
 		
 		//kill the database
 		if( graph != null ) {

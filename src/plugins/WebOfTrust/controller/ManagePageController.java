@@ -20,7 +20,6 @@ import freenet.client.HighLevelSimpleClient;
 import freenet.client.async.ClientGetter;
 import freenet.clients.http.ToadletContext;
 import freenet.clients.http.ToadletContextClosedException;
-import freenet.keys.FreenetURI;
 import freenet.support.api.HTTPRequest;
 
 public class ManagePageController extends freenet.plugin.web.HTMLFileReaderToadlet {
@@ -38,31 +37,7 @@ public class ManagePageController extends freenet.plugin.web.HTMLFileReaderToadl
 	{
 		try
 		{
-			//existing patterns
 		    Document doc = Jsoup.parse(readFile());
-			
-			Element existing = doc.select("#existing_patterns").first();
-
-			/*
-			for (String pattern : )
-			{
-				Element form = doc.createElement("form");
-				form.attr("method", "post");
-				form.attr("action", "/SoneBridge/manage");
-				Element fieldset = doc.createElement("fieldset");
-				fieldset.appendChild(doc.createElement("legend").text("Existing pattern"));
-				fieldset.appendChild(doc.createElement("input").attr("type", "submit").attr("value", "Remove"));
-				
-				fieldset.appendChild(doc.createElement("input").attr("type", "hidden").attr("name", "action").attr("value", "delete"));
-				fieldset.appendChild(doc.createElement("input").attr("type", "hidden").attr("name", "pattern").attr("value", pattern));
-				
-				form.appendChild(fieldset);
-				existing.appendChild(form);
-			}
-			
-			*/
-			
-			//new patterns
 			Element stats_div = doc.select("#stats").first();
 			
 			long count_vertices = graph.getVertexCount();

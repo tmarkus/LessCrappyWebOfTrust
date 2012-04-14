@@ -11,7 +11,6 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 
 import plugins.WebOfTrust.WebOfTrust;
-import plugins.WebOfTrust.ScoreComputer;
 import plugins.WebOfTrust.datamodel.IEdge;
 import plugins.WebOfTrust.datamodel.IVertex;
 
@@ -19,10 +18,8 @@ import thomasmarkus.nl.freenet.graphdb.Edge;
 import thomasmarkus.nl.freenet.graphdb.H2Graph;
 
 import freenet.client.HighLevelSimpleClient;
-import freenet.client.async.ClientGetter;
 import freenet.clients.http.ToadletContext;
 import freenet.clients.http.ToadletContextClosedException;
-import freenet.keys.FreenetURI;
 import freenet.support.api.HTTPRequest;
 
 public class ShowIdentityController extends freenet.plugin.web.HTMLFileReaderToadlet {

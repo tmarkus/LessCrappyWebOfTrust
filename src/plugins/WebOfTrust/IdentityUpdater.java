@@ -13,7 +13,6 @@ import org.w3c.dom.NodeList;
 import plugins.WebOfTrust.datamodel.IEdge;
 import plugins.WebOfTrust.datamodel.IVertex;
 
-import thomasmarkus.nl.freenet.graphdb.Edge;
 import thomasmarkus.nl.freenet.graphdb.H2Graph;
 
 import com.db4o.ObjectContainer;
@@ -125,9 +124,6 @@ public class IdentityUpdater implements ClientGetCallback{
 								final String trustComment = attr.getNamedItem("Comment").getNodeValue();
 
 								long peer = getPeerIdentity(peerIdentityKey);
-
-								//add the trust relation, but first check whether the edge exists or not...
-								String trusteeID = Utils.getIDFromKey(peerIdentityKey);
 
 								long edge = -1;
 								
