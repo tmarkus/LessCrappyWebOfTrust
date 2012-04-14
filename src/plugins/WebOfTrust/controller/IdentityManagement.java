@@ -66,7 +66,7 @@ public class IdentityManagement extends freenet.plugin.web.HTMLFileReaderToadlet
 				Map<String, List<String>> props = graph.getVertexProperties(own_vertex);
 				
 				Element p = doc.createElement("p");
-				p.text(props.get(IVertex.NAME).get(0));
+				p.appendChild(doc.createElement("a").attr("href", "ShowIdentity?id="+props.get(IVertex.ID).get(0)).text(props.get(IVertex.NAME).get(0)));
 				
 				Element form = doc.createElement("form").attr("action", "restore.html").attr("method", "post");
 				Element hiddenValue = doc.createElement("input").attr("type", "hidden").attr("name", "action").attr("value", "delete");
