@@ -30,6 +30,7 @@ import freenet.clients.http.ToadletContext;
 import freenet.clients.http.ToadletContextClosedException;
 import freenet.keys.FreenetURI;
 import freenet.keys.InsertableClientSSK;
+import freenet.node.RequestStarter;
 import freenet.support.api.HTTPRequest;
 
 public class IdentityManagement extends freenet.plugin.web.HTMLFileReaderToadlet {
@@ -140,7 +141,9 @@ public class IdentityManagement extends freenet.plugin.web.HTMLFileReaderToadlet
 				
 				//Fetch the identity from freenet
 				System.out.println("Starting to fetch your own identity");
-				rs.addInFlight(hl.fetch(requestURI, 200000, rc, cc, hl.getFetchContext()));
+				
+				HighLevelSimpleClient hl_high_prio = main.getPR().getNode().clientCore.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS, false, true);
+				rs.addInFlight(hl_high_prio.fetch(requestURI, 200000, rc, cc, hl_high_prio.getFetchContext()));
 			}
 			catch(Exception e)
 			{

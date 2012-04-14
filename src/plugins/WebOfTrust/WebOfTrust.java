@@ -65,7 +65,8 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	public void runPlugin(PluginRespirator pr) {
 
 		this.pr = pr;
-		this.hl = pr.getNode().clientCore.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS, false, true);
+		this.hl = pr.getNode().clientCore.makeClient(RequestStarter.MINIMUM_PRIORITY_CLASS, false, true);
+		
 		FetchContext fc = hl.getFetchContext();
 		fc.followRedirects = true;
 
