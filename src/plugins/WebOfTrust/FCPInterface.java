@@ -116,7 +116,7 @@ public class FCPInterface {
 						own_identity_vertex = vertex;
 					}
 				}
-				
+
 				List<Long> vertices = graph.getVerticesWithPropertyValueLargerThan(IVertex.TRUST+"."+trusterID, select);
 				sfsReply.putSingle("Message", "Identities");
 				int i = 0;
@@ -124,47 +124,51 @@ public class FCPInterface {
 				{
 					long identity_vertex = vertices.get(vertex_index);
 					Map<String, List<String>> properties = graph.getVertexProperties(identity_vertex);
-					
-					//check whether the identity has the context we need
-					//TODO: This should be done as part of the query
-					if (properties.containsKey("contextName") && properties.get("contextName").contains(context))
+
+					//check whether the identity has a name (and we thus have retrieved it at least once)
+					if (properties.containsKey(IVertex.NAME))
 					{
-						sfsReply.putOverwrite("Identity" + i, properties.get(IVertex.ID).get(0));
-						sfsReply.putOverwrite("RequestURI" + i, properties.get(IVertex.REQUEST_URI).get(0));
-						sfsReply.putOverwrite("Nickname" + i, properties.get(IVertex.NAME).get(0));
-
-						int contextCounter = 0;
-						for (String identityContext: properties.get("contextName")) {
-							sfsReply.putOverwrite("Contexts" + i + ".Context" + contextCounter++, identityContext);
-						}
-
-						int propertiesCounter = 0;
-						for (Entry<String, List<String>> property : properties.entrySet()) {
-							sfsReply.putOverwrite("Properties" + i + ".Property" + propertiesCounter + ".Name", property.getKey());
-							sfsReply.putOverwrite("Properties" + i + ".Property" + propertiesCounter++ + ".Value", property.getValue().get(0));
-						}
-
-						sfs.putOverwrite("ScoreOwner" + i, properties.get("id").get(0));
-
-						try //TODO: make this more efficient, horribly slow now
+						//check whether the identity has the context we need
+						//TODO: This should be done as part of the query
+						if (properties.containsKey(IVertex.CONTEXT_NAME) && properties.get(IVertex.CONTEXT_NAME).contains(context))
 						{
-							long edge = graph.getEdgeByVerticesAndProperty(own_identity_vertex, identity_vertex, IEdge.SCORE);
-							String score = graph.getEdeProperties(edge).get(IEdge.SCORE).get(0);
-							
-							sfsReply.putOverwrite("Score" + i, score);
+							sfsReply.putOverwrite("Identity" + i, properties.get(IVertex.ID).get(0));
+							sfsReply.putOverwrite("RequestURI" + i, properties.get(IVertex.REQUEST_URI).get(0));
+							sfsReply.putOverwrite("Nickname" + i, properties.get(IVertex.NAME).get(0));
+
+							int contextCounter = 0;
+							for (String identityContext: properties.get("contextName")) {
+								sfsReply.putOverwrite("Contexts" + i + ".Context" + contextCounter++, identityContext);
+							}
+
+							int propertiesCounter = 0;
+							for (Entry<String, List<String>> property : properties.entrySet()) {
+								sfsReply.putOverwrite("Properties" + i + ".Property" + propertiesCounter + ".Name", property.getKey());
+								sfsReply.putOverwrite("Properties" + i + ".Property" + propertiesCounter++ + ".Value", property.getValue().get(0));
+							}
+
+							sfs.putOverwrite("ScoreOwner" + i, properties.get("id").get(0));
+
+							try //TODO: make this more efficient, horribly slow now
+							{
+								long edge = graph.getEdgeByVerticesAndProperty(own_identity_vertex, identity_vertex, IEdge.SCORE);
+								String score = graph.getEdeProperties(edge).get(IEdge.SCORE).get(0);
+
+								sfsReply.putOverwrite("Score" + i, score);
+							}
+							catch(SQLException e) //no score relation
+							{
+								sfsReply.putOverwrite("Score" + i, "null");
+							}
+
+
+							//sfs.putOverwrite("Rank" + i, properties.get("score."+trusterID).get(0)); //TODO: rank isn't stored yet by score computation
+							if (includeTrustValue)
+							{
+								sfsReply.putOverwrite("Trust" + i, properties.get(IVertex.TRUST+"."+trusterID).get(0));	
+							}
+							i += 1;
 						}
-						catch(SQLException e) //no score relation
-						{
-							sfsReply.putOverwrite("Score" + i, "null");
-						}
-						
-						
-						//sfs.putOverwrite("Rank" + i, properties.get("score."+trusterID).get(0)); //TODO: rank isn't stored yet by score computation
-						if (includeTrustValue)
-						{
-							sfsReply.putOverwrite("Trust" + i, properties.get(IVertex.TRUST+"."+trusterID).get(0));	
-						}
-						i += 1;
 					}
 				}
 			}
@@ -176,53 +180,53 @@ public class FCPInterface {
 				sfsReply.putOverwrite("Message", "Identity");
 
 				long own_id = graph.getVertexByPropertyValue(IVertex.ID, trusterID).get(0);
-				
+
 				List<Long> identities = graph.getVertexByPropertyValue(IVertex.ID, identityID);
 
-					for(long identity : identities)
+				for(long identity : identities)
+				{
+					Map<String, List<String>> props = graph.getVertexProperties(identity);
+
+					sfsReply.putOverwrite("Nickname", props.get(IVertex.NAME).get(0));
+					sfsReply.putOverwrite("RequestURI", props.get(IVertex.REQUEST_URI).get(0));
+
+					try	//directly trusted
 					{
-						Map<String, List<String>> props = graph.getVertexProperties(identity);
+						long edge = graph.getEdgeByVerticesAndProperty(own_id, identity, IEdge.SCORE);
+						Map<String, List<String>> edge_props = graph.getEdeProperties(edge);
 
-						sfsReply.putOverwrite("Nickname", props.get(IVertex.NAME).get(0));
-						sfsReply.putOverwrite("RequestURI", props.get(IVertex.REQUEST_URI).get(0));
-
-						try	//directly trusted
-						{
-							long edge = graph.getEdgeByVerticesAndProperty(own_id, identity, IEdge.SCORE);
-							Map<String, List<String>> edge_props = graph.getEdeProperties(edge);
-
-							sfsReply.putOverwrite("Score", edge_props.get(plugins.WebOfTrust.datamodel.IEdge.SCORE).get(0));
-						}
-						catch(SQLException e) //not directly trusted, so set score accordingly
-						{
-							sfsReply.putOverwrite("Score", "null");
-						}
-						
-						sfsReply.putOverwrite("Trust", props.get(IVertex.TRUST+"."+trusterID).get(0));
-
-						//determine whether we trust the identity directly with the trusterID?
-						if (isDirectlyTrusted(own_id, identity)) sfsReply.putOverwrite("Rank", "1");
-						else sfsReply.putOverwrite("Rank", "2");
-
-						int i=0;
-						for(String context : props.get("contextName"))
-						{
-							sfsReply.putOverwrite("Context" + i, context);
-							i += 1;
-						}
-
-						int propertiesCounter = 0;
-						for (Entry<String, List<String>> property : props.entrySet()) {
-							sfsReply.putOverwrite("Property" + propertiesCounter + ".Name", property.getKey());
-							sfsReply.putOverwrite("Property" + propertiesCounter++ + ".Value", property.getValue().get(0));
-						}
+						sfsReply.putOverwrite("Score", edge_props.get(plugins.WebOfTrust.datamodel.IEdge.SCORE).get(0));
 					}
+					catch(SQLException e) //not directly trusted, so set score accordingly
+					{
+						sfsReply.putOverwrite("Score", "null");
+					}
+
+					sfsReply.putOverwrite("Trust", props.get(IVertex.TRUST+"."+trusterID).get(0));
+
+					//determine whether we trust the identity directly with the trusterID?
+					if (isDirectlyTrusted(own_id, identity)) sfsReply.putOverwrite("Rank", "1");
+					else sfsReply.putOverwrite("Rank", "2");
+
+					int i=0;
+					for(String context : props.get("contextName"))
+					{
+						sfsReply.putOverwrite("Context" + i, context);
+						i += 1;
+					}
+
+					int propertiesCounter = 0;
+					for (Entry<String, List<String>> property : props.entrySet()) {
+						sfsReply.putOverwrite("Property" + propertiesCounter + ".Name", property.getKey());
+						sfsReply.putOverwrite("Property" + propertiesCounter++ + ".Value", property.getValue().get(0));
+					}
+				}
 			}
 			else if (sfs.get("Message").equals("GetProperty"))
 			{
-		    	final String identityID = sfs.get("Identity");
-		        final String propertyName = sfs.get("Property");
-				
+				final String identityID = sfs.get("Identity");
+				final String propertyName = sfs.get("Property");
+
 				List<Long> vertices = graph.getVertexByPropertyValue("id", identityID);
 				Map<java.lang.String, List<java.lang.String>> props = graph.getVertexProperties(vertices.get(0));
 
@@ -231,9 +235,9 @@ public class FCPInterface {
 			}
 			else if (sfs.get("Message").equals("SetProperty"))
 			{
-		    	final String identityID = sfs.get("Identity");
-		        final String propertyName = sfs.get("Property");
-		        final String propertyValue = sfs.get("Value");
+				final String identityID = sfs.get("Identity");
+				final String propertyName = sfs.get("Property");
+				final String propertyValue = sfs.get("Value");
 
 				List<Long> vertices = graph.getVertexByPropertyValue("id", identityID);
 				for(long vertex_id : vertices)
@@ -241,12 +245,12 @@ public class FCPInterface {
 					graph.updateVertexProperty(vertex_id, propertyName, propertyValue);
 				}
 
-		        sfsReply.putOverwrite("Message", "PropertyAdded");
+				sfsReply.putOverwrite("Message", "PropertyAdded");
 			}
 			else if (sfs.get("Message").equals("RemoveProperty"))
 			{
-		    	final String identityID = sfs.get("Identity");
-		        final String propertyName = sfs.get("Property");
+				final String identityID = sfs.get("Identity");
+				final String propertyName = sfs.get("Property");
 
 				List<Long> vertices = graph.getVertexByPropertyValue("id", identityID);
 				for(long vertex_id : vertices)
@@ -258,28 +262,28 @@ public class FCPInterface {
 			}
 			else if (sfs.get("Message").equals("SetTrust"))
 			{
-		    	final String trusterID = getMandatoryParameter(sfs, "Truster");
-		    	final String trusteeID = getMandatoryParameter(sfs, "Trustee");
-		    	final String trustValue = getMandatoryParameter(sfs, "Value");
-		    	final String trustComment = getMandatoryParameter(sfs, "Comment");
+				final String trusterID = getMandatoryParameter(sfs, "Truster");
+				final String trusteeID = getMandatoryParameter(sfs, "Trustee");
+				final String trustValue = getMandatoryParameter(sfs, "Value");
+				final String trustComment = getMandatoryParameter(sfs, "Comment");
 
-		    	long truster = graph.getVertexByPropertyValue("id", trusterID).get(0);
-		    	long trustee = graph.getVertexByPropertyValue("id", trusteeID).get(0);
-		    	
-		    	long edge;
-		    	try
-		    	{
-		    		edge = graph.getEdgeByVerticesAndProperty(truster, trustee, "score");	
-		    	}
-		    	catch(SQLException e) //edge doesn't exist
-		    	{
-		    		edge = graph.addEdge(truster, trustee);
-		    	}
+				long truster = graph.getVertexByPropertyValue("id", trusterID).get(0);
+				long trustee = graph.getVertexByPropertyValue("id", trusteeID).get(0);
 
-		    	graph.updateEdgeProperty(edge, IEdge.SCORE, trustValue);
-		    	graph.updateEdgeProperty(edge, IEdge.COMMENT, trustComment);
-		    	
-		    	sfsReply.putOverwrite("Message", "TrustSet");
+				long edge;
+				try
+				{
+					edge = graph.getEdgeByVerticesAndProperty(truster, trustee, "score");	
+				}
+				catch(SQLException e) //edge doesn't exist
+				{
+					edge = graph.addEdge(truster, trustee);
+				}
+
+				graph.updateEdgeProperty(edge, IEdge.SCORE, trustValue);
+				graph.updateEdgeProperty(edge, IEdge.COMMENT, trustComment);
+
+				sfsReply.putOverwrite("Message", "TrustSet");
 				sfsReply.putOverwrite("Truster", trusterID);
 				sfsReply.putOverwrite("Trustee", trusteeID);
 				sfsReply.putOverwrite("Value", trustValue);
@@ -290,19 +294,19 @@ public class FCPInterface {
 				final String trusterID = getMandatoryParameter(sfs, "Truster");
 				final String trusteeID = getMandatoryParameter(sfs, "Trustee");
 
-		    	long truster = graph.getVertexByPropertyValue(IVertex.ID, trusterID).get(0);
-		    	long trustee = graph.getVertexByPropertyValue(IVertex.ID, trusteeID).get(0);
-	    		
-		    	try
-	    		{
-	    			long edge = graph.getEdgeByVerticesAndProperty(truster, trustee, IEdge.SCORE);	
-	    			graph.removeEdge(edge);
-	    		}
-		    	catch(SQLException e) 
-		    	{
-		    		System.out.println("Failed to find edge with vertex_from: " + truster + " vertex_to: " + trustee + " and the 'score' property");
-		    	}
-				
+				long truster = graph.getVertexByPropertyValue(IVertex.ID, trusterID).get(0);
+				long trustee = graph.getVertexByPropertyValue(IVertex.ID, trusteeID).get(0);
+
+				try
+				{
+					long edge = graph.getEdgeByVerticesAndProperty(truster, trustee, IEdge.SCORE);	
+					graph.removeEdge(edge);
+				}
+				catch(SQLException e) 
+				{
+					System.out.println("Failed to find edge with vertex_from: " + truster + " vertex_to: " + trustee + " and the 'score' property");
+				}
+
 				sfsReply.putOverwrite("Message", "TrustRemoved");
 				sfsReply.putOverwrite("Truster", trusterID);
 				sfsReply.putOverwrite("Trustee", trusteeID);
@@ -315,7 +319,7 @@ public class FCPInterface {
 			}
 
 			System.out.println("Sending message: " + sfsReply.get("Message"));
-			
+
 			//send the actual message
 			prs.send(sfsReply);
 		}
@@ -324,21 +328,21 @@ public class FCPInterface {
 		}
 	}
 
-    private String getMandatoryParameter(final SimpleFieldSet sfs, final String name) throws IllegalArgumentException {
-    	final String result = sfs.get(name);
-    	if(result == null)
-    		throw new IllegalArgumentException("Missing mandatory parameter: " + name);
-    	
-    	return result;
-    }
+	private String getMandatoryParameter(final SimpleFieldSet sfs, final String name) throws IllegalArgumentException {
+		final String result = sfs.get(name);
+		if(result == null)
+			throw new IllegalArgumentException("Missing mandatory parameter: " + name);
 
-    private boolean isDirectlyTrusted(long own_id, long identity) throws SQLException
-    {
+		return result;
+	}
+
+	private boolean isDirectlyTrusted(long own_id, long identity) throws SQLException
+	{
 		for(Edge edge : graph.getIncomingEdges(identity))
 		{
 			if (edge.vertex_from == own_id) return true;
 		}
 		return false;
-    }
-    
+	}
+
 }

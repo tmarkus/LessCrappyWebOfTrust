@@ -96,9 +96,6 @@ public class OwnIdentityInserter implements Runnable, ClientPutCallback {
 				if (props.containsKey(IVertex.HASH))	old_hash = props.get(IVertex.HASH).get(0);
 				String new_hash = calculateIdentityHash(own_vertex);
 				
-				
-				System.out.println("INSERT URI we will use: " + nextInsertURI.toASCIIString());
-				
 				//panic check for insertURI inclusion...
 				if (xml.contains(IVertex.INSERT_URI))
 				{
@@ -107,7 +104,6 @@ public class OwnIdentityInserter implements Runnable, ClientPutCallback {
 				}
 				
 				
-				System.out.println("Maybe inserting own identity... checking the hash");
 				if (!new_hash.equals(old_hash))
 				{
 					System.out.println("INSERTING OWN IDENTITY");
@@ -116,10 +112,6 @@ public class OwnIdentityInserter implements Runnable, ClientPutCallback {
 					//update the time when we stored it in the database (as to disallow inserting it every second)
 					graph.updateVertexProperty(own_vertex, IVertex.LAST_INSERT, Long.toString(System.currentTimeMillis()));
 					graph.updateVertexProperty(own_vertex, IVertex.HASH, new_hash);
-				}
-				else
-				{
-					System.out.println("nope... not inserting, because nothing seems to have been altered...");
 				}
 			}
 		} catch (TransformerConfigurationException e) {
@@ -170,10 +162,17 @@ public class OwnIdentityInserter implements Runnable, ClientPutCallback {
 				
 				graph.updateVertexProperty(own_vertex, IVertex.EDITION, Long.toString(cp.getURI().getEdition()));
 				graph.updateVertexProperty(own_vertex, IVertex.REQUEST_URI, newRequestURI.toASCIIString());
+			
+				//TODO: update the insert URI? 
+				
+				//update the hash value after these updates (otherwise infinite insert
+				graph.updateVertexProperty(own_vertex, IVertex.HASH, calculateIdentityHash(own_vertex));
 			}
 		} catch (SQLException e) {
 			e.printStackTrace();
 		} catch (MalformedURLException e) {
+			e.printStackTrace();
+		} catch (NoSuchAlgorithmException e) {
 			e.printStackTrace();
 		}
 	}
