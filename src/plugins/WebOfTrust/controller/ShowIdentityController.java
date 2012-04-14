@@ -5,6 +5,8 @@ import java.net.URI;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -48,19 +50,35 @@ public class ShowIdentityController extends freenet.plugin.web.HTMLFileReaderToa
 			Long id_vertex = graph.getVertexByPropertyValue("id", id).get(0);
 			Map<String, List<String>> props = graph.getVertexProperties(id_vertex);
 			
+			info_div.append("<h1>Identity properties</h1>");
+			SortedSet<String> sortedKeys = new TreeSet(props.keySet());
+			
+			Element table = doc.createElement("table");
+			table.appendChild(doc.createElement("tr").appendChild(doc.createElement("th").text("Name")).appendChild(doc.createElement("th").text("Value")));
+			
 			//generic properties associated with this identity in the graph store
-			for(String key : props.keySet())
+			for(String key : sortedKeys)
 			{
 				for(String value : props.get(key))
 				{
-					info_div.append(key + ": " + value + "<br />");	
+					table.appendChild(doc.createElement("tr").appendChild(doc.createElement("td").text(key)).appendChild(doc.createElement("td").text(value)));
 				}
 			}
+			info_div.appendChild(table);
 			
 			//explicit trust relations assigned by this identity
 			info_div.append("<h1>Explicit trust relations set by this identity:</h1>");
 			List<Edge> edges = graph.getOutgoingEdges(id_vertex);
-			info_div.append("<ol>");
+			
+			Element tableTrust = doc.createElement("table");
+			tableTrust.appendChild(doc.createElement("tr")
+									.appendChild(doc.createElement("th").text("nr."))
+									.appendChild(doc.createElement("th").text("identity"))
+									.appendChild(doc.createElement("th").text("Trust"))
+									.appendChild(doc.createElement("th").text("Comment"))
+									);
+			
+			int i = 1;
 			for(Edge edge : edges)
 			{
 				Map<String, List<String>> peer_identity_props = graph.getVertexProperties(edge.vertex_to);
@@ -73,14 +91,31 @@ public class ShowIdentityController extends freenet.plugin.web.HTMLFileReaderToa
 				if (peer_identity_props.containsKey(IVertex.NAME))	peerName = peer_identity_props.get(IVertex.NAME).get(0);
 				else												peerName = "(Not yet downloaded)";
 				String peerID = peer_identity_props.get(IVertex.ID).get(0);
-				
-				info_div.select("ol").append("<li>"+peerName+"("+peerID+"): Trust score: " + trustValue + "  comment: " + trustComment+"</li>");
+
+				tableTrust.appendChild(doc.createElement("tr")
+						.appendChild(doc.createElement("td").text(Integer.toString(i)))
+						.appendChild(doc.createElement("td").text(peerName+" ("+peerID+")"))
+						.appendChild(doc.createElement("td").text(trustValue))
+						.appendChild(doc.createElement("td").text(trustComment))
+						);
+				i += 1;
 			}
 
+			info_div.appendChild(tableTrust);
+			
 			//explicit trust relations given by others
 			info_div.append("<h1>Explicit trust relations given by others to this identity:</h1>");
 			edges = graph.getIncomingEdges(id_vertex);
-			info_div.append("<ol>");
+
+			
+			Element tableTrusters = doc.createElement("table");
+			tableTrusters.appendChild(doc.createElement("tr")
+									.appendChild(doc.createElement("th").text("nr."))
+									.appendChild(doc.createElement("th").text("identity"))
+									.appendChild(doc.createElement("th").text("Trust"))
+									.appendChild(doc.createElement("th").text("Comment"))
+									);
+			i = 1;
 			for(Edge edge : edges)
 			{
 				Map<String, List<String>> peer_identity_props = graph.getVertexProperties(edge.vertex_from);
@@ -91,9 +126,17 @@ public class ShowIdentityController extends freenet.plugin.web.HTMLFileReaderToa
 				String peerName = peer_identity_props.get("name").get(0);
 				String peerID = peer_identity_props.get("id").get(0);
 				
-				info_div.select("ol").last().append("<li>"+peerName+"("+peerID+"): Trust score: " + trustValue + "  comment: " + trustComment+"</li>");
-			}
+				tableTrusters.appendChild(doc.createElement("tr")
+						.appendChild(doc.createElement("td").text(Integer.toString(i)))
+						.appendChild(doc.createElement("td").text(peerName+" ("+peerID+")"))
+						.appendChild(doc.createElement("td").text(trustValue))
+						.appendChild(doc.createElement("td").text(trustComment))
+						);
 
+				i += 1;
+			}
+			info_div.appendChild(tableTrusters);
+			
 			
 			writeReply(ctx, 200, "text/html", "content", doc.html());
 		}

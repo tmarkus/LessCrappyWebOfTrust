@@ -40,6 +40,14 @@ public class ScoreComputer {
 
 		Map<Long, Integer> vertexToScore = new HashMap<Long, Integer>();
 		
+		//set all trust values for all identities for this own identity initially to 0
+		List<Long> all_identities = graph.getAllVerticesWithProperty(IVertex.ID);
+		for(long identity : all_identities)
+		{
+			graph.updateVertexProperty(identity, IVertex.TRUST+"."+ownIdentityID, "0");
+		}
+		
+		//calculate score per rank
 		for(int rank=0; rank < 6; rank++)
 		{
 			System.out.println("rank: " + rank);

@@ -1,8 +1,10 @@
-- check whether multiple identities in the graph store work as expected wrt trust calculation
-- create page where you can search for an identity and go to its identity info page (listing all identities is CRAZY)
-- Add controls for changing trust values AND even removing the connection to an identity entirely!
 - Beautify HTML pages for various actions
-- check whether we can output evil HTML?
+- create page where you can search for an identity and go to its identity info page (listing all identities is CRAZY)
+- Add controls for changing trust values AND even removing the (direct) connection to an identity entirely!
+- check whether we can output evil HTML? (this would be bad)
+
+
+- check whether multiple identities in the graph store work as expected wrt trust calculation
 
 RELEASE FOR BETA TESTING
 
