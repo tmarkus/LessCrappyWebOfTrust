@@ -10,6 +10,7 @@ import plugins.WebOfTrust.controller.ShowIdentityController;
 import thomasmarkus.nl.freenet.graphdb.H2Graph;
 import freenet.client.FetchContext;
 import freenet.client.HighLevelSimpleClient;
+import freenet.clients.http.Toadlet;
 import freenet.clients.http.ToadletContainer;
 import freenet.l10n.BaseL10n.LANGUAGE;
 import freenet.node.RequestStarter;
@@ -34,20 +35,20 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	private static final String db_path = "LCWoT"; 
 	private static final String basePath = "/WebOfTrust";
 	public static final int FETCH_MAX_FILE_SIZE = 2000000; 
-	
+
 	private PluginRespirator pr;
 	private WebInterface webInterface;
 	private final List<FileReaderToadlet> toadlets = new ArrayList<FileReaderToadlet>();
 	private HighLevelSimpleClient hl;
 	private H2Graph graph;
 	private RequestScheduler rs;
-	
+
 	public boolean isRunning = true;
 	private FCPInterface fpi; 
 	private final static Logger LOGGER = Logger.getLogger(WebOfTrust.class.getName());
-	
-	
-	
+
+
+
 	public HighLevelSimpleClient getHL()
 	{
 		return this.hl;
@@ -57,7 +58,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	{
 		return this.pr;
 	}
-	
+
 	@Override
 	public void runPlugin(PluginRespirator pr) {
 
@@ -72,62 +73,65 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 
 			//setup fcp plugin handler
 			this.fpi = new FCPInterface(graph);
-			
+
 			//setup requestscheduler
 			this.rs = new RequestScheduler(this, graph, hl);
 			new Thread(rs). start ( );
 		} 
 		catch (ClassNotFoundException e) {
-		e.printStackTrace();
-	} catch (SQLException e) {
-		e.printStackTrace();
-	}		
+			e.printStackTrace();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}		
 		//setup web interface
+		setupWebinterface();
+
+		LOGGER.info("Completed initialization.");
+	}
+
+	private void setupWebinterface()
+	{
 		LOGGER.info("Setting up webinterface");
 		PluginContext pluginContext = new PluginContext(pr);
 		this.webInterface = new WebInterface(pluginContext);
 
 		//setup the manage page
-		OverviewController managePage = new OverviewController(this,
-																	pr.getHLSimpleClient(),
-																	"/staticfiles/html/manage.html",
-																	basePath+"/manage", graph);
+		toadlets.add(new OverviewController(this,
+				pr.getHLSimpleClient(),
+				"/staticfiles/html/manage.html",
+				basePath+"/manage", graph));
 
-		IdentityManagement restoreIdentityPage = new IdentityManagement(this,
+		toadlets.add(new IdentityManagement(this,
 				pr.getHLSimpleClient(),
 				"/staticfiles/html/restore.html",
-				basePath+"/restore", graph);
+				basePath+"/restore", graph));
 
-		ShowIdentityController showIdentityPage = new ShowIdentityController(this,
+		toadlets.add(new ShowIdentityController(this,
 				pr.getHLSimpleClient(),
 				"/staticfiles/html/showIdentity.html",
-				basePath+"/ShowIdentity", graph);
-		
-		webInterface.registerInvisible(managePage);
-		webInterface.registerInvisible(restoreIdentityPage);
-		webInterface.registerInvisible(showIdentityPage);
-		
-		toadlets.add(managePage);
-		toadlets.add(restoreIdentityPage);
-		toadlets.add(showIdentityPage);
+				basePath+"/ShowIdentity", graph));
 
-		LOGGER.info("Completed initialization.");
+		for(Toadlet toadlet : toadlets)
+		{
+			webInterface.registerInvisible(toadlet);	
+		}
 	}
+
 
 	@Override
 	public void terminate() {
 		LOGGER.info("Terminating plugin");
-		
+
 		ToadletContainer toadletContainer = pr.getToadletContainer();
 		for (FileReaderToadlet pageToadlet : toadlets) {
 			toadletContainer.unregister(pageToadlet);
 		}
 		//toadletContainer.getPageMaker().removeNavigationCategory("SoneBridge");
-		
+
 		if (webInterface != null) webInterface.kill();
 
 		//TODO: kill all requests which are still running
-		
+
 		//kill the database
 		if( graph != null ) {
 			System.out.println("Killing the graph database");
@@ -138,7 +142,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 			}
 			System.out.println("done");
 		}
-		
+
 		//tell everybody else that we are no longer running
 		isRunning = false;
 	}
@@ -148,17 +152,17 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	{
 		return this.rs;
 	}
-	
+
 	@Override
 	public String getString(String key) {
 		return "SoneBridge";
 	}
 
 
-	
+
 	@Override
 	public void setLanguage(LANGUAGE arg0) {
-		
+
 	}
 
 
