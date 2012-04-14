@@ -28,8 +28,8 @@ public class RequestScheduler implements Runnable {
 	private static final int MAX_MAINTENANCE_REQUESTS = 1; 
 	private static final double PROBABILITY_OF_FETCHING_DIRECTLY_TRUSTED_IDENTITY = 0.8;
 
-	private static final long MAX_TIME_SINCE_LAST_INSERT = (10 * 1000);
-	private static final long MINIMAL_SLEEP_TIME = (1 * 1000);
+	private static final long MAX_TIME_SINCE_LAST_INSERT = (60 * 1000);
+	private static final long MINIMAL_SLEEP_TIME = (10 * 1000);
 
 	private WebOfTrust main;
 	private final H2Graph graph;
@@ -97,7 +97,7 @@ public class RequestScheduler implements Runnable {
 
 				if ((System.currentTimeMillis() - MAX_TIME_SINCE_LAST_INSERT) > timestamp)
 				{
-					String id = props.get(IVertex.ID).get(0);
+					final String id = props.get(IVertex.ID).get(0);
 					OwnIdentityInserter ii = new OwnIdentityInserter(graph, id, hl, main);
 					ii.run();
 				}
@@ -152,8 +152,6 @@ public class RequestScheduler implements Runnable {
 						//get a random edge
 						if (edges.size() > 0)
 						{
-							System.out.println("looking for a random edge from an ownidentity...");
-							
 							EdgeWithProperty edge = edges.get( ran.nextInt(edges.size()) );
 
 							//get the node to which that edge is pointing
@@ -162,7 +160,6 @@ public class RequestScheduler implements Runnable {
 							//add the requestURI to the backlog
 							if (props.containsKey(IVertex.REQUEST_URI))
 							{
-								System.out.println("Added to backlog..");
 								addBacklog(new FreenetURI(props.get(IVertex.REQUEST_URI).get(0)));	
 							}
 						}

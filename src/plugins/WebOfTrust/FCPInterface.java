@@ -292,14 +292,15 @@ public class FCPInterface {
 
 		    	long truster = graph.getVertexByPropertyValue(IVertex.ID, trusterID).get(0);
 		    	long trustee = graph.getVertexByPropertyValue(IVertex.ID, trusteeID).get(0);
-	    		try
+	    		
+		    	try
 	    		{
 	    			long edge = graph.getEdgeByVerticesAndProperty(truster, trustee, IEdge.SCORE);	
 	    			graph.removeEdge(edge);
 	    		}
 		    	catch(SQLException e) 
 		    	{
-		    		System.out.println("Failed to find edge with vertex_from: " + truster + " vertex_to: " + trustee + "and the 'score' property");
+		    		System.out.println("Failed to find edge with vertex_from: " + truster + " vertex_to: " + trustee + " and the 'score' property");
 		    	}
 				
 				sfsReply.putOverwrite("Message", "TrustRemoved");

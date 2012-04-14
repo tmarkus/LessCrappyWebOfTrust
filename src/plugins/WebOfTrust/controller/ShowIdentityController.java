@@ -25,11 +25,9 @@ import freenet.support.api.HTTPRequest;
 public class ShowIdentityController extends freenet.plugin.web.HTMLFileReaderToadlet {
 
 	private H2Graph graph;
-	private WebOfTrust main;
 	
 	public ShowIdentityController(WebOfTrust main, HighLevelSimpleClient client, String filepath, String URLPath, H2Graph graph) {
 		super(client, filepath, URLPath);
-		this.main = main;
 		this.graph = graph;
 	}
 

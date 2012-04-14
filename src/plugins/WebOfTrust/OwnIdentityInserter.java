@@ -2,6 +2,7 @@ package plugins.WebOfTrust;
 
 import java.io.IOException;
 import java.io.StringWriter;
+import java.lang.reflect.Field;
 import java.math.BigInteger;
 import java.net.MalformedURLException;
 import java.security.MessageDigest;
@@ -47,8 +48,6 @@ import freenet.client.async.ClientPutter;
 import freenet.keys.FreenetURI;
 import freenet.node.RequestStarter;
 import freenet.support.api.Bucket;
-import freenet.support.api.BucketFactory;
-import freenet.support.io.BucketTools;
 
 
 
@@ -74,15 +73,16 @@ public class OwnIdentityInserter implements Runnable, ClientPutCallback {
 			long own_vertex = graph.getVertexByPropertyValue(IVertex.ID, ownID).get(0);
 			Map<String, List<String>> props = graph.getVertexProperties(own_vertex);
 		
-			if (!props.containsKey(IVertex.NAME)) //identity should have some minimal amount of data...
+			if (props.containsKey(IVertex.NAME)) //identity should have some minimal amount of data...
 			{
-				//create XML document
-				String xml = createXML(own_vertex);
 				
-				//insert the XML
-				BucketTools bt = new BucketTools();
+				//create the bucket
+				String xml = createXML(own_vertex, null);
 				Bucket bucket = wot.getPR().getNode().clientCore.persistentTempBucketFactory.makeBucket(xml.length());
+				createXML(own_vertex, bucket);
 				bucket.setReadOnly();
+
+				//create XML document
 				
 				//get metadata
 				long next_edition = Long.parseLong(props.get(IVertex.EDITION).get(0)) + 1;
@@ -96,12 +96,23 @@ public class OwnIdentityInserter implements Runnable, ClientPutCallback {
 				if (props.containsKey(IVertex.HASH))	old_hash = props.get(IVertex.HASH).get(0);
 				String new_hash = calculateIdentityHash(own_vertex);
 				
+				
+				System.out.println("INSERT URI we will use: " + nextInsertURI.toASCIIString());
+				
+				//panic check for insertURI inclusion...
+				if (xml.contains(IVertex.INSERT_URI))
+				{
+					System.out.println(xml);
+					throw new IllegalStateException("The XML content may have included an insertURI!");
+				}
+				
+				
 				System.out.println("Maybe inserting own identity... checking the hash");
 				if (!new_hash.equals(old_hash))
 				{
-					//ClientPutter pu = hl.insert(ib, false, null, false, ictx, this, RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS);
 					System.out.println("INSERTING OWN IDENTITY");
-
+					ClientPutter pu = hl.insert(ib, false, null, false, ictx, this, RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS);
+					
 					//update the time when we stored it in the database (as to disallow inserting it every second)
 					graph.updateVertexProperty(own_vertex, IVertex.LAST_INSERT, Long.toString(System.currentTimeMillis()));
 					graph.updateVertexProperty(own_vertex, IVertex.HASH, new_hash);
@@ -135,12 +146,17 @@ public class OwnIdentityInserter implements Runnable, ClientPutCallback {
 		} catch (NoSuchAlgorithmException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
+		} catch (InsertException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
 	}
 	
 	@Override
 	public void onSuccess(BaseClientPutter cp, ObjectContainer oc) {
 
+		System.out.println("IDENTITY INSERT COMPLETE FOR URI: " + cp.getURI().toASCIIString());
+		
 		//update the insert and request uris in the database
 		try {
 			List<Long> own_vertices = graph.getVertexByPropertyValue(IVertex.ID, ownID);
@@ -152,7 +168,7 @@ public class OwnIdentityInserter implements Runnable, ClientPutCallback {
 				long new_edition = cp.getURI().getEdition();
 				newRequestURI.setSuggestedEdition(new_edition);
 				
-				graph.updateVertexProperty(own_vertex, IVertex.INSERT_URI, cp.getURI().toASCIIString());
+				graph.updateVertexProperty(own_vertex, IVertex.EDITION, Long.toString(cp.getURI().getEdition()));
 				graph.updateVertexProperty(own_vertex, IVertex.REQUEST_URI, newRequestURI.toASCIIString());
 			}
 		} catch (SQLException e) {
@@ -213,9 +229,10 @@ public class OwnIdentityInserter implements Runnable, ClientPutCallback {
 	 * @throws TransformerFactoryConfigurationError
 	 * @throws ParserConfigurationException
 	 * @throws TransformerException
+	 * @throws IOException 
 	 */
 	
-	private String createXML(long own_identity) throws SQLException, TransformerFactoryConfigurationError, ParserConfigurationException, TransformerException
+	private String createXML(long own_identity, Bucket bucket) throws SQLException, TransformerFactoryConfigurationError, ParserConfigurationException, TransformerException, IOException
 	{
 
 		DocumentBuilderFactory xmlFactory = DocumentBuilderFactory.newInstance();
@@ -258,20 +275,28 @@ public class OwnIdentityInserter implements Runnable, ClientPutCallback {
 			}
 			
 			/* Create the context Elements */
-			
 			for(String context : props.get(IVertex.CONTEXT_NAME)) {
 				Element contextElement = xmlDoc.createElement("Context");
 				contextElement.setAttribute("Name", context);
 				identityElement.appendChild(contextElement);
 			}
+
+			/* Create a list of properties we SHOULD NOT insert */
+			List<String> blackList = new LinkedList<String>();
+			for(Field field : IVertex.class.getDeclaredFields())
+			{
+				try {
+					blackList.add((String) field.get(new IVertex()));
+				} catch (IllegalArgumentException e) {
+					e.printStackTrace();
+				} catch (IllegalAccessException e) {
+					e.printStackTrace();
+				}
+			}
 			
 			/* Create the property Elements */
-			String[] blacklistItems = {IVertex.CONTEXT_NAME, IVertex.EDITION, IVertex.INSERT_URI, IVertex.NAME, IVertex.OWN_IDENTITY, IVertex.PUBLISHES_TRUSTLIST, IVertex.REQUEST_URI, IVertex.TRUST};
-			List<String> blackList = new LinkedList<String>();
-			for(String item : blacklistItems) blackList.add(item);
-			
 			for(String propertyName : props.keySet()) {
-				if (!blackList.contains(propertyName))
+				if (!blackList.contains(propertyName) && !propertyName.contains(IVertex.TRUST+"."))
 				{
 					Element propertyElement = xmlDoc.createElement("Property");
 					propertyElement.setAttribute("Name", propertyName);
@@ -290,11 +315,14 @@ public class OwnIdentityInserter implements Runnable, ClientPutCallback {
 				{
 					Map<String, List<String>> peer_identity_props = graph.getVertexProperties(edge.vertex_to);
 					
-					Element trustElement = xmlDoc.createElement("Trust");
-					trustElement.setAttribute("Identity", peer_identity_props.get(IVertex.REQUEST_URI).get(0));
-					trustElement.setAttribute("Value", edge.getProperty(IEdge.SCORE));
-					trustElement.setAttribute("Comment", edge.getProperty(IEdge.COMMENT));
-					trustListElement.appendChild(trustElement);
+					if(peer_identity_props.containsKey(IVertex.REQUEST_URI))
+					{
+						Element trustElement = xmlDoc.createElement("Trust");
+						trustElement.setAttribute("Identity", peer_identity_props.get(IVertex.REQUEST_URI).get(0));
+						trustElement.setAttribute("Value", edge.getProperty(IEdge.SCORE));
+						trustElement.setAttribute("Comment", edge.getProperty(IEdge.COMMENT));
+						trustListElement.appendChild(trustElement);
+					}
 				}
 				identityElement.appendChild(trustListElement);
 			}
@@ -303,11 +331,18 @@ public class OwnIdentityInserter implements Runnable, ClientPutCallback {
 
 		//serialize the XML
 		DOMSource domSource = new DOMSource(xmlDoc);
-		StringWriter result = new StringWriter();
-		StreamResult resultStream = new StreamResult(result);
-		mSerializer.transform(domSource, resultStream);
+		StringWriter resultStringWriter = new StringWriter();
+		StreamResult resultStreamString = new StreamResult(resultStringWriter);
+		mSerializer.transform(domSource, resultStreamString);
 
-		return result.toString();
+		//store the XML in the bucket
+		if (bucket != null)
+		{
+			StreamResult resultStreamBucket = new StreamResult(bucket.getOutputStream());
+			mSerializer.transform(domSource, resultStreamBucket);
+		}
+		
+		return resultStringWriter.toString();
 	}
 
 	

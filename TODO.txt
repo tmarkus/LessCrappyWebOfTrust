@@ -1,7 +1,6 @@
-- don't insert some more properties (score.IDENTITY for example, because this exposes ALL our identities we have)
--- use introspection to get all the fields from the IVertex / Iedge classes (pretty, yay!)
--- doesn't fix score properties though... maybe match on 'trust.' as well
 - insert WoT XML file
+- removeTrust doesn't work?
+- GetIdentityByScore returns identities that GetIdentity cannot return due to incomplete data? oops
  
 
 - check whether we remove edges on an update? I think we're currently only increasingly adding them? NEVER remove vertices though...
