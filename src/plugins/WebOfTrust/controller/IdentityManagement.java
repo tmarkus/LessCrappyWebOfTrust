@@ -17,17 +17,19 @@ import plugins.WebOfTrust.IdentityUpdater;
 import plugins.WebOfTrust.IdentityUpdaterRequestClient;
 import plugins.WebOfTrust.WebOfTrust;
 import plugins.WebOfTrust.RequestScheduler;
-import plugins.WebOfTrust.Utils;
 import plugins.WebOfTrust.datamodel.IVertex;
+import plugins.WebOfTrust.util.Utils;
 
 import thomasmarkus.nl.freenet.graphdb.H2Graph;
 
 import freenet.client.FetchException;
 import freenet.client.HighLevelSimpleClient;
+import freenet.client.InsertException;
 import freenet.client.async.ClientGetCallback;
 import freenet.clients.http.ToadletContext;
 import freenet.clients.http.ToadletContextClosedException;
 import freenet.keys.FreenetURI;
+import freenet.keys.InsertableClientSSK;
 import freenet.support.api.HTTPRequest;
 
 public class IdentityManagement extends freenet.plugin.web.HTMLFileReaderToadlet {
@@ -93,9 +95,8 @@ public class IdentityManagement extends freenet.plugin.web.HTMLFileReaderToadlet
 		
 	    if(action.equals("restore"))
 	    {
-			FreenetURI requestURI = new FreenetURI(request.getPartAsStringFailsafe("requestURI", 20000));
 		    FreenetURI insertURI = new FreenetURI(request.getPartAsStringFailsafe("insertURI", 20000));
-		    restoreIdentity(requestURI, insertURI);
+		    restoreIdentity(insertURI);
 	    }	
 		else if (action.equals("create"))
 		{
@@ -120,29 +121,44 @@ public class IdentityManagement extends freenet.plugin.web.HTMLFileReaderToadlet
 		}
 	}
 
-	private void restoreIdentity(FreenetURI requestURI, FreenetURI insertURI)
-			throws SQLException, FetchException {
-		List<Long> existing_identity = graph.getVertexByPropertyValue("id", Utils.getIDFromKey(requestURI));
-		if (existing_identity.size() == 0) //does identity already exist?
-		{
+	private void restoreIdentity(FreenetURI insertURI) throws SQLException, FetchException, MalformedURLException 
+	{
 			IdentityUpdaterRequestClient rc = new IdentityUpdaterRequestClient();
 			HighLevelSimpleClient hl = main.getHL();
 			RequestScheduler rs = main.getRequestScheduler();
 			ClientGetCallback cc = new IdentityUpdater(rs, graph, hl, true);  
-			
-			addOwnIdentity(requestURI, insertURI);
-			
-			//Fetch the identity from freenet
-			System.out.println("Starting to fetch your own identity");
-			rs.addInFlight(hl.fetch(requestURI, 200000, rc, cc, hl.getFetchContext()));
-		}
+
+			try
+			{
+				InsertableClientSSK key = InsertableClientSSK.create(insertURI.sskForUSK());
+				FreenetURI requestURI = key.getURI().setKeyType("USK")
+						.setDocName(WebOfTrust.namespace)
+						.setSuggestedEdition(insertURI.getEdition())
+						.setMetaString(null);
+
+				addOwnIdentity(requestURI, insertURI);
+				
+				//Fetch the identity from freenet
+				System.out.println("Starting to fetch your own identity");
+				rs.addInFlight(hl.fetch(requestURI, 200000, rc, cc, hl.getFetchContext()));
+			}
+			catch(Exception e)
+			{
+				e.printStackTrace();
+			}
 	}
 
 	private void createIdentity(String name) throws SQLException, MalformedURLException {
 		//create ssk keypair
 		FreenetURI[] keypair = main.getHL().generateKeyPair(WebOfTrust.namespace);
-		FreenetURI newRequestURI = keypair[1].setKeyType("USK").setDocName(WebOfTrust.namespace).setSuggestedEdition(0).setMetaString(null);
-		FreenetURI newInsertURI = keypair[0].setKeyType("USK").setDocName(WebOfTrust.namespace).setSuggestedEdition(0).setMetaString(null);
+		FreenetURI newRequestURI = keypair[1].setKeyType("USK")
+											.setDocName(WebOfTrust.namespace).
+											setSuggestedEdition(0).
+											setMetaString(null);
+		FreenetURI newInsertURI = keypair[0].setKeyType("USK")
+											.setDocName(WebOfTrust.namespace)
+											.setSuggestedEdition(0)
+											.setMetaString(null);
 		
 		//create minimal identity in store
 		long own_identity_vertex = addOwnIdentity(newRequestURI, newInsertURI);
@@ -172,10 +188,12 @@ public class IdentityManagement extends freenet.plugin.web.HTMLFileReaderToadlet
 	private long addOwnIdentity(FreenetURI requestURI, FreenetURI insertURI) throws SQLException {
 		long vertex_id = graph.createVertex();
 		graph.updateVertexProperty(vertex_id, IVertex.ID, Utils.getIDFromKey(requestURI));
+		graph.updateVertexProperty(vertex_id, IVertex.NAME, " ... still fetching ...");
 		graph.updateVertexProperty(vertex_id, IVertex.OWN_IDENTITY, "true");
 		graph.updateVertexProperty(vertex_id, IVertex.INSERT_URI, insertURI.toASCIIString());
 		graph.updateVertexProperty(vertex_id, IVertex.REQUEST_URI, requestURI.toASCIIString());
-		graph.updateVertexProperty(vertex_id, IVertex.EDITION, "0");
+		graph.updateVertexProperty(vertex_id, IVertex.EDITION, "-1");
+		graph.updateVertexProperty(vertex_id, IVertex.DONT_INSERT, "true");
 		return vertex_id;
 	}
 }

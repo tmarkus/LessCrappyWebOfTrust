@@ -26,9 +26,9 @@ public class RequestScheduler implements Runnable {
 
 	private static final int MAX_REQUESTS = 8; 
 	private static final int MAX_MAINTENANCE_REQUESTS = 1; 
-	private static final double PROBABILITY_OF_FETCHING_DIRECTLY_TRUSTED_IDENTITY = 0.8;
+	private static final double PROBABILITY_OF_FETCHING_DIRECTLY_TRUSTED_IDENTITY = 0.7;
 
-	private static final long MAX_TIME_SINCE_LAST_INSERT = (60 * 1000);
+	private static final long MAX_TIME_SINCE_LAST_INSERT = (60 * 1000)*60; //don't insert faster than once per hour
 	private static final long MINIMAL_SLEEP_TIME = (10 * 1000);
 
 	private WebOfTrust main;

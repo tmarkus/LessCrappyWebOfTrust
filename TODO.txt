@@ -1,3 +1,5 @@
+- don't insert a new own identity when we are still restoring one...
+- when deleting an identity, also delete all its trust values in the graph
 - Beautify HTML pages for various actions
 - create page where you can search for an identity and go to its identity info page (listing all identities is CRAZY)
 - Add controls for changing trust values AND even removing the (direct) connection to an identity entirely!

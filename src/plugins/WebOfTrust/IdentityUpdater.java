@@ -12,6 +12,7 @@ import org.w3c.dom.NodeList;
 
 import plugins.WebOfTrust.datamodel.IEdge;
 import plugins.WebOfTrust.datamodel.IVertex;
+import plugins.WebOfTrust.util.Utils;
 
 import thomasmarkus.nl.freenet.graphdb.Edge;
 import thomasmarkus.nl.freenet.graphdb.H2Graph;
@@ -209,6 +210,9 @@ public class IdentityUpdater implements ClientGetCallback{
 			if (isOwnIdentity) graph.updateVertexProperty(identity, IVertex.OWN_IDENTITY, Boolean.toString(true));
 		}
 
+		//always try and remove the DONT INSERT property...
+		graph.removeVertexProperty(identity, IVertex.DONT_INSERT);
+		
 		return identity;
 	}
 

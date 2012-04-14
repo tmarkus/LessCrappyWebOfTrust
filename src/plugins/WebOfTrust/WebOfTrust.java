@@ -36,6 +36,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	private static final String basePath = "/WebOfTrust";
 	public static final int FETCH_MAX_FILE_SIZE = 2000000; 
 	public static final String namespace = "WebOfTrust";
+	public static final int COMPATIBLE_VERSION = 11;
 	
 	private PluginRespirator pr;
 	private WebInterface webInterface;

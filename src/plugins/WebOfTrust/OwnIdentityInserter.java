@@ -73,9 +73,8 @@ public class OwnIdentityInserter implements Runnable, ClientPutCallback {
 			long own_vertex = graph.getVertexByPropertyValue(IVertex.ID, ownID).get(0);
 			Map<String, List<String>> props = graph.getVertexProperties(own_vertex);
 		
-			if (props.containsKey(IVertex.NAME)) //identity should have some minimal amount of data...
+			if (!props.containsKey(IVertex.DONT_INSERT)) //identity should have some minimal amount of data...
 			{
-				
 				//create the bucket
 				String xml = createXML(own_vertex, null);
 				Bucket bucket = wot.getPR().getNode().clientCore.persistentTempBucketFactory.makeBucket(xml.length());
@@ -85,6 +84,7 @@ public class OwnIdentityInserter implements Runnable, ClientPutCallback {
 				//create XML document
 				long next_edition = 0; //default
 				if (props.containsKey(IVertex.EDITION))	next_edition = Long.parseLong(props.get(IVertex.EDITION).get(0)) + 1;
+				
 				FreenetURI nextInsertURI = new FreenetURI(props.get(IVertex.INSERT_URI).get(0)).setSuggestedEdition(next_edition);
 				
 				InsertBlock ib = new InsertBlock(bucket, null, nextInsertURI);
@@ -254,7 +254,7 @@ public class OwnIdentityInserter implements Runnable, ClientPutCallback {
 		Element rootElement = xmlDoc.getDocumentElement();
 		
 		// We include the WoT version to have an easy way of handling bogus XML which might be created by bugged versions.
-		rootElement.setAttribute("Version", Long.toString(1));
+		rootElement.setAttribute("Version", Long.toString(WebOfTrust.COMPATIBLE_VERSION));
 		
 		/* Create the identity Element */
 		Map<String, List<String>> props = graph.getVertexProperties(own_identity);

@@ -84,23 +84,25 @@ public class ShowIdentityController extends freenet.plugin.web.HTMLFileReaderToa
 				Map<String, List<String>> peer_identity_props = graph.getVertexProperties(edge.vertex_to);
 				Map<String, List<String>> edge_properties = edge.getProperties();
 				
-				String trustValue = edge_properties.get(IEdge.SCORE).get(0);
-				String trustComment = edge_properties.get(IEdge.COMMENT).get(0);
-				
-				String peerName;
-				if (peer_identity_props.containsKey(IVertex.NAME))	peerName = peer_identity_props.get(IVertex.NAME).get(0);
-				else												peerName = "(Not yet downloaded)";
-				String peerID = peer_identity_props.get(IVertex.ID).get(0);
+				if (edge_properties.containsKey(IEdge.SCORE) && edge_properties.containsKey(IEdge.COMMENT))
+				{
+					String trustValue = edge_properties.get(IEdge.SCORE).get(0);
+					String trustComment = edge_properties.get(IEdge.COMMENT).get(0);
+					
+					String peerName;
+					if (peer_identity_props.containsKey(IVertex.NAME))	peerName = peer_identity_props.get(IVertex.NAME).get(0);
+					else												peerName = "(Not yet downloaded)";
+					String peerID = peer_identity_props.get(IVertex.ID).get(0);
 
-				tableTrust.appendChild(doc.createElement("tr")
-						.appendChild(doc.createElement("td").text(Integer.toString(i)))
-						.appendChild(doc.createElement("td").text(peerName+" ("+peerID+")"))
-						.appendChild(doc.createElement("td").text(trustValue))
-						.appendChild(doc.createElement("td").text(trustComment))
-						);
-				i += 1;
+					tableTrust.appendChild(doc.createElement("tr")
+							.appendChild(doc.createElement("td").text(Integer.toString(i)))
+							.appendChild(doc.createElement("td").text(peerName+" ("+peerID+")"))
+							.appendChild(doc.createElement("td").text(trustValue))
+							.appendChild(doc.createElement("td").text(trustComment))
+							);
+					i += 1;
+				}
 			}
-
 			info_div.appendChild(tableTrust);
 			
 			//explicit trust relations given by others

@@ -15,4 +15,5 @@ public class IVertex {
 	public final static String LAST_FETCHED = "lastFetched";
 	public final static String LAST_INSERT = "lastInserted";
 	public final static String HASH = "hash";
+	public final static String DONT_INSERT = "dontInsert";
 }
