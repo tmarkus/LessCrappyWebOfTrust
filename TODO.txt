@@ -1,7 +1,3 @@
-- check whether we remove edges on an update? I think we're currently only increasingly adding them? NEVER remove vertices though...
-
-- give each identity a default trust value of 0 for the complete WoT when calculating the trust values
-
 - create NEW ownIdentity using auto-generated keys
 
 - test whether everything breaks and whether trust values for identities make sense (maybe trust digger3, but distrust a random identity, then check with Sone if they appear or not?)
