@@ -1,4 +1,3 @@
-- create NEW ownIdentity using auto-generated keys and check what breaks (if anything... *crosses fingers*)
 -- test whether everything breaks and whether trust values for identities make sense (maybe trust digger3, but distrust a random identity, then check with Sone if they appear or not?)
 
 - create page where you can search for an identity and go to its identity info page (listing all identities is CRAZY)

@@ -106,7 +106,7 @@ public class FCPInterface {
 				else if (selection.equals("0")) select = -1;
 
 				long own_identity_vertex = 0; //TODO: FIX, gives strange results when no own identities are present
-				//find `random' ownIdentity if none is specified
+
 				if (trusterID == null || trusterID.equals("null")) //TODO: this requires updates below... we should get the identities trusted by ANY ownIdentity
 				{
 					List<Long> vertices = graph.getVertexByPropertyValue(IVertex.OWN_IDENTITY, "true");
