@@ -14,6 +14,7 @@ import plugins.WebOfTrust.IdentityUpdaterRequestClient;
 import plugins.WebOfTrust.WebOfTrust;
 import plugins.WebOfTrust.RequestScheduler;
 import plugins.WebOfTrust.Utils;
+import plugins.WebOfTrust.datamodel.IVertex;
 
 import thomasmarkus.nl.freenet.graphdb.H2Graph;
 
@@ -57,10 +58,10 @@ public class RestoreIdentity extends freenet.plugin.web.HTMLFileReaderToadlet {
 			
 			//add minimal identity features to graph store
 			long vertex_id = graph.createVertex();
-			graph.addVertexProperty(vertex_id, "id", Utils.getIDFromKey(requestURI));
-			graph.addVertexProperty(vertex_id, "ownIdentity", "true");
-			graph.addVertexProperty(vertex_id, "insertURI", insertURI.toASCIIString());
-			graph.addVertexProperty(vertex_id, "requestURI", requestURI.toASCIIString());
+			graph.addVertexProperty(vertex_id, IVertex.ID, Utils.getIDFromKey(requestURI));
+			graph.addVertexProperty(vertex_id, IVertex.OWN_IDENTITY, "true");
+			graph.addVertexProperty(vertex_id, IVertex.INSERT_URI, insertURI.toASCIIString());
+			graph.addVertexProperty(vertex_id, IVertex.REQUEST_URI, requestURI.toASCIIString());
 			
 			//Fetch the identity from freenet
 			System.out.println("Starting to fetch your own identity");

@@ -1,8 +1,7 @@
-- fix backlog implementation, more specifically, check if there isn't a key already with a more recent edition
+- check key updating, because the requestURI looks recent for an identity restore, but the insertURI is still the old one??? :(
 - don't insert some more properties (score.IDENTITY for example, because this exposes ALL our identities we have)
 -- use introspection to get all the fields from the IVertex / Iedge classes (pretty, yay!)
--- doesn't fix score properties though... maybe match on 'score.'
-- rebuild WoT database to account for field changes etc etc
+-- doesn't fix score properties though... maybe match on 'trust.' as well
 - insert WoT XML file
  
 

@@ -186,7 +186,7 @@ public class IdentityUpdater implements ClientGetCallback{
 
 	private long getPeerIdentity(final FreenetURI peerIdentityKey)	throws SQLException 
 	{
-		List<Long> identityMatches = graph.getVertexByPropertyValue("id", Utils.getIDFromKey(peerIdentityKey));
+		List<Long> identityMatches = graph.getVertexByPropertyValue(IVertex.ID, Utils.getIDFromKey(peerIdentityKey));
 		long peer;
 
 		//existing identity
@@ -201,7 +201,7 @@ public class IdentityUpdater implements ClientGetCallback{
 			graph.updateVertexProperty(peer, IVertex.EDITION, "-1");
 
 			//store when we first saw the identity
-			graph.updateVertexProperty(peer, "firstSeen", Long.toString(System.currentTimeMillis()));
+			graph.updateVertexProperty(peer, IVertex.FIRST_FETCHED, Long.toString(System.currentTimeMillis()));
 		}
 		
 		return peer;
@@ -263,7 +263,7 @@ public class IdentityUpdater implements ClientGetCallback{
 			graph.updateVertexProperty(identity, IVertex.EDITION, Long.toString(current_edition));	
 
 			//update the request and insert keys with the most recent known edition
-			graph.updateVertexProperty(identity, "requestURI", identityKey.setSuggestedEdition(current_edition).toASCIIString());
+			graph.updateVertexProperty(identity, IVertex.REQUEST_URI, identityKey.setSuggestedEdition(current_edition).toASCIIString());
 
 			//update the insert uri if we have one
 			if (props.containsKey(IVertex.INSERT_URI))
