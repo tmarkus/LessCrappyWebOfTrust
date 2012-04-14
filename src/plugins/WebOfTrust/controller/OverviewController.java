@@ -43,33 +43,39 @@ public class OverviewController extends freenet.plugin.web.HTMLFileReaderToadlet
 			long count_vertices = graph.getVertexCount();
 			long count_edges = graph.getEdgeCount();
 			
-			stats_div.text("Number of identities: " + count_vertices).append("<br />");
-			stats_div.append("Number of trust relations: " + count_edges + "<br />");
-			stats_div.append("Number of requests in flight currently: " + main.getRequestScheduler().getInFlightSize() + "<br />");
-			stats_div.append("Backlog: " + main.getRequestScheduler().getBacklogSize() + "<br />");
+			Element list = doc.createElement("ul");
 			
+			list.appendChild(doc.createElement("li").text("Number of identities: " + count_vertices));
+			list.appendChild(doc.createElement("li").text("Number of trust relations: " + count_edges));
+			list.appendChild(doc.createElement("li").text("Number of requests in flight currently: " + main.getRequestScheduler().getInFlightSize()));
+			list.appendChild(doc.createElement("li").text("Backlog: " + main.getRequestScheduler().getBacklogSize()));
+			
+			stats_div.appendChild(list);
 
-			stats_div.append("Own identities in local storage: "  + "<br />");
-			stats_div.append("<ul>");
+			stats_div.append("<h2> Own identities in local storage </h2>");
+			Element own_identities = doc.createElement("ul");
+			
 			for(long identity : graph.getVertexByPropertyValue("ownIdentity", "true"))
 			{
 				Map<String, List<String>> props = graph.getVertexProperties(identity);
 				if (props.containsKey(IVertex.NAME))
 				{
-					stats_div.append("<li>" + props.get(IVertex.NAME).get(0) + "  (" + props.get("id").get(0) + ")</li>");	
+					own_identities.appendChild(doc.createElement("li").text(props.get(IVertex.NAME).get(0) + "  (" + props.get("id").get(0) + ")"));
 				}
 			}
-			stats_div.append("</ul><br />");
+
+			stats_div.appendChild(own_identities);
+
 			
-			stats_div.append("URIs currently in flight: "  + "<br />");
-			stats_div.append("<ul>");
+			stats_div.append("<h2>URIs currently in flight</h2>");
+			Element inflight = doc.createElement("ol");
+			
 			for(ClientGetter cg : main.getRequestScheduler().getInFlight())
 			{
-				stats_div.append("<li>" + cg.getURI() + " finished: " + cg.isFinished() + "</li>");	
+				inflight.appendChild(doc.createElement("li").text(cg.getURI().toASCIIString()));
 			}
-			stats_div.append("</ul>");
 			
-			addTrustInformation(stats_div);
+			stats_div.appendChild(inflight);
 			
 			writeReply(ctx, 200, "text/html", "content", doc.html());
 			
@@ -81,21 +87,6 @@ public class OverviewController extends freenet.plugin.web.HTMLFileReaderToadlet
 			ex.printStackTrace();
 		}
 	}
-	
-	public void addTrustInformation(Element stats_div)
-	{
-        
-		//parse it and determine WHO you trust
-        
-        // TrustList/Trust
-        // Identity, value
-        
-        //traverse the orientdb and get the number of identities.
-
-		
-	}
-	
-	
 	
 	public void handleMethodPOST(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException, SQLException
 	{

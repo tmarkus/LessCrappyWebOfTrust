@@ -4,6 +4,8 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
+
+import plugins.WebOfTrust.controller.IdenticonController;
 import plugins.WebOfTrust.controller.OverviewController;
 import plugins.WebOfTrust.controller.IdentityManagement;
 import plugins.WebOfTrust.controller.ShowIdentityController;
@@ -108,6 +110,12 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 				pr.getHLSimpleClient(),
 				"/staticfiles/html/manage.html",
 				basePath, graph));
+
+		//Identicons
+		toadlets.add(new IdenticonController(this,
+				pr.getHLSimpleClient(),
+				"",
+				basePath+"/GetIdenticon", graph));
 		
 		toadlets.add(new IdentityManagement(this,
 				pr.getHLSimpleClient(),
