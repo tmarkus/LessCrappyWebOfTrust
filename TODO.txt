@@ -1,11 +1,8 @@
-- interrupt requestscheduler when killing the plugin
 - get trust doesn't always make sense in Sone? recheck fcp call output (GetIdentity?)
 - Beautify HTML pages for various actions
 - create page where you can search for an identity and go to its identity info page (listing all identities is CRAZY)
 - Add controls for changing trust values AND even removing the (direct) connection to an identity entirely!
 - check whether we can output evil HTML? (this would be bad)
-
-
 - check whether multiple identities in the graph store work as expected wrt trust calculation
 
 RELEASE FOR BETA TESTING
@@ -16,3 +13,4 @@ RELEASE FOR BETA TESTING
 
 FAR FUTURE:
 - add event pushing framework thingy
+- clean-up the WoT using some criterium
