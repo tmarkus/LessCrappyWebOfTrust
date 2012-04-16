@@ -5,6 +5,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -80,12 +81,10 @@ public class RequestScheduler implements Runnable {
 		}
 		
 		//cancel all running requests
-		synchronized (inFlight) {
-			System.out.println("Cancelling all running requests...");
-			for(ClientGetter running : inFlight)
-			{
-				running.cancel(null, main.getPR().getNode().clientCore.clientContext);
-			}
+		System.out.println("Cancelling all running requests...");
+		for(ClientGetter running : inFlight)
+		{
+			running.cancel(null, main.getPR().getNode().clientCore.clientContext);
 		}
 	}
 
@@ -137,12 +136,14 @@ public class RequestScheduler implements Runnable {
 	 * Cleanup ClientGetters which have finished or have been cancelled.
 	 */
 
-	private synchronized void cleanup() {
-		Iterator<ClientGetter> iter = inFlight.iterator();
-		while(iter.hasNext())
-		{
-			ClientGetter cg = iter.next();
-			if (cg.isFinished() || cg.isCancelled()) iter.remove();
+	private void cleanup() {
+		synchronized (inFlight) {
+			Iterator<ClientGetter> iter = inFlight.iterator();
+			while(iter.hasNext())
+			{
+				ClientGetter cg = iter.next();
+				if (cg.isFinished() || cg.isCancelled()) iter.remove();
+			}
 		}
 	}
 
@@ -212,7 +213,7 @@ public class RequestScheduler implements Runnable {
 		}
 	}
 
-	public synchronized void addBacklog(FreenetURI uri)
+	public void addBacklog(FreenetURI uri)
 	{
 		synchronized (backlog) {
 			uri.setSuggestedEdition(-uri.getEdition()); //note: negative edition!
@@ -239,7 +240,7 @@ public class RequestScheduler implements Runnable {
 		}
 	}
 
-	public synchronized FreenetURI getBacklogItem()
+	public FreenetURI getBacklogItem()
 	{
 		synchronized (backlog) {
 			Iterator<String> iter = backlog.iterator();
@@ -257,17 +258,28 @@ public class RequestScheduler implements Runnable {
 		return null;
 	}
 
-	public List<ClientGetter> getInFlight()
+	public List<String> getInFlight()
 	{
-		return inFlight;
+		List<String> result = new LinkedList<String>();
+
+		synchronized (inFlight) {
+			for(ClientGetter cg : inFlight)
+			{
+				result.add(cg.getURI().toASCIIString());
+			}
+		}
+		
+		return result;
 	}
 
 	public int getBacklogSize()
 	{
-		return backlog.size();
+		synchronized (backlog) {
+			return backlog.size();	
+		}
 	}
 
-	public synchronized void addInFlight(ClientGetter cg)
+	public void addInFlight(ClientGetter cg)
 	{
 		synchronized (inFlight) {
 			inFlight.add(cg);	
@@ -275,16 +287,18 @@ public class RequestScheduler implements Runnable {
 		
 	}
 
-	public synchronized void removeInFlight(ClientGetter cg)
+	public void removeInFlight(ClientGetter cg)
 	{
 		synchronized (inFlight) {
 			inFlight.remove(cg);
 		}
 	}
 
-	public synchronized int getInFlightSize()
+	public int getInFlightSize()
 	{
-		return inFlight.size();
+		synchronized (inFlight) {
+			return inFlight.size();	
+		}
 	}
 
 }

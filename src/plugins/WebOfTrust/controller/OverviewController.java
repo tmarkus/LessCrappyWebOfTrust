@@ -70,9 +70,12 @@ public class OverviewController extends freenet.plugin.web.HTMLFileReaderToadlet
 			stats_div.append("<h2>URIs currently in flight</h2>");
 			Element inflight = doc.createElement("ol");
 			
-			for(ClientGetter cg : main.getRequestScheduler().getInFlight())
+			synchronized (main.getRequestScheduler().getInFlight()) {
+
+			for(String in : main.getRequestScheduler().getInFlight())
 			{
-				inflight.appendChild(doc.createElement("li").text(cg.getURI().toASCIIString()));
+				inflight.appendChild(doc.createElement("li").text(in));
+			}
 			}
 			
 			stats_div.appendChild(inflight);

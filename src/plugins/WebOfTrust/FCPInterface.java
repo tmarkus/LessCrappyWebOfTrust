@@ -154,19 +154,19 @@ public class FCPInterface {
 							try //TODO: make this more efficient, horribly slow now to get the edges and then the property...
 							{
 								String score = graph.getEdgeValueByVerticesAndProperty(own_identity_vertex, identity_vertex, IEdge.SCORE);
-								sfsReply.putOverwrite("Score" + i, score);
+								sfsReply.putOverwrite("Trust" + i, score);
 								sfsReply.putOverwrite("Rank" + i, "666");
 							}
 							catch(SQLException e) //no score relation
 							{
-								sfsReply.putOverwrite("Score" + i, "null");
+								sfsReply.putOverwrite("Trust" + i, "null");
 								sfsReply.putOverwrite("Rank" + i, "null");
 							}
 
 							//sfs.putOverwrite("Rank" + i, properties.get("score."+trusterID).get(0)); //TODO: rank isn't stored yet by score computation
 							if (includeTrustValue)
 							{
-								sfsReply.putOverwrite("Trust" + i, properties.get(IVertex.TRUST+"."+trusterID).get(0));	
+								sfsReply.putOverwrite("Score" + i, properties.get(IVertex.TRUST+"."+trusterID).get(0));	
 							}
 							i += 1;
 						}
@@ -196,16 +196,23 @@ public class FCPInterface {
 						long edge = graph.getEdgeByVerticesAndProperty(own_id, identity, IEdge.SCORE);
 						Map<String, List<String>> edge_props = graph.getEdgeProperties(edge);
 
-						sfsReply.putOverwrite("Score", edge_props.get(plugins.WebOfTrust.datamodel.IEdge.SCORE).get(0));
+						sfsReply.putOverwrite("Trust", edge_props.get(plugins.WebOfTrust.datamodel.IEdge.SCORE).get(0));
 						sfsReply.putOverwrite("Rank", "666");
 					}
 					catch(SQLException e) //not directly trusted, so set score accordingly
 					{
-						sfsReply.putOverwrite("Score", "null");
+						sfsReply.putOverwrite("Trust", "null");
 						sfsReply.putOverwrite("Rank", "null");
 					}
 
-					sfsReply.putOverwrite("Trust", props.get(IVertex.TRUST+"."+trusterID).get(0));
+					try
+					{
+						sfsReply.putOverwrite("Score", props.get(IVertex.TRUST+"."+trusterID).get(0));	
+					}
+					catch(NullPointerException e) //trust not stored in db
+					{
+						sfsReply.putOverwrite("Score", "null");
+					}
 
 					int i=0;
 					for(String context : props.get("contextName"))
