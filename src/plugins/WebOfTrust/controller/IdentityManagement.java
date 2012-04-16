@@ -116,10 +116,17 @@ public class IdentityManagement extends freenet.plugin.web.HTMLFileReaderToadlet
 	private void removeIdentity(String id) throws SQLException {
 		List<Long> vertices = graph.getVertexByPropertyValue(IVertex.ID, id);
 
+		//remove the vertex itself
 		for(long vertex : vertices)
 		{
 			graph.removeVertex(vertex);
+			
+			//remove the calculated trust values associated with this identity
+			graph.removePropertyForAllVertices(IVertex.TRUST+"."+id);
 		}
+	
+		
+		
 	}
 
 	private void restoreIdentity(FreenetURI insertURI) throws SQLException, FetchException, MalformedURLException 
