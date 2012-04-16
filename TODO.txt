@@ -1,4 +1,3 @@
-- get trust doesn't always make sense in Sone? recheck fcp call output (GetIdentity?)
 - Beautify HTML pages for various actions
 - create page where you can search for an identity and go to its identity info page (listing all identities is CRAZY)
 - Add controls for changing trust values AND even removing the (direct) connection to an identity entirely!
@@ -10,6 +9,7 @@ RELEASE FOR BETA TESTING
 - fix link between getIdentitiesByScore and getIdentity, requires refactoring
 - fix getIdentitiesbyScore inefficiency (optimize using graph db call)
 - incremental score recomputation on identity update
+- properly cancel requests, currentcurrentmodificationexception?
 
 FAR FUTURE:
 - add event pushing framework thingy

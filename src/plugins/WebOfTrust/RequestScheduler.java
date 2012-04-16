@@ -25,7 +25,7 @@ import freenet.keys.FreenetURI;
 
 public class RequestScheduler implements Runnable {
 
-	private static final int MAX_REQUESTS = 8; 
+	private static final int MAX_REQUESTS = 50; 
 	private static final int MAX_MAINTENANCE_REQUESTS = 1; 
 	private static final double PROBABILITY_OF_FETCHING_DIRECTLY_TRUSTED_IDENTITY = 0.7;
 
