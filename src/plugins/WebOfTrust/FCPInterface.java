@@ -1,6 +1,7 @@
 package plugins.WebOfTrust;
 
 import java.sql.SQLException;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -150,18 +151,17 @@ public class FCPInterface {
 
 							sfs.putOverwrite("ScoreOwner" + i, properties.get("id").get(0));
 
-							try //TODO: make this more efficient, horribly slow now
+							try //TODO: make this more efficient, horribly slow now to get the edges and then the property...
 							{
-								long edge = graph.getEdgeByVerticesAndProperty(own_identity_vertex, identity_vertex, IEdge.SCORE);
-								String score = graph.getEdeProperties(edge).get(IEdge.SCORE).get(0);
-
+								String score = graph.getEdgeValueByVerticesAndProperty(own_identity_vertex, identity_vertex, IEdge.SCORE);
 								sfsReply.putOverwrite("Score" + i, score);
+								sfsReply.putOverwrite("Rank" + i, "666");
 							}
 							catch(SQLException e) //no score relation
 							{
 								sfsReply.putOverwrite("Score" + i, "null");
+								sfsReply.putOverwrite("Rank" + i, "null");
 							}
-
 
 							//sfs.putOverwrite("Rank" + i, properties.get("score."+trusterID).get(0)); //TODO: rank isn't stored yet by score computation
 							if (includeTrustValue)
@@ -194,20 +194,18 @@ public class FCPInterface {
 					try	//directly trusted
 					{
 						long edge = graph.getEdgeByVerticesAndProperty(own_id, identity, IEdge.SCORE);
-						Map<String, List<String>> edge_props = graph.getEdeProperties(edge);
+						Map<String, List<String>> edge_props = graph.getEdgeProperties(edge);
 
 						sfsReply.putOverwrite("Score", edge_props.get(plugins.WebOfTrust.datamodel.IEdge.SCORE).get(0));
+						sfsReply.putOverwrite("Rank", "666");
 					}
 					catch(SQLException e) //not directly trusted, so set score accordingly
 					{
 						sfsReply.putOverwrite("Score", "null");
+						sfsReply.putOverwrite("Rank", "null");
 					}
 
 					sfsReply.putOverwrite("Trust", props.get(IVertex.TRUST+"."+trusterID).get(0));
-
-					//determine whether we trust the identity directly with the trusterID?
-					if (isDirectlyTrusted(own_id, identity)) sfsReply.putOverwrite("Rank", "1");
-					else sfsReply.putOverwrite("Rank", "2");
 
 					int i=0;
 					for(String context : props.get("contextName"))
