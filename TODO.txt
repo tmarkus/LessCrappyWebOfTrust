@@ -1,5 +1,9 @@
-- don't insert a new own identity when we are still restoring one...
+- calculated trust for Dab56z88gwLuQuJTfYok-MlL2hZ8GFhk~MvzdN~S6qw  seems to be indirect, I give him -25 directly, but the calculated trust is 0????
+-- same goes for: BhyX7hQmqVVvNuAsdENOLknLQSONuuLqaZuumN0qrN8, calculated trust is 100? W T F
+-- same for: 	Алеша (hF1daduorn8tcTNz-EAr23Pyw92TWRpi5-eCiy58eUY)
 - when deleting an identity, also delete all its trust values in the graph
+- interrupt requestscheduler when killing the plugin
+- get trust doesn't always make sense in Sone? recheck fcp call output (GetIdentity?)
 - Beautify HTML pages for various actions
 - create page where you can search for an identity and go to its identity info page (listing all identities is CRAZY)
 - Add controls for changing trust values AND even removing the (direct) connection to an identity entirely!

@@ -6,6 +6,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 
 import plugins.WebOfTrust.datamodel.IEdge;
@@ -39,20 +40,23 @@ public class ScoreComputer {
 		Set<Long> pool = new HashSet<Long>(graph.getVertexByPropertyValue(IVertex.ID, ownIdentityID));
 
 		Map<Long, Integer> vertexToScore = new HashMap<Long, Integer>();
+		Set<Long> localOverride = new HashSet<Long>();
 		
 		//set all trust values for all identities for this own identity initially to 0
+		/*
 		List<Long> all_identities = graph.getAllVerticesWithProperty(IVertex.ID);
-		for(long identity : all_identities)
+		for(final long identity : all_identities)
 		{
 			graph.updateVertexProperty(identity, IVertex.TRUST+"."+ownIdentityID, "0");
 		}
+		*/
 		
 		//calculate score per rank
 		for(int rank=0; rank < 6; rank++)
 		{
 			System.out.println("rank: " + rank);
 
-			Set<Long> next_pool = new HashSet<Long>();
+			final Set<Long> next_pool = new HashSet<Long>();
 
 			for(long vertex_id : pool)
 			{
@@ -60,50 +64,58 @@ public class ScoreComputer {
 				
 				if (!vertexToScore.containsKey(vertex_id) || vertexToScore.get(vertex_id) > 0)
 				{
-					System.out.print(".");
 					List<EdgeWithProperty> edges = graph.getOutgoingEdgesWithProperty(vertex_id, IEdge.SCORE);
 
-					if (rank == 0) vertexToScore.put(vertex_id, 100);
+					if (rank == 0) {
+						vertexToScore.put(vertex_id, 100); //set 100 trust to our own identity
+						localOverride.add(vertex_id); //it is not possible to change this trust value anymore, because of locally set value
+					}
 					
 					for(EdgeWithProperty edge : edges)	//gather all connected nodes, filter those already seen
 					{
-						int score = Integer.parseInt(edge.value);
-
-						if (!vertexToScore.containsKey(edge.vertex_to)) vertexToScore.put(edge.vertex_to, 0);
-						int updated_score = vertexToScore.get(edge.vertex_to) + (int) Math.round(score*(capacities[rank]/100.0));
-						vertexToScore.put(edge.vertex_to, updated_score);
 						next_pool.add(edge.vertex_to);
+						if (!vertexToScore.containsKey(edge.vertex_to)) vertexToScore.put(edge.vertex_to, 0);
+
+						if (!localOverride.contains(edge.vertex_to)) //only update trust value if it hasn't been overridden by a local trust value
+						{
+							final int score = Integer.parseInt(edge.value);
+							final int updated_score = vertexToScore.get(edge.vertex_to) + (int) Math.round(score*(capacities[rank]/100.0));
+							vertexToScore.put(edge.vertex_to, updated_score);
+						}
+
+						if (rank == 0)	localOverride.add(edge.vertex_to);
 					}
 				}
 			}
 
 			//normalize score of next pool participants
-			for(Long vertex_id : next_pool)
-			{
-				normalize(vertexToScore, vertex_id);
-			}
-			
-			//store the calculated scores for the nodes in the graph db
-			for(Long vertex_id : pool)
-			{
-				graph.updateVertexProperty(vertex_id, IVertex.TRUST+"."+ownIdentityID,  Long.toString(normalize(vertexToScore, vertex_id)));
-			}
+			for(Long vertex_id : next_pool)	normalize(vertexToScore, vertex_id);
 			
 			//don't consider identities with trust values of 0 and lower for trust propagation for the next rank
 			Iterator<Long> next_pool_iter = next_pool.iterator();
 			while(next_pool_iter.hasNext())
 			{
-				long vector_id = next_pool_iter.next();
+				final long vector_id = next_pool_iter.next();
 				if (vertexToScore.get(vector_id) <= 0) next_pool_iter.remove();
 			}
 
-			//don't re-consider vertices which we've already seen in the next iteration
+			//don't re-consider vertices which we've already seen in the previous iteration
 			next_pool.removeAll(seen_vertices);
 			
 			System.out.println();
-			System.out.println("I will consider " + next_pool.size() + " identities for next rank " + (rank+1));
+			//System.out.println("I will consider " + next_pool.size() + " identities for next rank " + (rank+1));
 			pool = next_pool; //use the identities from this rank for the next rank
 		}
+
+		//update calculated trust values
+		int distrusted = 0;
+		for(Entry<Long, Integer> pair : vertexToScore.entrySet())
+		{
+			graph.updateVertexProperty(pair.getKey(), IVertex.TRUST+"."+ownIdentityID,  Long.toString(normalize(vertexToScore, pair.getKey())));
+			if (pair.getValue() < 0) distrusted += 1;
+		}
+
+		System.out.println("Total: " + vertexToScore.size() + "  distrusted: " + distrusted  + "  filtered total: " + (vertexToScore.size()-distrusted));
 	}
 
 	private static long normalize(Map<Long, Integer> vertexToScore, long vertex_id)
