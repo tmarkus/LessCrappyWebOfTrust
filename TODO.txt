@@ -7,10 +7,10 @@
 
 RELEASE FOR BETA TESTING
 
-- fix link between getIdentitiesByScore and getIdentity, the name checking is pure evil?
+- fix link between getIdentitiesByScore and getIdentity, requires refactoring
 - fix getIdentitiesbyScore inefficiency (optimize using graph db call)
 - incremental score recomputation on identity update
 
 FAR FUTURE:
 - add event pushing framework thingy
-- clean-up the WoT using some criterium
+- clean-up some vertices from the the WoT using some criterium
