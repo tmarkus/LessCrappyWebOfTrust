@@ -138,15 +138,16 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	public void terminate() {
 		LOGGER.info("Terminating plugin");
 
+		//tell everybody else that we are no longer running
+		isRunning = false;
+		
 		ToadletContainer toadletContainer = pr.getToadletContainer();
 		for (FileReaderToadlet pageToadlet : toadlets) {
 			toadletContainer.unregister(pageToadlet);
 		}
-		//toadletContainer.getPageMaker().removeNavigationCategory("SoneBridge");
+		//toadletContainer.getPageMaker().removeNavigationCategory("WebOfTrust");
 
 		if (webInterface != null) webInterface.kill();
-
-		//TODO: kill all requests which are still running
 
 		//kill the database
 		if( graph != null ) {
@@ -158,9 +159,6 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 			}
 			System.out.println("done");
 		}
-
-		//tell everybody else that we are no longer running
-		isRunning = false;
 	}
 
 

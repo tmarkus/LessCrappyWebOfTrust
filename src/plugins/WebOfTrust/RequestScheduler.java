@@ -69,13 +69,13 @@ public class RequestScheduler implements Runnable {
 			//schedule random identity updates if there is no other activity at the time
 			maintenance();
 
+			//check if our own identities need to be inserted and do it if needed
 			insertOwnIdentities();
 
 			//chill out a bit
 			try {
 				Thread.sleep(MINIMAL_SLEEP_TIME);
 			} catch (InterruptedException e) {
-				e.printStackTrace();
 			}
 		}
 		
