@@ -144,7 +144,8 @@ public class IdentityManagement extends freenet.plugin.web.HTMLFileReaderToadlet
 						.setSuggestedEdition(insertURI.getEdition())
 						.setMetaString(null);
 
-				addOwnIdentity(requestURI, insertURI);
+				long own_vertex_id = addOwnIdentity(requestURI, insertURI);
+				graph.updateVertexProperty(own_vertex_id, IVertex.DONT_INSERT, "true");
 				
 				//Fetch the identity from freenet
 				System.out.println("Starting to fetch your own identity");
@@ -203,7 +204,6 @@ public class IdentityManagement extends freenet.plugin.web.HTMLFileReaderToadlet
 		graph.updateVertexProperty(vertex_id, IVertex.INSERT_URI, insertURI.toASCIIString());
 		graph.updateVertexProperty(vertex_id, IVertex.REQUEST_URI, requestURI.toASCIIString());
 		graph.updateVertexProperty(vertex_id, IVertex.EDITION, "-1");
-		graph.updateVertexProperty(vertex_id, IVertex.DONT_INSERT, "true");
 		return vertex_id;
 	}
 }

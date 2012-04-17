@@ -1,3 +1,5 @@
+- create identity sets dontinsert = true, but doesn't clear it so never an insert?
+-- probably an artefact from identity restore
 - Beautify HTML pages for various actions
 - create page where you can search for an identity and go to its identity info page (listing all identities is CRAZY)
 - Add controls for changing trust values AND even removing the (direct) connection to an identity entirely!

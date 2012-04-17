@@ -1,15 +1,15 @@
 package plugins.WebOfTrust;
 
 import java.sql.SQLException;
-import java.util.Iterator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 
 import plugins.WebOfTrust.datamodel.IEdge;
 import plugins.WebOfTrust.datamodel.IVertex;
 
-import thomasmarkus.nl.freenet.graphdb.Edge;
 import thomasmarkus.nl.freenet.graphdb.H2Graph;
 import freenet.pluginmanager.PluginNotFoundException;
 import freenet.pluginmanager.PluginReplySender;
@@ -106,25 +106,36 @@ public class FCPInterface {
 				if (selection.equals("+")) select = 0;
 				else if (selection.equals("0")) select = -1;
 
-				long own_identity_vertex = 0; //TODO: FIX, gives strange results when no own identities are present
-
-				if (trusterID == null || trusterID.equals("null")) //TODO: this requires updates below... we should get the identities trusted by ANY ownIdentity
+				Set<String> treeOwnerList = new HashSet<String>(); 
+				Set<Long> treeOwnerVertexList = new HashSet<Long>();
+				if (trusterID == null || trusterID.equals("null"))
 				{
-					List<Long> vertices = graph.getVertexByPropertyValue(IVertex.OWN_IDENTITY, "true");
-					for(long vertex : vertices)
+					List<Long> own_vertices = graph.getVertexByPropertyValue(IVertex.OWN_IDENTITY, "true");
+					for(long vertex : own_vertices)
 					{
+						treeOwnerVertexList.add(vertex);
 						Map<String, List<String>> props = graph.getVertexProperties(vertex);
-						trusterID = props.get("id").get(0);
-						own_identity_vertex = vertex;
+						treeOwnerList.add(props.get("id").get(0));
 					}
 				}
-
-				List<Long> vertices = graph.getVerticesWithPropertyValueLargerThan(IVertex.TRUST+"."+trusterID, select);
+				else
+				{
+					List<Long> own_vertex = graph.getVertexByPropertyValue(IVertex.ID, trusterID);
+					treeOwnerList.add(trusterID);
+					for(long vertex : own_vertex) treeOwnerVertexList.add(vertex);
+				}
+				
+				//take the union of all trusted identities for all identities specified
+				Set<Long> vertices = new HashSet<Long>();
+				for(String treeOwner : treeOwnerList)
+				{
+					vertices.addAll(graph.getVerticesWithPropertyValueLargerThan(IVertex.TRUST+"."+treeOwner, select));	
+				}
+				
 				sfsReply.putSingle("Message", "Identities");
 				int i = 0;
-				for(int vertex_index=0; vertex_index < vertices.size(); vertex_index++)
+				for(long identity_vertex : vertices)
 				{
-					long identity_vertex = vertices.get(vertex_index);
 					Map<String, List<String>> properties = graph.getVertexProperties(identity_vertex);
 
 					//check whether the identity has a name (and we thus have retrieved it at least once)
@@ -151,10 +162,16 @@ public class FCPInterface {
 
 							sfs.putOverwrite("ScoreOwner" + i, properties.get("id").get(0));
 
-							try //TODO: make this more efficient, horribly slow now to get the edges and then the property...
+							try
 							{
-								String score = graph.getEdgeValueByVerticesAndProperty(own_identity_vertex, identity_vertex, IEdge.SCORE);
-								sfsReply.putOverwrite("Trust" + i, score);
+								int score = Integer.MIN_VALUE;
+								for(long own_identity : treeOwnerVertexList)
+								{
+									int tmp_score = Integer.parseInt(graph.getEdgeValueByVerticesAndProperty(own_identity, identity_vertex, IEdge.SCORE));
+									if (tmp_score > score) score = tmp_score;
+								}
+								
+								sfsReply.putOverwrite("Trust" + i, Integer.toString(score));
 								sfsReply.putOverwrite("Rank" + i, "666");
 							}
 							catch(SQLException e) //no score relation
@@ -163,7 +180,6 @@ public class FCPInterface {
 								sfsReply.putOverwrite("Rank" + i, "null");
 							}
 
-							//sfs.putOverwrite("Rank" + i, properties.get("score."+trusterID).get(0)); //TODO: rank isn't stored yet by score computation
 							if (includeTrustValue)
 							{
 								sfsReply.putOverwrite("Score" + i, properties.get(IVertex.TRUST+"."+trusterID).get(0));	
@@ -352,14 +368,4 @@ public class FCPInterface {
 
 		return result;
 	}
-
-	private boolean isDirectlyTrusted(long own_id, long identity) throws SQLException
-	{
-		for(Edge edge : graph.getIncomingEdges(identity))
-		{
-			if (edge.vertex_from == own_id) return true;
-		}
-		return false;
-	}
-
 }
