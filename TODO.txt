@@ -1,15 +1,16 @@
+- make identities into a link that you can click (go to showIdentity page)
+- support deleting the link to an identity entirely
+- support deleting properties from your own profile at will
+- support changing the trust of an identity via the WoT
 - Beautify HTML pages for various actions
 - create page where you can search for an identity and go to its identity info page (listing all identities is CRAZY)
-- Add controls for changing trust values AND even removing the (direct) connection to an identity entirely!
 - check whether we can output evil HTML? (this would be bad)
-- check whether multiple identities in the graph store work as expected wrt trust calculation
 
-RELEASE FOR BETA TESTING
+- RELEASE FOR BETA TESTING
 
 - fix link between getIdentitiesByScore and getIdentity, requires refactoring
 - fix getIdentitiesbyScore inefficiency (optimize using graph db call)
 - incremental score recomputation on identity update
-- properly cancel requests, currentcurrentmodificationexception?
 
 FAR FUTURE:
 - add event pushing framework thingy
