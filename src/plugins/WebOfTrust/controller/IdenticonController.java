@@ -10,8 +10,6 @@ import javax.imageio.ImageIO;
 import plugins.WebOfTrust.WebOfTrust;
 import plugins.WebOfTrust.identicon.Identicon;
 
-import thomasmarkus.nl.freenet.graphdb.H2Graph;
-
 import freenet.client.HighLevelSimpleClient;
 import freenet.clients.http.ToadletContext;
 import freenet.clients.http.ToadletContextClosedException;
