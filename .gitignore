@@ -1,5 +1,6 @@
 dist/
 bin/
 build/
+lib/
 
 override.properties
