@@ -63,9 +63,10 @@ public class IdentityManagement extends freenet.plugin.web.HTMLFileReaderToadlet
 	{
 		Document doc = Jsoup.parse(readFile());
 		Element identities_div = doc.select("#identities").first();
-		
+		H2Graph graph = null;
+		 
 		try {
-			H2Graph graph = gf.getGraph();
+			graph = gf.getGraph();
 			for(long own_vertex : graph.getVertexByPropertyValue(IVertex.OWN_IDENTITY, "true"))
 			{
 				Map<String, List<String>> props = graph.getVertexProperties(own_vertex);
@@ -87,7 +88,15 @@ public class IdentityManagement extends freenet.plugin.web.HTMLFileReaderToadlet
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
-		
+		finally
+		{
+			if (graph != null)
+				try {
+					graph.close();
+				} catch (SQLException e) {
+					e.printStackTrace();
+				}
+		}
 		
 	    writeReply(ctx, 200, "text/html", "content", doc.html());
 	}
@@ -95,24 +104,33 @@ public class IdentityManagement extends freenet.plugin.web.HTMLFileReaderToadlet
 	public void handleMethodPOST(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException, SQLException, FetchException
 	{
 	    String action = request.getPartAsStringFailsafe("action", 200);
-		H2Graph graph = gf.getGraph();
-	    
-	    if(action.equals("restore"))
-	    {
-		    FreenetURI insertURI = new FreenetURI(request.getPartAsStringFailsafe("insertURI", 20000));
-		    restoreIdentity(graph, insertURI);
-	    }	
-		else if (action.equals("create"))
+		H2Graph graph = null; 
+				
+		try
 		{
-			String name = request.getPartAsStringFailsafe("name", 2000);
-			createIdentity(graph, name);
+			graph =	gf.getGraph();
+			
+		    if(action.equals("restore"))
+		    {
+			    FreenetURI insertURI = new FreenetURI(request.getPartAsStringFailsafe("insertURI", 20000));
+			    restoreIdentity(graph, insertURI);
+		    }	
+			else if (action.equals("create"))
+			{
+				String name = request.getPartAsStringFailsafe("name", 2000);
+				createIdentity(graph, name);
+			}
+			else if (action.equals("delete"))
+			{
+				String id = request.getPartAsStringFailsafe("id", 2000);
+				removeIdentity(graph, id);
+			}
 		}
-		else if (action.equals("delete"))
+		finally
 		{
-			String id = request.getPartAsStringFailsafe("id", 2000);
-			removeIdentity(graph, id);
+			graph.close();
 		}
-	    
+		
 	    handleMethodGET(uri, request, ctx);
 	}
 
@@ -200,13 +218,30 @@ public class IdentityManagement extends freenet.plugin.web.HTMLFileReaderToadlet
 	 */
 	
 	private static long addOwnIdentity(H2Graph graph, FreenetURI requestURI, FreenetURI insertURI) throws SQLException {
-		long vertex_id = graph.createVertex();
-		graph.updateVertexProperty(vertex_id, IVertex.ID, Utils.getIDFromKey(requestURI));
-		graph.updateVertexProperty(vertex_id, IVertex.NAME, " ... still fetching ...");
-		graph.updateVertexProperty(vertex_id, IVertex.OWN_IDENTITY, "true");
-		graph.updateVertexProperty(vertex_id, IVertex.INSERT_URI, insertURI.toASCIIString());
-		graph.updateVertexProperty(vertex_id, IVertex.REQUEST_URI, requestURI.toASCIIString());
-		graph.updateVertexProperty(vertex_id, IVertex.EDITION, "-1");
-		return vertex_id;
+		
+		try
+		{
+			long vertex_id = graph.createVertex();
+			graph.getConnection().setAutoCommit(false);
+			graph.updateVertexProperty(vertex_id, IVertex.ID, Utils.getIDFromKey(requestURI));
+			graph.updateVertexProperty(vertex_id, IVertex.NAME, " ... still fetching ...");
+			graph.updateVertexProperty(vertex_id, IVertex.OWN_IDENTITY, "true");
+			graph.updateVertexProperty(vertex_id, IVertex.INSERT_URI, insertURI.toASCIIString());
+			graph.updateVertexProperty(vertex_id, IVertex.REQUEST_URI, requestURI.toASCIIString());
+			graph.updateVertexProperty(vertex_id, IVertex.EDITION, "-1");
+			graph.getConnection().commit();
+			
+			return vertex_id;
+		}
+		finally
+		{
+			graph.getConnection().setAutoCommit(true);
+		}
 	}
+
+	@Override
+	public void terminate() {
+	}
+
+	
 }

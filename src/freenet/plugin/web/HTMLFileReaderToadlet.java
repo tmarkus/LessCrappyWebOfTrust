@@ -11,7 +11,7 @@ import freenet.clients.http.ToadletContext;
 import freenet.clients.http.ToadletContextClosedException;
 import freenet.support.api.HTTPRequest;
 
-public class HTMLFileReaderToadlet extends FileReaderToadlet {
+public abstract class HTMLFileReaderToadlet extends FileReaderToadlet {
 
 	private Map<String, String> context = new HashMap<String, String>();
 	

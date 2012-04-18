@@ -167,4 +167,9 @@ public class ShowIdentityController extends freenet.plugin.web.HTMLFileReaderToa
 		handleMethodGET(uri, request, ctx);
 		*/
 	}
+
+	@Override
+	public void terminate() throws SQLException {
+		graph.close();
+	}
 }

@@ -11,6 +11,7 @@ import plugins.WebOfTrust.datamodel.IEdge;
 import plugins.WebOfTrust.datamodel.IVertex;
 
 import thomasmarkus.nl.freenet.graphdb.H2Graph;
+import thomasmarkus.nl.freenet.graphdb.H2GraphFactory;
 import freenet.pluginmanager.PluginNotFoundException;
 import freenet.pluginmanager.PluginReplySender;
 import freenet.support.SimpleFieldSet;
@@ -18,17 +19,19 @@ import freenet.support.api.Bucket;
 
 public class FCPInterface {
 
-	private H2Graph graph;
+	private H2GraphFactory gf;
 
-	public FCPInterface(H2Graph graph)
+	public FCPInterface(H2GraphFactory gf)
 	{
-		this.graph = graph;
+		this.gf = gf;;
 	}
 
 	public void handle(PluginReplySender prs, SimpleFieldSet sfs, Bucket bucket, int accessType) throws SQLException {
 		//System.out.println("Received the following message type: " + sfs.get("Message") + " with identifier: " + prs.getIdentifier());
 
+		H2Graph graph = gf.getGraph();
 		try {
+			
 			SimpleFieldSet sfsReply = new SimpleFieldSet(true);
 
 			if (sfs.get("Message").equals("Error"))
@@ -337,6 +340,10 @@ public class FCPInterface {
 		catch(Exception e)
 		{
 			e.printStackTrace();
+		}
+		finally
+		{
+			graph.close();
 		}
 	}
 

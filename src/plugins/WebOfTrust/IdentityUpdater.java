@@ -76,11 +76,13 @@ public class IdentityUpdater implements ClientGetCallback{
 		}
 	}
 
-	private void addTrustRelations(Document doc, FreenetURI freenetURI)
+	private void addTrustRelations(Document doc, FreenetURI freenetURI) throws SQLException
 	{
+		H2Graph graph = gf.getGraph();
 		try
 		{
-			H2Graph graph = gf.getGraph();
+			graph.setAutoCommit(false);
+			
 			Node ownIdentity = doc.getElementsByTagName("Identity").item(0);
 			final String identityName = ownIdentity.getAttributes().getNamedItem("Name").getNodeValue();
 			final String publishesTrustList = ownIdentity.getAttributes().getNamedItem("PublishesTrustList").getNodeValue();
@@ -148,10 +150,16 @@ public class IdentityUpdater implements ClientGetCallback{
 					}
 				}
 			}
+			graph.commit();
 		}
 		catch(Exception ex)
 		{
 			ex.printStackTrace();
+		}
+		finally
+		{
+			graph.setAutoCommit(true);
+			graph.close();
 		}
 	}
 

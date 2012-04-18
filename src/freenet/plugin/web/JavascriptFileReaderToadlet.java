@@ -18,5 +18,8 @@ public class JavascriptFileReaderToadlet extends FileReaderToadlet {
 		writeReply(ctx, 200, "text/javascript", "javascript file", readFile());
 	}
 
-	
+	public void terminate()
+	{
+		
+	}
 }

@@ -15,6 +15,7 @@ import plugins.WebOfTrust.ScoreComputer;
 import plugins.WebOfTrust.datamodel.IVertex;
 
 import thomasmarkus.nl.freenet.graphdb.H2Graph;
+import thomasmarkus.nl.freenet.graphdb.H2GraphFactory;
 
 import freenet.client.HighLevelSimpleClient;
 import freenet.client.async.ClientGetter;
@@ -24,20 +25,22 @@ import freenet.support.api.HTTPRequest;
 
 public class OverviewController extends freenet.plugin.web.HTMLFileReaderToadlet {
 
-	private H2Graph graph;
+	private H2GraphFactory gf;
 	private WebOfTrust main;
 	
-	public OverviewController(WebOfTrust main, HighLevelSimpleClient client, String filepath, String URLPath, H2Graph graph) {
+	public OverviewController(WebOfTrust main, HighLevelSimpleClient client, String filepath, String URLPath, H2GraphFactory gf) {
 		super(client, filepath, URLPath);
 		this.main = main;
-		this.graph = graph;
+		this.gf = gf;
 	}
 
 	public void handleMethodGET(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException
 	{
+		H2Graph graph = null;
 		try
 		{
-		    Document doc = Jsoup.parse(readFile());
+		    graph = gf.getGraph();
+			Document doc = Jsoup.parse(readFile());
 			Element stats_div = doc.select("#stats").first();
 			
 			long count_vertices = graph.getVertexCount();
@@ -89,22 +92,44 @@ public class OverviewController extends freenet.plugin.web.HTMLFileReaderToadlet
 		{
 			ex.printStackTrace();
 		}
+		finally
+		{
+			try {
+				graph.close();
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+		}
 	}
 	
 	public void handleMethodPOST(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException, SQLException
 	{
-		String action = request.getPartAsStringFailsafe("action", 20000);
-		
-		//generate the web of trust for each of the ownIdentities that we have
-		if (action.equals("generate"))
+		H2Graph graph = null;
+		try
 		{
-			ScoreComputer sc = new ScoreComputer(graph);
-			for(long vertex_id : graph.getVertexByPropertyValue("ownIdentity", "true"))
+			graph = gf.getGraph();
+			String action = request.getPartAsStringFailsafe("action", 20000);
+			
+			//generate the web of trust for each of the ownIdentities that we have
+			if (action.equals("generate"))
 			{
-				Map<String, List<String>> props = graph.getVertexProperties(vertex_id);
-				sc.compute(props.get("id").get(0));
+				ScoreComputer sc = new ScoreComputer(graph);
+				for(long vertex_id : graph.getVertexByPropertyValue("ownIdentity", "true"))
+				{
+					Map<String, List<String>> props = graph.getVertexProperties(vertex_id);
+					sc.compute(props.get("id").get(0));
+				}
 			}
+			handleMethodGET(uri, request, ctx);
 		}
-		handleMethodGET(uri, request, ctx);
+		finally
+		{
+			graph.close();
+		}
+	}
+
+	@Override
+	public void terminate() throws SQLException {
+		
 	}
 }

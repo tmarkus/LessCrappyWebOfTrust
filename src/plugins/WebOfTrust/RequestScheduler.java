@@ -97,11 +97,11 @@ public class RequestScheduler implements Runnable {
 		}
 	}
 
-	private void insertOwnIdentities() {
+	private void insertOwnIdentities() throws SQLException {
 
+		H2Graph graph = gf.getGraph();
 		try
 		{
-			H2Graph graph = gf.getGraph();
 			List<Long> own_identities = graph.getVertexByPropertyValue(IVertex.OWN_IDENTITY, "true");
 			for(long own_identity : own_identities)
 			{
@@ -124,6 +124,10 @@ public class RequestScheduler implements Runnable {
 		catch(SQLException e)
 		{
 			e.printStackTrace();
+		}
+		finally
+		{
+			graph.close();
 		}
 	}
 
@@ -157,12 +161,13 @@ public class RequestScheduler implements Runnable {
 		}
 	}
 
-	private void maintenance() {
+	private void maintenance() throws SQLException {
 		if (getInFlightSize() <= MAX_MAINTENANCE_REQUESTS)
 		{
+			H2Graph graph = gf.getGraph();
 			try
 			{
-				H2Graph graph = gf.getGraph();
+				
 				double random = ran.nextDouble();
 				if (random < PROBABILITY_OF_FETCHING_DIRECTLY_TRUSTED_IDENTITY) //fetch random directly connected identity
 				{
@@ -220,6 +225,10 @@ public class RequestScheduler implements Runnable {
 				e.printStackTrace();
 			} catch (MalformedURLException e) {
 				e.printStackTrace();
+			}
+			finally
+			{
+				graph.close();
 			}
 		}
 	}

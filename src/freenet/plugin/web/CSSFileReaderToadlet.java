@@ -18,5 +18,8 @@ public class CSSFileReaderToadlet extends FileReaderToadlet {
 		writeReply(ctx, 200, "text/css", "css file", readFile());
 	}
 
-	
+	public void terminate()
+	{
+		
+	}
 }

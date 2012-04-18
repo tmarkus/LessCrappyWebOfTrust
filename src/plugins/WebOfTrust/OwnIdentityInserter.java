@@ -70,8 +70,10 @@ public class OwnIdentityInserter implements Runnable, ClientPutCallback {
 	
 	@Override
 	public void run() {
+		
+		H2Graph graph = null;
 		try {
-			H2Graph graph = gf.getGraph();
+			graph = gf.getGraph();
 			
 			//get all the properties of this identity from the graph
 			long own_vertex = graph.getVertexByPropertyValue(IVertex.ID, ownID).get(0);
@@ -145,6 +147,14 @@ public class OwnIdentityInserter implements Runnable, ClientPutCallback {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+		finally
+		{
+			try {
+				graph.close();
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+		}
 	}
 	
 	@Override
@@ -153,8 +163,9 @@ public class OwnIdentityInserter implements Runnable, ClientPutCallback {
 		System.out.println("IDENTITY INSERT COMPLETE FOR URI: " + cp.getURI().toASCIIString());
 		
 		//update the insert and request uris in the database
+		H2Graph graph = null;
 		try {
-			H2Graph graph = gf.getGraph();
+			graph = gf.getGraph();
 			List<Long> own_vertices = graph.getVertexByPropertyValue(IVertex.ID, ownID);
 
 			for(long own_vertex : own_vertices)
@@ -178,6 +189,14 @@ public class OwnIdentityInserter implements Runnable, ClientPutCallback {
 			e.printStackTrace();
 		} catch (NoSuchAlgorithmException e) {
 			e.printStackTrace();
+		}
+		finally
+		{
+			try {
+				graph.close();
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
 		}
 	}
 	

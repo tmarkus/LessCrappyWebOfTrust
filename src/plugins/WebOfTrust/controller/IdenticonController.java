@@ -57,6 +57,10 @@ public class IdenticonController extends freenet.plugin.web.HTMLFileReaderToadle
                 Closer.close(imageOutputStream);
         }
 	}
+
+	@Override
+	public void terminate() {
+	}
 	
 
 }

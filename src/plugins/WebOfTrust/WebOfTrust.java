@@ -75,7 +75,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 			this.gf = new H2GraphFactory(db_path);	
 
 			//setup fcp plugin handler
-			this.fpi = new FCPInterface(gf.getGraph());
+			this.fpi = new FCPInterface(gf);
 
 			//setup requestscheduler
 			this.rs = new RequestScheduler(this, gf, hl);
@@ -106,12 +106,12 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		toadlets.add(new OverviewController(this,
 				pr.getHLSimpleClient(),
 				"/staticfiles/html/manage.html",
-				basePath+"/", gf.getGraph()));
+				basePath+"/", gf));
 
 		toadlets.add(new OverviewController(this,
 				pr.getHLSimpleClient(),
 				"/staticfiles/html/manage.html",
-				basePath, gf.getGraph()));
+				basePath, gf));
 
 		//Identicons
 		toadlets.add(new IdenticonController(this,
@@ -145,9 +145,13 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		
 		ToadletContainer toadletContainer = pr.getToadletContainer();
 		for (FileReaderToadlet pageToadlet : toadlets) {
-			toadletContainer.unregister(pageToadlet);
+			try {
+				toadletContainer.unregister(pageToadlet);
+				pageToadlet.terminate();
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
 		}
-		//toadletContainer.getPageMaker().removeNavigationCategory("WebOfTrust");
 
 		if (webInterface != null) webInterface.kill();
 
