@@ -91,12 +91,14 @@ public class RequestScheduler implements Runnable {
 		
 		//cancel all running requests
 		System.out.println("Cancelling all running requests...");
-		Iterator<ClientGetter> iter = inFlight.iterator();
-		while(iter.hasNext())
-		{
-			ClientGetter getter = iter.next();
-			iter.remove();
-			getter.cancel(null, main.getPR().getNode().clientCore.clientContext);
+		synchronized(inFlight) {
+			Iterator<ClientGetter> iter = inFlight.iterator();
+			while(iter.hasNext())
+			{
+				ClientGetter getter = iter.next();
+				iter.remove();
+				getter.cancel(null, main.getPR().getNode().clientCore.clientContext);
+			}
 		}
 	}
 
