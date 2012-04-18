@@ -51,7 +51,7 @@ public class ShowIdentityController extends freenet.plugin.web.HTMLFileReaderToa
 			Map<String, List<String>> props = graph.getVertexProperties(id_vertex);
 			
 			info_div.append("<h1>Identity properties</h1>");
-			SortedSet<String> sortedKeys = new TreeSet(props.keySet());
+			SortedSet<String> sortedKeys = new TreeSet<String>(props.keySet());
 			
 			Element table = doc.createElement("table");
 			table.appendChild(doc.createElement("tr").appendChild(doc.createElement("th").text("Name")).appendChild(doc.createElement("th").text("Value")));

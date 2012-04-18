@@ -18,7 +18,6 @@ import thomasmarkus.nl.freenet.graphdb.H2Graph;
 import thomasmarkus.nl.freenet.graphdb.H2GraphFactory;
 
 import freenet.client.HighLevelSimpleClient;
-import freenet.client.async.ClientGetter;
 import freenet.clients.http.ToadletContext;
 import freenet.clients.http.ToadletContextClosedException;
 import freenet.support.api.HTTPRequest;

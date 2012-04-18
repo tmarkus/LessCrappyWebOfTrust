@@ -25,7 +25,6 @@ import thomasmarkus.nl.freenet.graphdb.H2GraphFactory;
 
 import freenet.client.FetchException;
 import freenet.client.HighLevelSimpleClient;
-import freenet.client.InsertException;
 import freenet.client.async.ClientGetCallback;
 import freenet.clients.http.ToadletContext;
 import freenet.clients.http.ToadletContextClosedException;
