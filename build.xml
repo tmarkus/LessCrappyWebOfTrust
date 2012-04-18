@@ -1,6 +1,8 @@
 <?xml version="1.0"?>
 
 <project name="stb" default="dist" basedir=".">
+	<property file="override.properties" />
+
 	<property name="src" location="src"/>
 	<property name="build" location="build"/>
 	<property name="lib" location="lib"/>
