@@ -47,7 +47,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	private H2GraphFactory gf;
 	private RequestScheduler rs;
 
-	public boolean isRunning = true;
+	public volatile boolean isRunning = true;
 	private FCPInterface fpi; 
 	private final static Logger LOGGER = Logger.getLogger(WebOfTrust.class.getName());
 
