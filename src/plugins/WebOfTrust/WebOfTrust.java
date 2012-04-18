@@ -117,7 +117,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		toadlets.add(new IdenticonController(this,
 				pr.getHLSimpleClient(),
 				"",
-				basePath+"/GetIdenticon", gf.getGraph()));
+				basePath+"/GetIdenticon"));
 		
 		toadlets.add(new IdentityManagement(this,
 				pr.getHLSimpleClient(),
@@ -127,7 +127,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		toadlets.add(new ShowIdentityController(this,
 				pr.getHLSimpleClient(),
 				"/staticfiles/html/showIdentity.html",
-				basePath+"/ShowIdentity", gf.getGraph()));
+				basePath+"/ShowIdentity", gf));
 
 		for(Toadlet toadlet : toadlets)
 		{
