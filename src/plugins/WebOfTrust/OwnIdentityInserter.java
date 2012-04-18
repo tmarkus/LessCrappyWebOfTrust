@@ -29,6 +29,8 @@ import plugins.WebOfTrust.datamodel.IEdge;
 import plugins.WebOfTrust.datamodel.IVertex;
 import thomasmarkus.nl.freenet.graphdb.Edge;
 import thomasmarkus.nl.freenet.graphdb.H2Graph;
+import thomasmarkus.nl.freenet.graphdb.H2GraphFactory;
+
 import javax.xml.parsers.DocumentBuilderFactory;
 
 import org.w3c.dom.DOMImplementation;
@@ -53,14 +55,14 @@ import freenet.support.api.Bucket;
 
 public class OwnIdentityInserter implements Runnable, ClientPutCallback {
 
-	private H2Graph graph;
+	private H2GraphFactory gf;
 	private String ownID;
 	private HighLevelSimpleClient hl;
 	private WebOfTrust wot;
 	
-	public OwnIdentityInserter(H2Graph graph, String ownID, HighLevelSimpleClient hl, WebOfTrust wot)
+	public OwnIdentityInserter(H2GraphFactory gf, String ownID, HighLevelSimpleClient hl, WebOfTrust wot)
 	{
-		this.graph = graph;
+		this.gf = gf;
 		this.ownID = ownID;
 		this.hl = hl;
 		this.wot = wot;
@@ -69,6 +71,8 @@ public class OwnIdentityInserter implements Runnable, ClientPutCallback {
 	@Override
 	public void run() {
 		try {
+			H2Graph graph = gf.getGraph();
+			
 			//get all the properties of this identity from the graph
 			long own_vertex = graph.getVertexByPropertyValue(IVertex.ID, ownID).get(0);
 			Map<String, List<String>> props = graph.getVertexProperties(own_vertex);
@@ -76,9 +80,9 @@ public class OwnIdentityInserter implements Runnable, ClientPutCallback {
 			if (!props.containsKey(IVertex.DONT_INSERT)) //identity should have some minimal amount of data...
 			{
 				//create the bucket
-				String xml = createXML(own_vertex, null);
+				String xml = createXML(graph, own_vertex, null);
 				Bucket bucket = wot.getPR().getNode().clientCore.persistentTempBucketFactory.makeBucket(xml.length());
-				createXML(own_vertex, bucket);
+				createXML(graph, own_vertex, bucket);
 				bucket.setReadOnly();
 
 				//create XML document
@@ -93,7 +97,7 @@ public class OwnIdentityInserter implements Runnable, ClientPutCallback {
 				//insert the damn thing
 				String old_hash = "";
 				if (props.containsKey(IVertex.HASH))	old_hash = props.get(IVertex.HASH).get(0);
-				String new_hash = calculateIdentityHash(own_vertex);
+				String new_hash = calculateIdentityHash(graph, own_vertex);
 				
 				//panic check for insertURI inclusion...
 				if (xml.contains(IVertex.INSERT_URI))
@@ -150,6 +154,7 @@ public class OwnIdentityInserter implements Runnable, ClientPutCallback {
 		
 		//update the insert and request uris in the database
 		try {
+			H2Graph graph = gf.getGraph();
 			List<Long> own_vertices = graph.getVertexByPropertyValue(IVertex.ID, ownID);
 
 			for(long own_vertex : own_vertices)
@@ -165,7 +170,7 @@ public class OwnIdentityInserter implements Runnable, ClientPutCallback {
 				//TODO: update the insert URI? 
 				
 				//update the hash value after these updates (otherwise infinite insert
-				graph.updateVertexProperty(own_vertex, IVertex.HASH, calculateIdentityHash(own_vertex));
+				graph.updateVertexProperty(own_vertex, IVertex.HASH, calculateIdentityHash(graph, own_vertex));
 			}
 		} catch (SQLException e) {
 			e.printStackTrace();
@@ -177,7 +182,7 @@ public class OwnIdentityInserter implements Runnable, ClientPutCallback {
 	}
 	
 	
-	private String calculateIdentityHash(long own_vertex_id) throws SQLException, NoSuchAlgorithmException
+	private static String calculateIdentityHash(H2Graph graph, long own_vertex_id) throws SQLException, NoSuchAlgorithmException
 	{
 		Map<String, List<String>> props = graph.getVertexProperties(own_vertex_id);
 		List<Edge> edges = graph.getOutgoingEdges(own_vertex_id);
@@ -230,7 +235,7 @@ public class OwnIdentityInserter implements Runnable, ClientPutCallback {
 	 * @throws IOException 
 	 */
 	
-	private String createXML(long own_identity, Bucket bucket) throws SQLException, TransformerFactoryConfigurationError, ParserConfigurationException, TransformerException, IOException
+	private static String createXML(H2Graph graph, long own_identity, Bucket bucket) throws SQLException, TransformerFactoryConfigurationError, ParserConfigurationException, TransformerException, IOException
 	{
 
 		DocumentBuilderFactory xmlFactory = DocumentBuilderFactory.newInstance();

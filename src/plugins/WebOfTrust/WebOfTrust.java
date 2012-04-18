@@ -9,7 +9,7 @@ import plugins.WebOfTrust.controller.IdenticonController;
 import plugins.WebOfTrust.controller.OverviewController;
 import plugins.WebOfTrust.controller.IdentityManagement;
 import plugins.WebOfTrust.controller.ShowIdentityController;
-import thomasmarkus.nl.freenet.graphdb.H2Graph;
+import thomasmarkus.nl.freenet.graphdb.H2GraphFactory;
 import freenet.client.FetchContext;
 import freenet.client.HighLevelSimpleClient;
 import freenet.clients.http.Toadlet;
@@ -44,14 +44,12 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	private WebInterface webInterface;
 	private final List<FileReaderToadlet> toadlets = new ArrayList<FileReaderToadlet>();
 	private HighLevelSimpleClient hl;
-	private H2Graph graph;
+	private H2GraphFactory gf;
 	private RequestScheduler rs;
 
 	public boolean isRunning = true;
 	private FCPInterface fpi; 
 	private final static Logger LOGGER = Logger.getLogger(WebOfTrust.class.getName());
-
-
 
 	public HighLevelSimpleClient getHL()
 	{
@@ -74,13 +72,13 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 
 		try {
 			//init graph
-			this.graph = new H2Graph(db_path);	
+			this.gf = new H2GraphFactory(db_path);	
 
 			//setup fcp plugin handler
-			this.fpi = new FCPInterface(graph);
+			this.fpi = new FCPInterface(gf.getGraph());
 
 			//setup requestscheduler
-			this.rs = new RequestScheduler(this, graph, hl);
+			this.rs = new RequestScheduler(this, gf, hl);
 			new Thread(rs). start ( );
 		} 
 		catch (ClassNotFoundException e) {
@@ -89,12 +87,16 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 			e.printStackTrace();
 		}		
 		//setup web interface
-		setupWebinterface();
+		try {
+			setupWebinterface();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
 
 		LOGGER.info("Completed initialization.");
 	}
 
-	private void setupWebinterface()
+	private void setupWebinterface() throws SQLException
 	{
 		LOGGER.info("Setting up webinterface");
 		PluginContext pluginContext = new PluginContext(pr);
@@ -104,28 +106,28 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		toadlets.add(new OverviewController(this,
 				pr.getHLSimpleClient(),
 				"/staticfiles/html/manage.html",
-				basePath+"/", graph));
+				basePath+"/", gf.getGraph()));
 
 		toadlets.add(new OverviewController(this,
 				pr.getHLSimpleClient(),
 				"/staticfiles/html/manage.html",
-				basePath, graph));
+				basePath, gf.getGraph()));
 
 		//Identicons
 		toadlets.add(new IdenticonController(this,
 				pr.getHLSimpleClient(),
 				"",
-				basePath+"/GetIdenticon", graph));
+				basePath+"/GetIdenticon", gf.getGraph()));
 		
 		toadlets.add(new IdentityManagement(this,
 				pr.getHLSimpleClient(),
 				"/staticfiles/html/restore.html",
-				basePath+"/restore", graph));
+				basePath+"/restore", gf));
 
 		toadlets.add(new ShowIdentityController(this,
 				pr.getHLSimpleClient(),
 				"/staticfiles/html/showIdentity.html",
-				basePath+"/ShowIdentity", graph));
+				basePath+"/ShowIdentity", gf.getGraph()));
 
 		for(Toadlet toadlet : toadlets)
 		{
@@ -150,13 +152,9 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		if (webInterface != null) webInterface.kill();
 
 		//kill the database
-		if( graph != null ) {
+		if( gf != null ) {
 			System.out.println("Killing the graph database");
-			try {
-				graph.shutdown();
-			} catch (SQLException e) {
-				e.printStackTrace();
-			}
+			gf.stop();
 			System.out.println("done");
 		}
 	}

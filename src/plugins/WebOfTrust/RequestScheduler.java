@@ -16,6 +16,7 @@ import plugins.WebOfTrust.datamodel.IVertex;
 
 import thomasmarkus.nl.freenet.graphdb.EdgeWithProperty;
 import thomasmarkus.nl.freenet.graphdb.H2Graph;
+import thomasmarkus.nl.freenet.graphdb.H2GraphFactory;
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
 import freenet.client.HighLevelSimpleClient;
@@ -33,7 +34,7 @@ public class RequestScheduler implements Runnable {
 	private static final long MINIMAL_SLEEP_TIME = (10 * 1000);
 
 	private WebOfTrust main;
-	private final H2Graph graph;
+	private final H2GraphFactory gf;
 	private HighLevelSimpleClient hl;
 
 	private List<ClientGetter> inFlight = new ArrayList<ClientGetter>();
@@ -44,14 +45,14 @@ public class RequestScheduler implements Runnable {
 	private ClientGetCallback cc;
 	private FetchContext fc;
 
-	public RequestScheduler(WebOfTrust main, H2Graph graph, HighLevelSimpleClient hl)
+	public RequestScheduler(WebOfTrust main, H2GraphFactory gf, HighLevelSimpleClient hl)
 	{
 		this.main = main;
-		this.graph = graph;
+		this.gf = gf;
 		this.hl = hl;
 
 		this.rc = new IdentityUpdaterRequestClient();
-		this.cc = new IdentityUpdater(this, graph, hl, false);
+		this.cc = new IdentityUpdater(this, gf, hl, false);
 		this.fc = hl.getFetchContext();
 		this.fc.followRedirects = true;
 	}
@@ -61,22 +62,30 @@ public class RequestScheduler implements Runnable {
 	{
 		while(main.isRunning)
 		{
-			//clear requests from the backlog
-			clearBacklog();
+			try
+			{
+				//clear requests from the backlog
+				clearBacklog();
 
-			//cleanup finished requests... (which did not call success / failure :S, probably a Freenet bug... )
-			cleanup();
+				//cleanup finished requests... (which did not call success / failure :S, probably a Freenet bug... )
+				cleanup();
 
-			//schedule random identity updates if there is no other activity at the time
-			maintenance();
+				//schedule random identity updates if there is no other activity at the time
+				maintenance();
 
-			//check if our own identities need to be inserted and do it if needed
-			insertOwnIdentities();
+				//check if our own identities need to be inserted and do it if needed
+				insertOwnIdentities();
 
-			//chill out a bit
-			try {
-				Thread.sleep(MINIMAL_SLEEP_TIME);
-			} catch (InterruptedException e) {
+				//chill out a bit
+				try {
+					Thread.sleep(MINIMAL_SLEEP_TIME);
+				} catch (InterruptedException e) {
+				}
+			}
+			catch(Exception e)
+			{
+				System.out.println("An exception was thrown in the requestScheduler. Please report with sufficient details!");
+				e.printStackTrace();
 			}
 		}
 		
@@ -92,6 +101,7 @@ public class RequestScheduler implements Runnable {
 
 		try
 		{
+			H2Graph graph = gf.getGraph();
 			List<Long> own_identities = graph.getVertexByPropertyValue(IVertex.OWN_IDENTITY, "true");
 			for(long own_identity : own_identities)
 			{
@@ -106,7 +116,7 @@ public class RequestScheduler implements Runnable {
 				if ((System.currentTimeMillis() - MAX_TIME_SINCE_LAST_INSERT) > timestamp)
 				{
 					final String id = props.get(IVertex.ID).get(0);
-					OwnIdentityInserter ii = new OwnIdentityInserter(graph, id, hl, main);
+					OwnIdentityInserter ii = new OwnIdentityInserter(gf, id, hl, main);
 					ii.run();
 				}
 			}
@@ -152,6 +162,7 @@ public class RequestScheduler implements Runnable {
 		{
 			try
 			{
+				H2Graph graph = gf.getGraph();
 				double random = ran.nextDouble();
 				if (random < PROBABILITY_OF_FETCHING_DIRECTLY_TRUSTED_IDENTITY) //fetch random directly connected identity
 				{

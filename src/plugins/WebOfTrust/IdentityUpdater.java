@@ -16,6 +16,7 @@ import plugins.WebOfTrust.util.Utils;
 
 import thomasmarkus.nl.freenet.graphdb.Edge;
 import thomasmarkus.nl.freenet.graphdb.H2Graph;
+import thomasmarkus.nl.freenet.graphdb.H2GraphFactory;
 
 import com.db4o.ObjectContainer;
 
@@ -28,13 +29,13 @@ import freenet.keys.FreenetURI;
 
 public class IdentityUpdater implements ClientGetCallback{
 
-	private final H2Graph graph;
+	private final H2GraphFactory gf;
 	private final boolean isOwnIdentity;
 	private RequestScheduler rs;
 
-	public IdentityUpdater(RequestScheduler rs, H2Graph graph, HighLevelSimpleClient hl, boolean isOwnIdentity)
+	public IdentityUpdater(RequestScheduler rs, H2GraphFactory gf, HighLevelSimpleClient hl, boolean isOwnIdentity)
 	{
-		this.graph = graph;
+		this.gf = gf;
 		this.isOwnIdentity = isOwnIdentity;
 		this.rs = rs;
 	}
@@ -79,23 +80,24 @@ public class IdentityUpdater implements ClientGetCallback{
 	{
 		try
 		{
+			H2Graph graph = gf.getGraph();
 			Node ownIdentity = doc.getElementsByTagName("Identity").item(0);
 			final String identityName = ownIdentity.getAttributes().getNamedItem("Name").getNodeValue();
 			final String publishesTrustList = ownIdentity.getAttributes().getNamedItem("PublishesTrustList").getNodeValue();
 			long current_edition = freenetURI.getEdition();
 
 			//setup identiy and possibly store it in the graphstore
-			final long identity = getIdentity(freenetURI, current_edition);
+			final long identity = getIdentity(graph, freenetURI, current_edition);
 
-			if (current_edition > getCurrentStoredEdition(identity)) //what we are fetching should be newer, if not, don't even bother updating everything
+			if (current_edition > getCurrentStoredEdition(graph, identity)) //what we are fetching should be newer, if not, don't even bother updating everything
 			{
-				updateKeyEditions(freenetURI, current_edition, identity); //always update the keys no matter what
+				updateKeyEditions(graph, freenetURI, current_edition, identity); //always update the keys no matter what
 
 				//always update:
 				graph.updateVertexProperty(identity, IVertex.NAME, identityName);
 				graph.updateVertexProperty(identity, IVertex.PUBLISHES_TRUSTLIST, publishesTrustList);
-				SetContexts(identity, doc.getElementsByTagName("Context"));
-				SetProperties(identity, doc.getElementsByTagName("Property"));
+				SetContexts(graph, identity, doc.getElementsByTagName("Context"));
+				SetProperties(graph, identity, doc.getElementsByTagName("Property"));
 				graph.updateVertexProperty(identity, IVertex.LAST_FETCHED, Long.toString(System.currentTimeMillis()));
 
 
@@ -176,7 +178,7 @@ public class IdentityUpdater implements ClientGetCallback{
 		return peer;
 	}
 
-	private void SetProperties(long identity, NodeList propertiesXML) throws SQLException 
+	private static void SetProperties(H2Graph graph, long identity, NodeList propertiesXML) throws SQLException 
 	{
 		//add all the (new) properties
 		for(int i=0; i < propertiesXML.getLength(); i++)
@@ -190,7 +192,7 @@ public class IdentityUpdater implements ClientGetCallback{
 		}
 	}
 
-	private long getIdentity(FreenetURI identityKey, long current_edition) throws SQLException {
+	private long getIdentity(H2Graph graph, FreenetURI identityKey, long current_edition) throws SQLException {
 
 		final String identityID = Utils.getIDFromKey(identityKey);
 		final List<Long> matches = graph.getVertexByPropertyValue(IVertex.ID, identityID);
@@ -213,7 +215,7 @@ public class IdentityUpdater implements ClientGetCallback{
 		return identity;
 	}
 
-	private long getCurrentStoredEdition(long vertex_id) throws SQLException
+	private static long getCurrentStoredEdition(H2Graph graph, long vertex_id) throws SQLException
 	{
 		Map<String, List<String>> props = graph.getVertexProperties(vertex_id);
 
@@ -227,9 +229,9 @@ public class IdentityUpdater implements ClientGetCallback{
 		}
 	}
 
-	private void updateKeyEditions(FreenetURI identityKey, long current_edition, long identity) throws SQLException 
+	private static void updateKeyEditions(H2Graph graph, FreenetURI identityKey, long current_edition, long identity) throws SQLException 
 	{
-		if (current_edition > getCurrentStoredEdition(identity))
+		if (current_edition > getCurrentStoredEdition(graph, identity))
 		{
 			Map<String, List<String>> props = graph.getVertexProperties(identity);
 			graph.updateVertexProperty(identity, IVertex.EDITION, Long.toString(current_edition));	
@@ -251,7 +253,7 @@ public class IdentityUpdater implements ClientGetCallback{
 		}
 	}
 
-	private void SetContexts(long identity, NodeList contextsXML) throws SQLException 
+	private static void SetContexts(H2Graph graph, long identity, NodeList contextsXML) throws SQLException 
 	{
 		//remove all old contexts
 		graph.removeVertexProperty(identity, IVertex.CONTEXT_NAME);
