@@ -174,6 +174,7 @@ public class IdentityUpdater implements ClientGetCallback{
 		}
 		else  {	//or create a new one
 			peer = graph.createVertex();
+			graph.updateVertexProperty(peer, IVertex.REQUEST_URI, peerIdentityKey.toASCIIString());
 			graph.updateVertexProperty(peer, IVertex.ID, Utils.getIDFromKey(peerIdentityKey));
 
 			//default to edition 0, because we want to ensure fetching the identity
