@@ -233,11 +233,14 @@ public class FCPInterface {
 						sfsReply.putOverwrite("Score", "null");
 					}
 
-					int i=0;
-					for(String context : props.get("contextName"))
+					if(props.containsKey(IVertex.CONTEXT_NAME))
 					{
-						sfsReply.putOverwrite("Context" + i, context);
-						i += 1;
+						int contextCounter=0;
+						for(String context : props.get("contextName"))
+						{
+							sfsReply.putOverwrite("Context" + contextCounter, context);
+							contextCounter += 1;
+						}
 					}
 
 					int propertiesCounter = 0;
@@ -253,10 +256,10 @@ public class FCPInterface {
 				final String propertyName = sfs.get("Property");
 
 				List<Long> vertices = graph.getVertexByPropertyValue("id", identityID);
-				Map<java.lang.String, List<java.lang.String>> props = graph.getVertexProperties(vertices.get(0));
+				final Map<String, List<String>> props = graph.getVertexProperties(vertices.get(0));
 
 				sfsReply.putSingle("Message", "PropertyValue");
-				sfsReply.putSingle("Property", props.get(propertyName).get(0));
+				if (props.containsKey(propertyName)) sfsReply.putSingle("Property", props.get(propertyName).get(0));
 			}
 			else if (sfs.get("Message").equals("SetProperty"))
 			{
