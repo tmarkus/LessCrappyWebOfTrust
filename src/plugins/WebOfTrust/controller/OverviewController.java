@@ -51,6 +51,7 @@ public class OverviewController extends freenet.plugin.web.HTMLFileReaderToadlet
 			list.appendChild(doc.createElement("li").text("Number of trust relations: " + count_edges));
 			list.appendChild(doc.createElement("li").text("Number of requests in flight currently: " + main.getRequestScheduler().getInFlightSize()));
 			list.appendChild(doc.createElement("li").text("Backlog: " + main.getRequestScheduler().getBacklogSize()));
+			list.appendChild(doc.createElement("li").text("Number of active db connections: " + gf.getActiveConnections()));
 			
 			stats_div.appendChild(list);
 
@@ -73,19 +74,15 @@ public class OverviewController extends freenet.plugin.web.HTMLFileReaderToadlet
 			Element inflight = doc.createElement("ol");
 			
 			synchronized (main.getRequestScheduler().getInFlight()) {
-
-			for(String in : main.getRequestScheduler().getInFlight())
-			{
-				inflight.appendChild(doc.createElement("li").text(in));
-			}
+				for(String in : main.getRequestScheduler().getInFlight())
+				{
+					inflight.appendChild(doc.createElement("li").text(in));
+				}
 			}
 			
 			stats_div.appendChild(inflight);
 			
 			writeReply(ctx, 200, "text/html", "content", doc.html());
-			
-			//ScoreComputer sc = new ScoreComputer(graph);
-			//sc.compute("zALLY9pbzMNicVn280HYqS2UkK0ZfX5LiTcln-cLrMU,GoLpCcShPzp3lbQSVClSzY7CH9c9HTw0qRLifBYqywY,AQACAAE");
 		}
 		catch(Exception ex)
 		{

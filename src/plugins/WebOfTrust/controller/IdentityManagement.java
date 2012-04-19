@@ -89,12 +89,11 @@ public class IdentityManagement extends freenet.plugin.web.HTMLFileReaderToadlet
 		}
 		finally
 		{
-			if (graph != null)
-				try {
-					graph.close();
-				} catch (SQLException e) {
-					e.printStackTrace();
-				}
+			try {
+				graph.close();
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
 		}
 		
 	    writeReply(ctx, 200, "text/html", "content", doc.html());
