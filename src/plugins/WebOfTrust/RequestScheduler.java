@@ -26,7 +26,7 @@ import freenet.keys.FreenetURI;
 
 public class RequestScheduler implements Runnable {
 
-	private static final int MAX_REQUESTS = 10; 
+	public static final int MAX_REQUESTS = 10; 
 	private static final int MAX_MAINTENANCE_REQUESTS = 1; 
 	private static final double PROBABILITY_OF_FETCHING_DIRECTLY_TRUSTED_IDENTITY = 0.7;
 
@@ -87,6 +87,12 @@ public class RequestScheduler implements Runnable {
 				System.out.println("An exception was thrown in the requestScheduler. Please report with sufficient details!");
 				e.printStackTrace();
 			}
+		}
+		
+		//clear backlog
+		synchronized(backlog)
+		{
+			backlog.clear();
 		}
 		
 		//cancel all running requests

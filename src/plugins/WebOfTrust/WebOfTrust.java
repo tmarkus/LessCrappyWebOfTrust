@@ -72,7 +72,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 
 		try {
 			//init graph
-			this.gf = new H2GraphFactory(db_path);	
+			this.gf = new H2GraphFactory(db_path, RequestScheduler.MAX_REQUESTS*3);	
 
 			//setup fcp plugin handler
 			this.fpi = new FCPInterface(gf);
