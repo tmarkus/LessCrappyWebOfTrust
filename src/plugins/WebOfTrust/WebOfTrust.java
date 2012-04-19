@@ -156,10 +156,17 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		if (webInterface != null) webInterface.kill();
 
 		//kill the database
-		if( gf != null ) {
-			System.out.println("Killing the graph database");
-			gf.stop();
-			System.out.println("done");
+		try
+		{
+			if( gf != null ) {
+				System.out.println("Killing the graph database");
+				gf.stop();
+				System.out.println("done");
+			}
+		}
+		catch(SQLException e)
+		{
+			e.printStackTrace();
 		}
 	}
 

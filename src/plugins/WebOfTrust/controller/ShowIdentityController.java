@@ -97,9 +97,10 @@ public class ShowIdentityController extends freenet.plugin.web.HTMLFileReaderToa
 					else												peerName = "(Not yet downloaded)";
 					String peerID = peer_identity_props.get(IVertex.ID).get(0);
 
+					Element a = doc.createElement("a").attr("href", "/"+WebOfTrust.namespace+"/ShowIdentity?id="+peerID).text(peerName+" ("+peerID+")");
 					tableTrust.appendChild(doc.createElement("tr")
 							.appendChild(doc.createElement("td").text(Integer.toString(i)))
-							.appendChild(doc.createElement("td").text(peerName+" ("+peerID+")"))
+							.appendChild(doc.createElement("td").appendChild(a))
 							.appendChild(doc.createElement("td").text(trustValue))
 							.appendChild(doc.createElement("td").text(trustComment))
 							);
@@ -131,9 +132,10 @@ public class ShowIdentityController extends freenet.plugin.web.HTMLFileReaderToa
 				String peerName = peer_identity_props.get("name").get(0);
 				String peerID = peer_identity_props.get("id").get(0);
 				
+				Element a = doc.createElement("a").attr("href", "/"+WebOfTrust.namespace+"/ShowIdentity?id="+peerID).text(peerName+" ("+peerID+")");
 				tableTrusters.appendChild(doc.createElement("tr")
 						.appendChild(doc.createElement("td").text(Integer.toString(i)))
-						.appendChild(doc.createElement("td").text(peerName+" ("+peerID+")"))
+						.appendChild(doc.createElement("td").appendChild(a))
 						.appendChild(doc.createElement("td").text(trustValue))
 						.appendChild(doc.createElement("td").text(trustComment))
 						);
