@@ -17,7 +17,7 @@
 
 		<tstamp/>
 
-		<javac srcdir="${src}" destdir="${build}" debug="on" optimize="on" source="1.6">
+		<javac srcdir="${src}" destdir="${build}" debug="on" optimize="on" source="1.6" target="1.6" encoding="UTF-8">
 			<sourcepath>
 				<pathelement path="${build}"/>
 			</sourcepath>
