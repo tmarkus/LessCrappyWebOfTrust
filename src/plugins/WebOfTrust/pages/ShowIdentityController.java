@@ -20,6 +20,7 @@ import thomasmarkus.nl.freenet.graphdb.Edge;
 import thomasmarkus.nl.freenet.graphdb.H2Graph;
 import thomasmarkus.nl.freenet.graphdb.H2GraphFactory;
 
+import freenet.client.FetchException;
 import freenet.client.HighLevelSimpleClient;
 import freenet.clients.http.ToadletContext;
 import freenet.clients.http.ToadletContextClosedException;
@@ -47,7 +48,7 @@ public class ShowIdentityController extends freenet.plugin.web.HTMLFileReaderToa
 			Element info_div = doc.select("#info").first();
 
 			//get the query param
-			String id = request.getParam("id");
+			final String id = request.getParam("id");
 			
 			//get the identity vertex & properties
 			Long id_vertex = graph.getVertexByPropertyValue("id", id).get(0);
@@ -57,7 +58,10 @@ public class ShowIdentityController extends freenet.plugin.web.HTMLFileReaderToa
 			SortedSet<String> sortedKeys = new TreeSet<String>(props.keySet());
 			
 			Element table = doc.createElement("table");
-			table.appendChild(doc.createElement("tr").appendChild(doc.createElement("th").text("Name")).appendChild(doc.createElement("th").text("Value")));
+			table.appendChild(
+								doc.createElement("tr").appendChild(
+										doc.createElement("th").text("Name")).appendChild(
+										doc.createElement("th").text("Value")));
 			
 			//generic properties associated with this identity in the graph store
 			for(String key : sortedKeys)
@@ -79,6 +83,7 @@ public class ShowIdentityController extends freenet.plugin.web.HTMLFileReaderToa
 									.appendChild(doc.createElement("th").text("identity"))
 									.appendChild(doc.createElement("th").text("Trust"))
 									.appendChild(doc.createElement("th").text("Comment"))
+									.appendChild(doc.createElement("th").text("action"))
 									);
 			
 			int i = 1;
@@ -98,12 +103,25 @@ public class ShowIdentityController extends freenet.plugin.web.HTMLFileReaderToa
 					String peerID = peer_identity_props.get(IVertex.ID).get(0);
 
 					Element a = doc.createElement("a").attr("href", "/"+WebOfTrust.namespace+"/ShowIdentity?id="+peerID).text(peerName+" ("+peerID+")");
-					tableTrust.appendChild(doc.createElement("tr")
+					Element tr = doc.createElement("tr")
 							.appendChild(doc.createElement("td").text(Integer.toString(i)))
 							.appendChild(doc.createElement("td").appendChild(a))
 							.appendChild(doc.createElement("td").text(trustValue))
-							.appendChild(doc.createElement("td").text(trustComment))
-							);
+							.appendChild(doc.createElement("td").text(trustComment));
+
+					//identity we are displaying is a local one, thus display additional options!
+					if (props.containsKey(IVertex.OWN_IDENTITY))
+					{
+						Element delete_edge_form = doc.createElement("form");
+						delete_edge_form.attr("action", "/"+WebOfTrust.namespace+"/ShowIdentity?id="+id);
+						delete_edge_form.attr("method", "post");
+						delete_edge_form.appendChild(doc.createElement("input").attr("type", "submit").attr("value", "Remove"));
+						delete_edge_form.appendChild(doc.createElement("input").attr("type", "hidden").attr("value", "remove_edge").attr("name", "action"));
+						delete_edge_form.appendChild(doc.createElement("input").attr("type", "hidden").attr("value", Long.toString(edge.id)).attr("name", "edge_id"));
+						tr.appendChild(doc.createElement("td").appendChild(delete_edge_form));
+					}
+					
+					tableTrust.appendChild(tr);
 					i += 1;
 				}
 			}
@@ -161,6 +179,27 @@ public class ShowIdentityController extends freenet.plugin.web.HTMLFileReaderToa
 		}
 	}
 
+	
+	public void handleMethodPOST(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException, SQLException, FetchException
+	{
+		final String action = request.getPartAsStringFailsafe("action", 1000);
+		
+		if (action.equals("remove_edge"))
+		{
+			final long edge_id = Long.parseLong(request.getPartAsStringFailsafe("edge_id", 1000));
+			H2Graph graph = gf.getGraph();
+			try
+			{
+				graph.removeEdge(edge_id);
+			}
+			finally
+			{
+				graph.close();
+			}
+		}
+		handleMethodGET(uri, request, ctx);
+	}
+	
 	@Override
 	public void terminate() throws SQLException {
 	}
