@@ -102,18 +102,19 @@ public class ShowIdentityController extends freenet.plugin.web.HTMLFileReaderToa
 					else												peerName = "(Not yet downloaded)";
 					String peerID = peer_identity_props.get(IVertex.ID).get(0);
 
-					Element a = doc.createElement("a").attr("href", "/"+WebOfTrust.namespace+"/ShowIdentity?id="+peerID).text(peerName+" ("+peerID+")");
+					Element a = doc.createElement("a").attr("href", "/"+WebOfTrust.namespace+"/ShowIdentity?id="+peerID).text(peerName+" ("+peerID+")").attr("name", Integer.toString(i));
 					Element tr = doc.createElement("tr")
 							.appendChild(doc.createElement("td").text(Integer.toString(i)))
 							.appendChild(doc.createElement("td").appendChild(a))
 							.appendChild(doc.createElement("td").text(trustValue))
 							.appendChild(doc.createElement("td").text(trustComment));
-
+					tableTrust.appendChild(tr);
+					
 					//identity we are displaying is a local one, thus display additional options!
 					if (props.containsKey(IVertex.OWN_IDENTITY))
 					{
 						Element delete_edge_form = doc.createElement("form");
-						delete_edge_form.attr("action", "/"+WebOfTrust.namespace+"/ShowIdentity?id="+id);
+						delete_edge_form.attr("action", "/"+WebOfTrust.namespace+"/ShowIdentity?id="+id + "#"+(i-1));
 						delete_edge_form.attr("method", "post");
 						delete_edge_form.appendChild(doc.createElement("input").attr("type", "submit").attr("value", "Remove"));
 						delete_edge_form.appendChild(doc.createElement("input").attr("type", "hidden").attr("value", "remove_edge").attr("name", "action"));
@@ -121,7 +122,6 @@ public class ShowIdentityController extends freenet.plugin.web.HTMLFileReaderToa
 						tr.appendChild(doc.createElement("td").appendChild(delete_edge_form));
 					}
 					
-					tableTrust.appendChild(tr);
 					i += 1;
 				}
 			}
