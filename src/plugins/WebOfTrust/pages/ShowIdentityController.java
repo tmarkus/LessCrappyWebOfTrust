@@ -51,7 +51,7 @@ public class ShowIdentityController extends freenet.plugin.web.HTMLFileReaderToa
 			final String id = request.getParam("id");
 			
 			//get the identity vertex & properties
-			Long id_vertex = graph.getVertexByPropertyValue("id", id).get(0);
+			Long id_vertex = graph.getVertexByPropertyValue(IVertex.ID, id).get(0);
 			Map<String, List<String>> props = graph.getVertexProperties(id_vertex);
 			
 			info_div.append("<h1>Identity properties</h1>");
