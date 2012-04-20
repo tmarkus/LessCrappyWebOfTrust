@@ -5,10 +5,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
 
-import plugins.WebOfTrust.controller.IdenticonController;
-import plugins.WebOfTrust.controller.OverviewController;
-import plugins.WebOfTrust.controller.IdentityManagement;
-import plugins.WebOfTrust.controller.ShowIdentityController;
+import plugins.WebOfTrust.pages.IdenticonController;
+import plugins.WebOfTrust.pages.IdentityManagement;
+import plugins.WebOfTrust.pages.OverviewController;
+import plugins.WebOfTrust.pages.ShowIdentityController;
 import thomasmarkus.nl.freenet.graphdb.H2GraphFactory;
 import freenet.client.FetchContext;
 import freenet.client.HighLevelSimpleClient;

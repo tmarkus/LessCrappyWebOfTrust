@@ -1,7 +1,22 @@
-- make identities into a link that you can click (go to showIdentity page)
+CHeck reason for these failures:
+INFO   | jvm 12   | 2012/04/19 22:13:30 | INSERT INTO edge_properties (edge_id, name, value, value_number) VALUES (?, ?, ?, ?) [22001-164]
+INFO   | jvm 12   | 2012/04/19 22:13:30 |       at org.h2.message.DbException.getJdbcSQLException(DbException.java:329)
+INFO   | jvm 12   | 2012/04/19 22:13:30 |       at org.h2.message.DbException.get(DbException.java:169)
+INFO   | jvm 12   | 2012/04/19 22:13:30 |       at org.h2.table.Column.validateConvertUpdateSequence(Column.java:315)
+INFO   | jvm 12   | 2012/04/19 22:13:30 |       at org.h2.table.Table.validateConvertUpdateSequence(Table.java:680)
+INFO   | jvm 12   | 2012/04/19 22:13:30 |       at org.h2.command.dml.Insert.insertRows(Insert.java:120)
+INFO   | jvm 12   | 2012/04/19 22:13:30 |       at org.h2.command.dml.Insert.update(Insert.java:84)
+INFO   | jvm 12   | 2012/04/19 22:13:30 |       at org.h2.command.CommandContainer.update(CommandContainer.java:73)
+INFO   | jvm 12   | 2012/04/19 22:13:30 |       at org.h2.command.Command.executeUpdate(Command.java:226)
+INFO   | jvm 12   | 2012/04/19 22:13:30 |       at org.h2.jdbc.JdbcPreparedStatement.execute(JdbcPreparedStatement.java:181)
+INFO   | jvm 12   | 2012/04/19 22:13:30 |       at thomasmarkus.nl.freenet.graphdb.H2DB.insertEdgeProperty(H2DB.java:189)
+INFO   | jvm 12   | 2012/04/19 22:13:30 |       at thomasmarkus.nl.freenet.graphdb.H2DB.updateEdgeProperty(H2DB.java:171)
+INFO   | jvm 12   | 2012/04/19 22:13:30 |       at thomasmarkus.nl.freenet.graphdb.H2Graph.updateEdgeProperty(H2Graph.java:86)
+
+
 - support deleting the link to an identity entirely
 - support deleting properties from your own profile at will
-- support changing the trust of an identity via the WoT
+- support changing the trust of an identity via the WoT web ui
 - Beautify HTML pages for various actions
 - create page where you can search for an identity and go to its identity info page (listing all identities is CRAZY)
 - check whether we can output evil HTML? (this would be bad)
