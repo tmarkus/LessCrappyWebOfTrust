@@ -106,7 +106,7 @@ public class FCPInterface {
 				final boolean includeTrustValue = sfs.getBoolean("WantTrustValues", false);
 
 				int select = 0;
-				if (selection.equals("+")) select = 0;
+				if (selection.equals("+")) select = -1;
 				else if (selection.equals("0")) select = -1;
 
 				Set<String> treeOwnerList = new HashSet<String>(); 

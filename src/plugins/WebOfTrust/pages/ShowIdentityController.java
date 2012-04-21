@@ -73,8 +73,42 @@ public class ShowIdentityController extends freenet.plugin.web.HTMLFileReaderToa
 			}
 			info_div.appendChild(table);
 			
+			
+			//allow specifying an updated trust value
+			info_div.append("<h1>Local trust assignments to this identity:</h1>");
+			for(long own_vertex_id : graph.getVertexByPropertyValue(IVertex.OWN_IDENTITY, "true"))
+			{
+				String current_trust_value = "";
+				String current_comment = "";
+				for(Edge edge: graph.getIncomingEdges(id_vertex))
+				{
+					if (edge.vertex_from == own_vertex_id) {
+						current_trust_value = edge.getProperty(IEdge.SCORE);
+						current_comment = edge.getProperty(IEdge.COMMENT);
+					}
+				}
+			
+				Map<String, List<String>> own_props = graph.getVertexProperties(own_vertex_id);
+				
+				Element form = doc.createElement("form").attr("method", "post").attr("action", "/"+WebOfTrust.namespace+"/ShowIdentity?id="+id);
+				Element fieldset = doc.createElement("fieldset");
+				fieldset.appendChild(doc.createElement("legend").text(own_props.get(IVertex.NAME).get(0)));
+				form.appendChild(fieldset);
+				fieldset.appendChild(doc.createElement("input").attr("type", "hidden").attr("name", "action").attr("value", "set_trust"));
+				fieldset.appendChild(doc.createElement("input").attr("type", "hidden").attr("name", "identity_id").attr("value", id));
+				fieldset.appendChild(doc.createElement("input").attr("type", "hidden").attr("name", "own_identity_id").attr("value", own_props.get(IVertex.ID).get(0)));
+				fieldset.appendText("Trust: ");
+				fieldset.appendChild(doc.createElement("input").attr("type", "text").attr("name", "trust_value").attr("value", current_trust_value));
+				fieldset.appendText("Comment: ");
+				fieldset.appendChild(doc.createElement("input").attr("type", "text").attr("name", "trust_comment").attr("value", current_comment));
+				fieldset.appendChild(doc.createElement("input").attr("type", "submit").attr("value", "Update"));
+				
+				info_div.appendChild(form);
+			}
+			
+			
 			//explicit trust relations assigned by this identity
-			info_div.append("<h1>Explicit trust relations set by this identity:</h1>");
+			info_div.append("<h1>Explicit trust relations exposed by this identity:</h1>");
 			List<Edge> edges = graph.getOutgoingEdges(id_vertex);
 			
 			Element tableTrust = doc.createElement("table");
@@ -180,23 +214,47 @@ public class ShowIdentityController extends freenet.plugin.web.HTMLFileReaderToa
 	}
 
 	
-	public void handleMethodPOST(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException, SQLException, FetchException
+	public void handleMethodPOST(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, SQLException, IOException
 	{
 		final String action = request.getPartAsStringFailsafe("action", 1000);
-		
-		if (action.equals("remove_edge"))
+
+		H2Graph graph = gf.getGraph();
+		try
 		{
-			final long edge_id = Long.parseLong(request.getPartAsStringFailsafe("edge_id", 1000));
-			H2Graph graph = gf.getGraph();
-			try
+			if (action.equals("remove_edge"))
 			{
+				final long edge_id = Long.parseLong(request.getPartAsStringFailsafe("edge_id", 1000));
 				graph.removeEdge(edge_id);
 			}
-			finally
+			else if (action.equals("set_trust"))
 			{
-				graph.close();
+				String own_identity = request.getPartAsStringFailsafe("own_identity_id", 1000);
+				String identity = request.getPartAsStringFailsafe("identity_id", 1000);
+				String trustValue = request.getPartAsStringFailsafe("trust_value", 1000);
+				String trustComment = request.getPartAsStringFailsafe("trust_comment", 1000);
+			
+				List<Long> own_vertices = graph.getVertexByPropertyValue(IVertex.ID, own_identity);
+				List<Long> identity_vertices = graph.getVertexByPropertyValue(IVertex.ID, identity);
+				
+				for(long own_vertex : own_vertices)
+				{
+					for(long identity_vertex : identity_vertices)
+					{
+						long edge;
+						try						{ edge = graph.getEdgeByVerticesAndProperty(own_vertex, identity_vertex, IEdge.SCORE); }
+						catch(SQLException e) 	{ edge = graph.addEdge(own_vertex, identity_vertex); }
+
+						graph.updateEdgeProperty(edge, IEdge.SCORE, trustValue);
+						graph.updateEdgeProperty(edge, IEdge.COMMENT, trustComment);
+					}
+				}
 			}
 		}
+		finally
+		{
+			graph.close();
+		}
+
 		handleMethodGET(uri, request, ctx);
 	}
 	
