@@ -188,10 +188,9 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 
 	}
 
-
 	@Override
 	public String getVersion() {
-		return "2012-04-13";
+		return "Hopefully recent enough.";
 	}
 
 
