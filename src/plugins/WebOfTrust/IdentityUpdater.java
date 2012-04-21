@@ -122,13 +122,22 @@ public class IdentityUpdater implements ClientGetCallback{
 							final NamedNodeMap attr = element.getAttributes();
 							final FreenetURI peerIdentityKey = new FreenetURI(attr.getNamedItem("Identity").getNodeValue());
 							final String trustComment = attr.getNamedItem("Comment").getNodeValue();
-
+							final Byte trustValue = Byte.parseByte(attr.getNamedItem("Value").getNodeValue());
+							
 							long peer = getPeerIdentity(graph, peerIdentityKey);
 							long edge = graph.addEdge(identity, peer);
-							graph.updateEdgeProperty(edge, IEdge.COMMENT, trustComment);
-							Byte trustValue = Byte.parseByte(attr.getNamedItem("Value").getNodeValue());
-							graph.updateEdgeProperty(edge, IEdge.SCORE, Byte.toString(trustValue));
-
+							try
+							{
+								graph.updateEdgeProperty(edge, IEdge.COMMENT, trustComment);
+								graph.updateEdgeProperty(edge, IEdge.SCORE, Byte.toString(trustValue));
+							}
+							catch(SQLException e)
+							{
+								System.out.println("Failed to add comment or score relation to graph database!");
+								System.out.println("Comment = "+trustComment+", Score = "+ Byte.toString(trustValue));
+								System.out.println("Identity: " + peerIdentityKey);
+								throw e;
+							}
 							//fetch the new identity if the USK value we're referred to seeing is newer than the one we are already aware of
 							final long current_ref_edition = peerIdentityKey.getEdition();
 							final Map<String, List<String>> peerProperties = graph.getVertexProperties(peer);

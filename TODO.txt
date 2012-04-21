@@ -15,7 +15,6 @@ INFO   | jvm 12   | 2012/04/19 22:13:30 |       at thomasmarkus.nl.freenet.graph
 
 
 - support deleting properties from your own profile at will
-- support changing the trust of an identity via the WoT web ui
 - Beautify HTML pages for various actions
 - create page where you can search for an identity and go to its identity info page (listing all identities is CRAZY)
 - check whether we can output evil HTML? (this would be bad)
