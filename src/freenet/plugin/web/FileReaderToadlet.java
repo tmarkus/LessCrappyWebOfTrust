@@ -16,8 +16,8 @@ import freenet.support.api.HTTPRequest;
 
 public abstract class FileReaderToadlet extends Toadlet {
 
-	String path;
-	String filePath;
+	protected String path;
+	protected String filePath;
 	
 	public FileReaderToadlet(HighLevelSimpleClient client, String filepath, String URLPath) {
 		super(client);

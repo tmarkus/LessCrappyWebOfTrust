@@ -53,13 +53,13 @@ public class FCPInterface {
 
 					sfsReply.putOverwrite("Identity" + i, identityProperties.get(IVertex.ID).get(0));
 					sfsReply.putOverwrite("RequestURI" + i, identityProperties.get(IVertex.REQUEST_URI).get(0));
-					sfsReply.putOverwrite("InsertURI" + i, identityProperties.get("insertURI").get(0));
+					sfsReply.putOverwrite("InsertURI" + i, identityProperties.get(IVertex.INSERT_URI).get(0));
 					sfsReply.putOverwrite("Nickname" + i, identityProperties.get(IVertex.NAME).get(0));
 
 					int contextCounter = 0;
 					if (identityProperties.containsKey(IVertex.CONTEXT_NAME))
 					{
-						for (String context : identityProperties.get("contextName")) {
+						for (String context : identityProperties.get(IVertex.CONTEXT_NAME)) {
 							sfsReply.putOverwrite("Contexts" + i + ".Context" + contextCounter++, context);
 						}
 					}
