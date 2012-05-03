@@ -2,6 +2,7 @@
 - Beautify HTML pages for various actions
 - create page where you can search for an identity and go to its identity info page (listing all identities is CRAZY)
 - check whether we can output evil HTML? (this would be bad)
+- specify the identity restore key format
 
 - RELEASE FOR BETA TESTING
 
