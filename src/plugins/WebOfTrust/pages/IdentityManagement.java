@@ -12,12 +12,12 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 
 
-import plugins.WebOfTrust.FCPInterface;
 import plugins.WebOfTrust.IdentityUpdater;
 import plugins.WebOfTrust.IdentityUpdaterRequestClient;
 import plugins.WebOfTrust.WebOfTrust;
 import plugins.WebOfTrust.RequestScheduler;
 import plugins.WebOfTrust.datamodel.IVertex;
+import plugins.WebOfTrust.fcp.SetTrust;
 import plugins.WebOfTrust.util.Utils;
 
 import thomasmarkus.nl.freenet.graphdb.H2Graph;
@@ -204,7 +204,7 @@ public class IdentityManagement extends freenet.plugin.web.HTMLFileReaderToadlet
 			String id = Utils.getIDFromKey(newRequestURI);
 			
 			IdentityUpdater.getPeerIdentity(graph, seedKey); //try to get from the db it and add it otherwise
-			FCPInterface.setTrust(graph, id, seedID, "100", "Initial seed identity");
+			SetTrust.setTrust(graph, id, seedID, "100", "Initial seed identity");
 		}
 	}
 

@@ -24,6 +24,7 @@ import freenet.pluginmanager.FredPluginL10n;
 import freenet.pluginmanager.FredPluginThreadless;
 import freenet.pluginmanager.FredPluginVersioned;
 import freenet.pluginmanager.PluginHTTPException;
+import freenet.pluginmanager.PluginNotFoundException;
 import freenet.pluginmanager.PluginReplySender;
 import freenet.pluginmanager.PluginRespirator;
 import freenet.support.SimpleFieldSet;
@@ -212,6 +213,8 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		try {
 			fpi.handle(prs, sfs, bucket, accessType);
 		} catch (SQLException e) {
+			e.printStackTrace();
+		} catch (PluginNotFoundException e) {
 			e.printStackTrace();
 		}
 	}
