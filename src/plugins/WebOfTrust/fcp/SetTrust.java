@@ -28,19 +28,17 @@ public class SetTrust extends FCPBase {
 		return reply;
 	}
 
-	public static void setTrust(H2Graph graph, final String trusterID, final String trusteeID,
-			final String trustValue, final String trustComment)
-			throws SQLException {
-		
-		long truster = graph.getVertexByPropertyValue("id", trusterID).get(0);
-		long trustee = graph.getVertexByPropertyValue("id", trusteeID).get(0);
+	public static void setTrust(H2Graph graph, final String trusterID, final String trusteeID, final String trustValue, final String trustComment) throws SQLException 
+	{
+		final long truster = graph.getVertexByPropertyValue("id", trusterID).get(0);
+		final long trustee = graph.getVertexByPropertyValue("id", trusteeID).get(0);
 
 		long edge;
 		try
 		{
 			edge = graph.getEdgeByVerticesAndProperty(truster, trustee, "score");	
 		}
-		catch(SQLException e) //edge doesn't exist
+		catch(SQLException e) //edge doesn't exist yet, so create new one
 		{
 			edge = graph.addEdge(truster, trustee);
 		}

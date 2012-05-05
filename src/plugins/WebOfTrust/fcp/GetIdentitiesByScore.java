@@ -5,7 +5,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.Map.Entry;
 
 import plugins.WebOfTrust.datamodel.IEdge;
 import plugins.WebOfTrust.datamodel.IVertex;
@@ -13,7 +12,7 @@ import plugins.WebOfTrust.datamodel.IVertex;
 import thomasmarkus.nl.freenet.graphdb.H2Graph;
 import freenet.support.SimpleFieldSet;
 
-public class GetIdentitiesByScore extends FCPBase {
+public class GetIdentitiesByScore extends GetIdentity {
 
 	@Override
 	public SimpleFieldSet handle(H2Graph graph, SimpleFieldSet input) throws SQLException {
@@ -29,7 +28,7 @@ public class GetIdentitiesByScore extends FCPBase {
 
 		Set<String> treeOwnerList = new HashSet<String>(); 
 		Set<Long> treeOwnerVertexList = new HashSet<Long>();
-		if (trusterID == null || trusterID.equals("null"))
+		if (trusterID == null || trusterID.equals("null")) //take the union of all identities seen by a local identity
 		{
 			List<Long> own_vertices = graph.getVertexByPropertyValue(IVertex.OWN_IDENTITY, "true");
 			for(long vertex : own_vertices)
@@ -39,11 +38,10 @@ public class GetIdentitiesByScore extends FCPBase {
 				treeOwnerList.add(props.get("id").get(0));
 			}
 		}
-		else
+		else //only one own identity
 		{
-			List<Long> own_vertex = graph.getVertexByPropertyValue(IVertex.ID, trusterID);
+			treeOwnerVertexList.addAll( graph.getVertexByPropertyValue(IVertex.ID, trusterID) );
 			treeOwnerList.add(trusterID);
-			for(long vertex : own_vertex) treeOwnerVertexList.add(vertex);
 		}
 		
 		//take the union of all trusted identities for all identities specified
@@ -66,51 +64,31 @@ public class GetIdentitiesByScore extends FCPBase {
 				//TODO: This should be done as part of the query
 				if (properties.containsKey(IVertex.CONTEXT_NAME) && properties.get(IVertex.CONTEXT_NAME).contains(context))
 				{
-					reply.putOverwrite("Identity" + i, properties.get(IVertex.ID).get(0));
-					reply.putOverwrite("RequestURI" + i, properties.get(IVertex.REQUEST_URI).get(0));
-					reply.putOverwrite("Nickname" + i, properties.get(IVertex.NAME).get(0));
-
-					int contextCounter = 0;
-					for (String identityContext: properties.get("contextName")) {
-						reply.putOverwrite("Contexts" + i + ".Context" + contextCounter++, identityContext);
-					}
-
-					int propertiesCounter = 0;
-					for (Entry<String, List<String>> property : properties.entrySet()) {
-						reply.putOverwrite("Properties" + i + ".Property" + propertiesCounter + ".Name", property.getKey());
-						reply.putOverwrite("Properties" + i + ".Property" + propertiesCounter++ + ".Value", property.getValue().get(0));
-					}
-
-					input.putOverwrite("ScoreOwner" + i, properties.get("id").get(0));
-
+					long max_score_owner_id = -1; //identity which has the maximum trust directly assigned (possibly none)
+					
 					try
 					{
 						int score = Integer.MIN_VALUE;
 						for(long own_identity : treeOwnerVertexList)
 						{
 							int tmp_score = Integer.parseInt(graph.getEdgeValueByVerticesAndProperty(own_identity, identity_vertex, IEdge.SCORE));
-							if (tmp_score > score) score = tmp_score;
+							if (tmp_score > score) {
+								score = tmp_score;
+								max_score_owner_id = own_identity;
+							}
 						}
-						
-						reply.putOverwrite("Trust" + i, Integer.toString(score));
-						reply.putOverwrite("Rank" + i, "666");
 					}
-					catch(SQLException e) //no score relation
-					{
-						reply.putOverwrite("Trust" + i, "null");
-						reply.putOverwrite("Rank" + i, "null");
-					}
+					catch(SQLException e) {} //no score relation
 
-					if (includeTrustValue)
-					{
-						reply.putOverwrite("Score" + i, properties.get(IVertex.TRUST+"."+trusterID).get(0));	
-					}
+					addIdentityReplyFields(graph, max_score_owner_id, identity_vertex, Integer.toString(i));
+					
+					if (includeTrustValue)	reply.putOverwrite("Score" + i, properties.get(IVertex.TRUST+"."+trusterID).get(0));
+					reply.putOverwrite("ScoreOwner" + i, properties.get("id").get(0));
+
 					i += 1;
 				}
 			}
 		}
-
 		return reply;
 	}
-
 }
