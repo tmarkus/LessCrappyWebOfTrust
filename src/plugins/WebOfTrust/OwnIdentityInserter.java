@@ -173,7 +173,7 @@ public class OwnIdentityInserter implements Runnable, ClientPutCallback {
 				Map<String, List<String>> props = graph.getVertexProperties(own_vertex);
 				FreenetURI newRequestURI = new FreenetURI(props.get(IVertex.REQUEST_URI).get(0));
 				long new_edition = cp.getURI().getEdition();
-				newRequestURI.setSuggestedEdition(new_edition);
+				newRequestURI = newRequestURI.setSuggestedEdition(new_edition);
 				
 				graph.updateVertexProperty(own_vertex, IVertex.EDITION, Long.toString(cp.getURI().getEdition()));
 				graph.updateVertexProperty(own_vertex, IVertex.REQUEST_URI, newRequestURI.toASCIIString());
