@@ -8,9 +8,7 @@
 
 - RELEASE FOR BETA TESTING
 
-- fix link between getIdentitiesByScore and getIdentity, requires refactoring
 - fix getIdentitiesbyScore inefficiency (optimize using graph db call)
-- incremental score recomputation on identity update
 - add random delay to identity insertion? -> after a restart of freenet local identities may be inserted at similar times. 
 --- Correlating USK updates times could lead to identity compromise.
 
