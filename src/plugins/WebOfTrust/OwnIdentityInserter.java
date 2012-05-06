@@ -379,6 +379,7 @@ public class OwnIdentityInserter implements Runnable, ClientPutCallback {
 	public void onFailure(InsertException ie, BaseClientPutter arg1, ObjectContainer arg2) {
 
 		System.out.println("Failed to insert own identity, please investigate!");
+		System.out.println(ie.getMessage());
 		ie.printStackTrace();
 	}
 
