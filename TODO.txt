@@ -1,3 +1,5 @@
+- Support a context of "" that will return all identities, not the identities with an empty string context, also allow getting all identities when the context is not present.
+-- required for freemail 0.2.0 compat
 - ShowIdentity with id that hasn't been fetched yet throws NullPointerException, should just display in UI that the identity hasn't been fetched yet
 - Beautify HTML pages for various actions
 - create page where you can search for an identity and go to its identity info page (listing all identities is CRAZY)
