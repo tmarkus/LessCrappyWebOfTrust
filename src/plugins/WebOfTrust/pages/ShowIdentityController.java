@@ -102,20 +102,20 @@ public class ShowIdentityController extends freenet.plugin.web.HTMLFileReaderToa
 			//extra empty property value pair
 			if (is_own_identity)
 			{
-				Element propertyName = doc.createElement("input").attr("type", "text").attr("name", "propertyName");
-				Element propertyValue = doc.createElement("input").attr("type", "text") .attr("name", "propertyValue").attr("size", "100");
-				
 				Element tr = doc.createElement("tr");
+				tr.appendChild(doc.createElement("td").appendChild(doc.createElement("input").attr("type", "text").attr("name", "propertyName"+property_index))).appendChild(
+					doc.createElement("td").appendChild(doc.createElement("input").attr("type", "text") .attr("name", "propertyValue"+property_index).attr("size", "100"))).appendChild(
+					doc.createElement("input").attr("type", "hidden") .attr("name", "oldPropertyName"+property_index)).appendChild(
+					doc.createElement("input").attr("type", "hidden") .attr("name", "oldPropertyValue"+property_index));
+				
 				table.appendChild(tr);
-				tr.appendChild(doc.createElement("td").appendChild(propertyName));
-				tr.appendChild(doc.createElement("td").appendChild(propertyValue));
 			}
 
 			
 			//submit button
 			if (is_own_identity)
 			{
-				Element modifySubmit = doc.createElement("input").attr("type", "submit").val("Modify");
+				Element modifySubmit = doc.createElement("input").attr("type", "submit").val("Modify properties");
 				propertiesForm.appendChild(modifySubmit);
 			}
 			info_div.appendChild(propertiesForm);
