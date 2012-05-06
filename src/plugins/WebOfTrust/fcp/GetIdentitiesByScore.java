@@ -68,17 +68,18 @@ public class GetIdentitiesByScore extends GetIdentity {
 					
 					try
 					{
-						int score = Integer.MIN_VALUE;
+						int max_score = Integer.MIN_VALUE;
 						for(long own_identity : treeOwnerVertexList)
 						{
-							int tmp_score = Integer.parseInt(graph.getEdgeValueByVerticesAndProperty(own_identity, identity_vertex, IEdge.SCORE));
-							if (tmp_score > score) {
-								score = tmp_score;
+							int score = Integer.parseInt(graph.getEdgeValueByVerticesAndProperty(own_identity, identity_vertex, IEdge.SCORE));
+							if (score > max_score) 
+							{
+								max_score = score;
 								max_score_owner_id = own_identity;
 							}
 						}
 					}
-					catch(SQLException e) {} //no score relation
+					catch(SQLException e) {} //no score relation no problem, just ignore
 
 					addIdentityReplyFields(graph, max_score_owner_id, identity_vertex, Integer.toString(i));
 					

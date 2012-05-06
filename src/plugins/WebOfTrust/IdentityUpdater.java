@@ -262,7 +262,7 @@ public class IdentityUpdater implements ClientGetCallback{
 			{
 				try {
 					FreenetURI insertURI = new FreenetURI(props.get(IVertex.INSERT_URI).get(0));
-					insertURI.setSuggestedEdition(current_edition);
+					insertURI = insertURI.setSuggestedEdition(current_edition);
 					graph.updateVertexProperty(identity, IVertex.INSERT_URI, insertURI.toASCIIString());
 				} catch (MalformedURLException e) {
 					e.printStackTrace();
