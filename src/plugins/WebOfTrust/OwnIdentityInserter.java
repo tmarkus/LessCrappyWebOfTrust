@@ -83,7 +83,7 @@ public class OwnIdentityInserter implements Runnable, ClientPutCallback {
 			{
 				//create the bucket
 				String xml = createXML(graph, own_vertex, null);
-				Bucket bucket = wot.getPR().getNode().clientCore.persistentTempBucketFactory.makeBucket(xml.length());
+				Bucket bucket = wot.getPR().getNode().clientCore.tempBucketFactory.makeBucket(xml.length());
 				createXML(graph, own_vertex, bucket);
 				bucket.setReadOnly();
 
