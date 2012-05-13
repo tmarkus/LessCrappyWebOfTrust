@@ -31,8 +31,10 @@ public class RequestScheduler implements Runnable {
 	private static final double PROBABILITY_OF_FETCHING_DIRECTLY_TRUSTED_IDENTITY = 0.7;
 
 	private static final long MAX_TIME_SINCE_LAST_INSERT = (60 * 1000)*60; //don't insert faster than once per hour
-	private static final long MINIMAL_SLEEP_TIME = (1 * 1000);
-
+	private static final long MINIMAL_SLEEP_TIME = (1*1000) * 120;
+	private static final long MINIMAL_SLEEP_TIME_WITH_BIG_BACKLOG = (1*1000);
+	private static final long MAX_DB_CONNECTIONS = 5;
+	
 	private WebOfTrust main;
 	private final H2GraphFactory gf;
 	private HighLevelSimpleClient hl;
@@ -78,7 +80,15 @@ public class RequestScheduler implements Runnable {
 
 				//chill out a bit
 				try {
-					Thread.sleep(MINIMAL_SLEEP_TIME);
+					if (getBacklogSize() > 10)
+					{
+						Thread.sleep(MINIMAL_SLEEP_TIME_WITH_BIG_BACKLOG);						
+					}
+					else
+					{
+						Thread.sleep(MINIMAL_SLEEP_TIME);
+					}
+					
 				} catch (InterruptedException e) {
 				}
 			}
@@ -144,7 +154,7 @@ public class RequestScheduler implements Runnable {
 
 	private void clearBacklog() 
 	{
-		while(getInFlightSize() < MAX_REQUESTS && getBacklogSize() > 0)
+		while(getInFlightSize() < MAX_REQUESTS && getBacklogSize() > 0 && gf.getActiveConnections() < MAX_DB_CONNECTIONS)
 		{
 			FreenetURI next = getBacklogItem();
 
