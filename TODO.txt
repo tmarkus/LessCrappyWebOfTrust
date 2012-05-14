@@ -1,11 +1,13 @@
-- Support a context of "" that will return all identities, not the identities with an empty string context, also allow getting all identities when the context is not present.
--- required for freemail 0.2.0 compat
+- write identity insert keys to plain text file
 - ShowIdentity with id that hasn't been fetched yet throws NullPointerException, should just display in UI that the identity hasn't been fetched yet
 - Beautify HTML pages for various actions
 - create page where you can search for an identity and go to its identity info page (listing all identities is CRAZY)
 - check whether we can output evil HTML? (this would be bad)
 - specify the identity restore key format
 - use priority queue for fetches to make sure that own identities are fetched before all others on the queue
+- make priority levels and such configurable
+- investigate: http://10.0.0.13:8888/CHK@axAXtKUbJBGBqG-P3BnexykoFVTI4tOWaOmjeC1LTZs,ft2FxCgqHo5DJxaeydT4FT6wOM4AP6LYTKfxANmOZT8,AAIC--8/trace
+
 
 - RELEASE FOR BETA TESTING
 
