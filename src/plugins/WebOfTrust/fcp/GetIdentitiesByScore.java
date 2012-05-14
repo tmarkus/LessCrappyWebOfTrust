@@ -82,7 +82,7 @@ public class GetIdentitiesByScore extends GetIdentity {
 					}
 					catch(SQLException e) {} //no score relation no problem, just ignore
 
-					addIdentityReplyFields(graph, max_score_owner_id, identity_vertex, Integer.toString(i));
+					addIdentityReplyFields(graph, properties, max_score_owner_id, identity_vertex, Integer.toString(i));
 					
 					if (includeTrustValue)	reply.putOverwrite("Score" + i, properties.get(IVertex.TRUST+"."+trusterID).get(0));
 					reply.putOverwrite("ScoreOwner" + i, properties.get("id").get(0));

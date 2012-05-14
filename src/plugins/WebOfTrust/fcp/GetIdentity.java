@@ -27,15 +27,14 @@ public class GetIdentity extends FCPBase {
 
 		for(long identity : identities)
 		{
-			addIdentityReplyFields(graph, own_id, identity, "");
+			Map<String, List<String>> props = graph.getVertexProperties(identity);
+			addIdentityReplyFields(graph, props, own_id, identity, "");
 		}
 		return reply;
 	}
 
-	protected void addIdentityReplyFields(H2Graph graph, long own_id, long identity, String index) throws SQLException 
+	protected void addIdentityReplyFields(H2Graph graph, Map<String, List<String>> props, long own_id, long identity, String index) throws SQLException 
 	{
-		final Map<String, List<String>> props = graph.getVertexProperties(identity);
-
 		reply.putOverwrite("Identity" + index, props.get(IVertex.ID).get(0));
 		reply.putOverwrite("Nickname"+index, props.get(IVertex.NAME).get(0));
 		reply.putOverwrite("RequestURI"+index, props.get(IVertex.REQUEST_URI).get(0));
@@ -45,7 +44,7 @@ public class GetIdentity extends FCPBase {
 			long edge = graph.getEdgeByVerticesAndProperty(own_id, identity, IEdge.SCORE);
 			Map<String, List<String>> edge_props = graph.getEdgeProperties(edge);
 
-			reply.putOverwrite("Trust"+index, edge_props.get(plugins.WebOfTrust.datamodel.IEdge.SCORE).get(0));
+			reply.putOverwrite("Trust"+index, edge_props.get(IEdge.SCORE).get(0));
 			reply.putOverwrite("Rank"+index, "666");
 		}
 		catch(SQLException e) //not directly trusted, so set score accordingly
