@@ -63,7 +63,7 @@ public class GetIdentitiesByScore extends GetIdentity {
 				//check whether the identity has the context we need
 				//TODO: This should be done as part of the query
 				if (properties.containsKey(IVertex.CONTEXT_NAME) && 
-						(properties.get(IVertex.CONTEXT_NAME).equals(context)) || properties.get(IVertex.CONTEXT_NAME).equals(""))
+						(properties.get(IVertex.CONTEXT_NAME).contains(context)) || context.contains(""))
 				{
 					long max_score_owner_id = -1; //identity which has the maximum trust directly assigned (possibly none)
 					
