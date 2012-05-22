@@ -40,6 +40,7 @@ public class FCPInterface {
 		{
 			SimpleFieldSet reply = new SimpleFieldSet(true);
 			System.out.println("Failed to match message: " + sfs.get("Message") + " with reply");
+			e.printStackTrace();
 			reply.putSingle("Message", "Error");
 			reply.putSingle("Description", "Could not match message with reply");
 			prs.send(reply);

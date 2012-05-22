@@ -50,6 +50,7 @@ import freenet.client.async.ClientPutter;
 import freenet.keys.FreenetURI;
 import freenet.node.RequestStarter;
 import freenet.support.api.Bucket;
+import freenet.support.io.Closer;
 
 
 
@@ -93,6 +94,8 @@ public class OwnIdentityInserter implements Runnable, ClientPutCallback {
 				
 				FreenetURI nextInsertURI = new FreenetURI(props.get(IVertex.INSERT_URI).get(0)).setSuggestedEdition(next_edition);
 				
+				System.out.println("next insert URI during insert request creation: " + nextInsertURI);
+				
 				InsertBlock ib = new InsertBlock(bucket, null, nextInsertURI);
 				InsertContext ictx = hl.getInsertContext(true);
 				
@@ -117,6 +120,8 @@ public class OwnIdentityInserter implements Runnable, ClientPutCallback {
 					//update the time when we stored it in the database (as to disallow inserting it every second)
 					graph.updateVertexProperty(own_vertex, IVertex.LAST_INSERT, Long.toString(System.currentTimeMillis()));
 					graph.updateVertexProperty(own_vertex, IVertex.HASH, new_hash);
+				
+					Closer.close(bucket);
 				}
 			}
 		} catch (TransformerConfigurationException e) {
@@ -359,12 +364,14 @@ public class OwnIdentityInserter implements Runnable, ClientPutCallback {
 		StringWriter resultStringWriter = new StringWriter();
 		StreamResult resultStreamString = new StreamResult(resultStringWriter);
 		mSerializer.transform(domSource, resultStreamString);
-
+		resultStringWriter.close();
+		
 		//store the XML in the bucket
 		if (bucket != null)
 		{
 			StreamResult resultStreamBucket = new StreamResult(bucket.getOutputStream());
 			mSerializer.transform(domSource, resultStreamBucket);
+			resultStreamBucket.getOutputStream().close();
 		}
 		
 		return resultStringWriter.toString();
@@ -376,10 +383,12 @@ public class OwnIdentityInserter implements Runnable, ClientPutCallback {
 	}
 
 	@Override
-	public void onFailure(InsertException ie, BaseClientPutter arg1, ObjectContainer arg2) {
+	public void onFailure(InsertException ie, BaseClientPutter cp, ObjectContainer oc) {
 
 		System.out.println("Failed to insert own identity, please investigate!");
+		System.out.println("insert key: " + cp.getURI());
 		System.out.println(ie.getMessage());
+		System.out.println(ie.getLocalizedMessage());
 		ie.printStackTrace();
 	}
 
