@@ -82,46 +82,42 @@ public class OwnIdentityInserter implements Runnable, ClientPutCallback {
 		
 			if (!props.containsKey(IVertex.DONT_INSERT)) //identity should have some minimal amount of data...
 			{
-				//create the bucket
-				String xml = createXML(graph, own_vertex, null);
-				Bucket bucket = wot.getPR().getNode().clientCore.tempBucketFactory.makeBucket(xml.length());
-				createXML(graph, own_vertex, bucket);
-				bucket.setReadOnly();
-
-				//create XML document
-				long next_edition = 0; //default
-				if (props.containsKey(IVertex.EDITION))	next_edition = Long.parseLong(props.get(IVertex.EDITION).get(0)) + 1;
-				
-				FreenetURI nextInsertURI = new FreenetURI(props.get(IVertex.INSERT_URI).get(0)).setSuggestedEdition(next_edition);
-				
-				System.out.println("next insert URI during insert request creation: " + nextInsertURI);
-				
-				InsertBlock ib = new InsertBlock(bucket, null, nextInsertURI);
-				InsertContext ictx = hl.getInsertContext(true);
-				
-				//insert the damn thing
 				String old_hash = "";
 				if (props.containsKey(IVertex.HASH))	old_hash = props.get(IVertex.HASH).get(0);
-				String new_hash = calculateIdentityHash(graph, own_vertex);
-				
-				//panic check for insertURI inclusion...
-				if (xml.contains(IVertex.INSERT_URI))
-				{
-					System.out.println(xml);
-					throw new IllegalStateException("The XML content may have included an insertURI!");
-				}
-				
+				final String new_hash = calculateIdentityHash(graph, own_vertex);
 				
 				if (!new_hash.equals(old_hash))
 				{
+					//create the bucket
+					final String xml = createXML(graph, own_vertex, null);
+					final Bucket bucket = wot.getPR().getNode().clientCore.persistentTempBucketFactory.makeBucket(xml.length());
+					createXML(graph, own_vertex, bucket);
+					bucket.setReadOnly();
+
+					//create XML document
+					long next_edition = 0; //default
+					if (props.containsKey(IVertex.EDITION))	next_edition = Long.parseLong(props.get(IVertex.EDITION).get(0)) + 1;
+					
+					FreenetURI nextInsertURI = new FreenetURI(props.get(IVertex.INSERT_URI).get(0)).setSuggestedEdition(next_edition);
+					
+					final InsertBlock ib = new InsertBlock(bucket, null, nextInsertURI);
+					final InsertContext ictx = hl.getInsertContext(true);
+					
+					
+					//panic check for insertURI inclusion...
+					if (xml.contains(IVertex.INSERT_URI))
+					{
+						System.out.println(xml);
+						throw new IllegalStateException("The XML content may have included an insertURI!");
+					}
+
+					//insert the damn thing
 					System.out.println("INSERTING OWN IDENTITY");
-					ClientPutter pu = hl.insert(ib, false, null, false, ictx, this, RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS);
+					ClientPutter pu = 	hl.insert(ib, false, null, false, ictx, this, RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS);
 					
 					//update the time when we stored it in the database (as to disallow inserting it every second)
 					graph.updateVertexProperty(own_vertex, IVertex.LAST_INSERT, Long.toString(System.currentTimeMillis()));
 					graph.updateVertexProperty(own_vertex, IVertex.HASH, new_hash);
-				
-					Closer.close(bucket);
 				}
 			}
 		} catch (TransformerConfigurationException e) {
@@ -197,6 +193,8 @@ public class OwnIdentityInserter implements Runnable, ClientPutCallback {
 		}
 		finally
 		{
+			Closer.close(((ClientPutter) cp).getData());
+			
 			try {
 				graph.close();
 			} catch (SQLException e) {
@@ -385,6 +383,8 @@ public class OwnIdentityInserter implements Runnable, ClientPutCallback {
 	@Override
 	public void onFailure(InsertException ie, BaseClientPutter cp, ObjectContainer oc) {
 
+		Closer.close(((ClientPutter) cp).getData());
+		
 		System.out.println("Failed to insert own identity, please investigate!");
 		System.out.println("insert key: " + cp.getURI());
 		System.out.println(ie.getMessage());

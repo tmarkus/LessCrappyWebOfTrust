@@ -156,6 +156,9 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 
 		if (webInterface != null) webInterface.kill();
 
+		//interrupt the request scheduler
+		rs.interrupt();
+		
 		//kill the database
 		try
 		{
