@@ -1,6 +1,7 @@
 - getIdentitiesByScore can work with a VertexIterator basically iterating the resultset until the vertex_id changes (new element) or the end is reached
 -- wraps around a resultset
 -- requires sorting
+- schedule WoT score calculation updates using requestScheduler
 - write identity insert keys to plain text file
 - ShowIdentity with id that hasn't been fetched yet throws NullPointerException, should just display in UI that the identity hasn't been fetched yet
 - Beautify HTML pages for various actions

@@ -17,6 +17,7 @@ import plugins.WebOfTrust.datamodel.IVertex;
 import thomasmarkus.nl.freenet.graphdb.EdgeWithProperty;
 import thomasmarkus.nl.freenet.graphdb.H2Graph;
 import thomasmarkus.nl.freenet.graphdb.H2GraphFactory;
+import thomasmarkus.nl.freenet.graphdb.VertexIterator;
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
 import freenet.client.HighLevelSimpleClient;
@@ -224,19 +225,13 @@ public class RequestScheduler extends Thread {
 						Map<String, List<String>> own_props = graph.getVertexProperties(own_vertex);
 						String own_id = own_props.get("id").get(0);
 
-						//Some identity with a score of 0 or higher
-						List<Long> vertices = graph.getVerticesWithPropertyValueLargerThan(IVertex.TRUST+"."+own_id, -1);
+						//Some identity with a score of 0 or higher and sort by random, limit by 1
+						VertexIterator vertices = graph.getVertices(IVertex.TRUST+"."+own_id, -1, IVertex.REQUEST_URI, true, 1);
 
-						if(vertices.size() > 0)
+						if(vertices.hasNext())
 						{
-							//get random vertex from that list
-							long vertex = vertices.get( ran.nextInt(vertices.size()));
-
-							//get properties of that vertex
-							Map<String, List<String>> props = graph.getVertexProperties(vertex);
-
 							//add URI to the backlog
-							addBacklog(new FreenetURI(props.get(IVertex.REQUEST_URI).get(0)));
+							addBacklog(new FreenetURI(vertices.next().get(IVertex.REQUEST_URI).get(0)));
 						}
 					}
 				}

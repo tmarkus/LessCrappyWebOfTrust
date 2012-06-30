@@ -27,7 +27,7 @@ public class Test {
 		
 		start = System.currentTimeMillis();
 		System.out.println();
-		List<Long> trusted = graph.getVerticesWithPropertyValueLargerThan(IVertex.TRUST+"."+id, -1);
-		System.out.println("trusted: " + trusted.size() + "in: " + (System.currentTimeMillis() - start) + "ms");
+		//List<Long> trusted = graph.getVerticesWithPropertyValueLargerThan(IVertex.TRUST+"."+id, -1);
+		//System.out.println("trusted: " + trusted.size() + "in: " + (System.currentTimeMillis() - start) + "ms");
 	}
 }

@@ -1,7 +1,9 @@
 package plugins.WebOfTrust.fcp;
 
 import java.sql.SQLException;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -10,6 +12,7 @@ import plugins.WebOfTrust.datamodel.IEdge;
 import plugins.WebOfTrust.datamodel.IVertex;
 
 import thomasmarkus.nl.freenet.graphdb.H2Graph;
+import thomasmarkus.nl.freenet.graphdb.VertexIterator;
 import freenet.support.SimpleFieldSet;
 
 public class GetIdentitiesByScore extends GetIdentity {
@@ -45,50 +48,60 @@ public class GetIdentitiesByScore extends GetIdentity {
 		}
 		
 		//take the union of all trusted identities for all identities specified
-		Set<Long> vertices = new HashSet<Long>();
+		List<String> treeOwnerProperties = new LinkedList<String>();
 		for(String treeOwner : treeOwnerList)
 		{
-			vertices.addAll(graph.getVerticesWithPropertyValueLargerThan(IVertex.TRUST+"."+treeOwner, select));	
+			treeOwnerProperties.add(IVertex.TRUST+"."+treeOwner);
 		}
+		
+		
+		List<String> queryProperties = new LinkedList<String>();
+		queryProperties.addAll(treeOwnerProperties);
+		queryProperties.add(IVertex.NAME);
+		queryProperties.add(IVertex.CONTEXT_NAME);
+		queryProperties.add(IVertex.ID);
+		queryProperties.add(IVertex.REQUEST_URI);
+		
+		Map<String, String> requiredProperties = new HashMap<String, String>(); 
+		requiredProperties.put(IVertex.CONTEXT_NAME, context);
+		
+		long start = System.currentTimeMillis();
+		VertexIterator vertices = graph.getVertices(treeOwnerProperties, select, queryProperties, requiredProperties, false, Integer.MAX_VALUE);
+		System.out.println("Big query took: " + (System.currentTimeMillis() - start) + "ms");
 		
 		reply.putSingle("Message", "Identities");
 		int i = 0;
-		for(long identity_vertex : vertices)
+
+		while(vertices.hasNext())
 		{
-			Map<String, List<String>> properties = graph.getVertexProperties(identity_vertex);
+			Map<String, List<String>> properties = vertices.next();
 
 			//check whether the identity has a name (and we thus have retrieved it at least once)
 			if (properties.containsKey(IVertex.NAME))
 			{
-				//check whether the identity has the context we need
-				//TODO: This should be done as part of the query
-				if (properties.containsKey(IVertex.CONTEXT_NAME) && 
-						(properties.get(IVertex.CONTEXT_NAME).contains(context)) || context.contains(""))
+				long max_score_owner_id = -1; //identity which has the maximum trust directly assigned (possibly none)
+				
+				try
 				{
-					long max_score_owner_id = -1; //identity which has the maximum trust directly assigned (possibly none)
-					
-					try
+					int max_score = Integer.MIN_VALUE;
+					for(long own_identity : treeOwnerVertexList)
 					{
-						int max_score = Integer.MIN_VALUE;
-						for(long own_identity : treeOwnerVertexList)
+						int score = Integer.parseInt(graph.getEdgeValueByVerticesAndProperty(own_identity, vertices.getLastVertexId(), IEdge.SCORE));
+						if (score > max_score) 
 						{
-							int score = Integer.parseInt(graph.getEdgeValueByVerticesAndProperty(own_identity, identity_vertex, IEdge.SCORE));
-							if (score > max_score) 
-							{
-								max_score = score;
-								max_score_owner_id = own_identity;
-							}
+							max_score = score;
+							max_score_owner_id = own_identity;
 						}
 					}
-					catch(SQLException e) {} //no score relation no problem, just ignore
-
-					addIdentityReplyFields(graph, properties, max_score_owner_id, identity_vertex, Integer.toString(i));
-					
-					if (includeTrustValue)	reply.putOverwrite("Score" + i, properties.get(IVertex.TRUST+"."+trusterID).get(0));
-					reply.putOverwrite("ScoreOwner" + i, properties.get("id").get(0));
-
-					i += 1;
 				}
+				catch(SQLException e) {} //no direct score relation no problem, just ignore
+
+				addIdentityReplyFields(graph, properties, max_score_owner_id, vertices.getLastVertexId(), Integer.toString(i));
+				
+				if (includeTrustValue)	reply.putOverwrite("Score" + i, properties.get(IVertex.TRUST+"."+trusterID).get(0));
+				reply.putOverwrite("ScoreOwner" + i, properties.get("id").get(0));
+
+				i += 1;
 			}
 		}
 		return reply;

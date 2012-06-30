@@ -30,9 +30,14 @@ public class FCPInterface {
 			Class<FCPBase> c = (Class<FCPBase>) Class.forName("plugins.WebOfTrust.fcp."+sfs.get("Message"));
 			FCPBase handler = c.newInstance();
 			
+			long start = System.currentTimeMillis();
+			
 			//call its handle method with the input data
 			final SimpleFieldSet reply = handler.handle(graph, sfs);
 
+			System.out.println(sfs.get("Message") + " took: " + (System.currentTimeMillis()-start)  + "ms");
+
+			
 			//send the reply
 			prs.send(reply);
 		}
