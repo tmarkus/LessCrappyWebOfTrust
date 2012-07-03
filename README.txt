@@ -3,7 +3,7 @@ A WebOfTrust plugin for freenet.
 Currently in a very early pre-alpha version and far from feature-complete.
 
 Requires https://github.com/tmarkus/GraphDatabase in lib/
-
+You may need to modify the paths to freenet.jar and freenet-ext.jar in build.xml .
 
 ## Building
 
