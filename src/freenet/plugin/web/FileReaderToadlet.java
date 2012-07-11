@@ -9,12 +9,13 @@ import java.net.URI;
 import java.sql.SQLException;
 
 import freenet.client.HighLevelSimpleClient;
+import freenet.clients.http.LinkEnabledCallback;
 import freenet.clients.http.Toadlet;
 import freenet.clients.http.ToadletContext;
 import freenet.clients.http.ToadletContextClosedException;
 import freenet.support.api.HTTPRequest;
 
-public abstract class FileReaderToadlet extends Toadlet {
+public abstract class FileReaderToadlet extends Toadlet implements LinkEnabledCallback {
 
 	protected String path;
 	protected String filePath;

@@ -22,4 +22,9 @@ public class CSSFileReaderToadlet extends FileReaderToadlet {
 	{
 		
 	}
+
+	@Override
+	public boolean isEnabled(ToadletContext arg0) {
+		return false;
+	}
 }

@@ -36,7 +36,7 @@ import freenet.support.plugins.helpers1.WebInterface;
 public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginFCP, FredPluginL10n, FredPluginVersioned, FredPluginHTTP{
 
 	private static final String db_path = "LCWoT"; 
-	private static final String basePath = "/WebOfTrust";
+	private static final String basePath = "/plugins/WebOfTrust";
 	public static final int FETCH_MAX_FILE_SIZE = 2000000; 
 	public static final String namespace = "WebOfTrust";
 	public static final int COMPATIBLE_VERSION = 11;
@@ -109,11 +109,17 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 				"/staticfiles/html/manage.html",
 				basePath+"/", gf));
 
-		toadlets.add(new OverviewController(this,
+		FileReaderToadlet oc = new OverviewController(this,
 				pr.getHLSimpleClient(),
 				"/staticfiles/html/manage.html",
-				basePath, gf));
+				basePath, gf);
+		toadlets.add(oc);
 
+		pr.getPageMaker().addNavigationCategory("WebOfTrust/","WebOfTrust.menuName.name", "WebOfTrust.menuName.tooltip", this);
+		ToadletContainer tc = pr.getToadletContainer();
+		tc.register(oc, "WebOfTrust.menuName.name", "plugins/WebOfTrust/", true, "WebOfTrust.mainPage", "WebOfTrust.mainPage.tooltip", false, oc);
+		tc.register(oc, null, "plugins/WebOfTrust/", true, false);
+		
 		//Identicons
 		toadlets.add(new IdenticonController(this,
 				pr.getHLSimpleClient(),
@@ -182,7 +188,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 
 	@Override
 	public String getString(String key) {
-		return "SoneBridge";
+		return "WoT";
 	}
 
 

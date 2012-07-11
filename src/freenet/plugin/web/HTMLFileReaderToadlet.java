@@ -41,4 +41,10 @@ public abstract class HTMLFileReaderToadlet extends FileReaderToadlet {
 		
 		writeReply(ctx, 200, "text/html", "html file", output);
 	}
+
+	@Override
+	public boolean isEnabled(ToadletContext arg0) {
+		return true;
+	}
+
 }
