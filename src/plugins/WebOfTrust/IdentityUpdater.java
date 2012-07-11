@@ -160,6 +160,7 @@ public class IdentityUpdater implements ClientGetCallback{
 							}
 							catch(NumberFormatException e)
 							{
+								System.err.println("Problem with identity trust list of " + identity);
 								e.printStackTrace();
 							}
 						}
