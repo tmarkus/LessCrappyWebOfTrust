@@ -1,9 +1,4 @@
 - Fix the bucket leaking problem
-
-- 19:24 < puddinpop> I haven't done anything else except refresh the page, now when I try to go to the manage page I get a "Invalid key: java.net.MalformedURLException: 
-There is no @ in that URI! (restore.html)"  "Expected a Freenet key, but got:restore.html" I fixed it.  It was missing the trailing / after WebOfTrust
-
-
 - write identity insert keys to plain text file
 - ShowIdentity with id that hasn't been fetched yet throws NullPointerException, should just display in UI that the identity hasn't been fetched yet
 - Beautify HTML pages for various actions
