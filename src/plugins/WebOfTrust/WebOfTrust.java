@@ -36,7 +36,7 @@ import freenet.support.plugins.helpers1.WebInterface;
 public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginFCP, FredPluginL10n, FredPluginVersioned, FredPluginHTTP{
 
 	private static final String db_path = "LCWoT"; 
-	private static final String basePath = "/plugins/WebOfTrust";
+	public static final String basePath = "/plugins/WebOfTrust";
 	public static final int FETCH_MAX_FILE_SIZE = 2000000; 
 	public static final String namespace = "WebOfTrust";
 	public static final int COMPATIBLE_VERSION = 11;
@@ -115,16 +115,16 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 				basePath, gf);
 		toadlets.add(oc);
 
-		pr.getPageMaker().addNavigationCategory("WebOfTrust/","WebOfTrust.menuName.name", "WebOfTrust.menuName.tooltip", this);
+		pr.getPageMaker().addNavigationCategory(basePath,"WebOfTrust.menuName.name", "WebOfTrust.menuName.tooltip", this);
 		ToadletContainer tc = pr.getToadletContainer();
-		tc.register(oc, "WebOfTrust.menuName.name", "plugins/WebOfTrust/", true, "WebOfTrust.mainPage", "WebOfTrust.mainPage.tooltip", false, oc);
-		tc.register(oc, null, "plugins/WebOfTrust/", true, false);
+		tc.register(oc, "WebOfTrust.menuName.name", basePath, true, "WebOfTrust.mainPage", "WebOfTrust.mainPage.tooltip", false, oc);
+		tc.register(oc, null, basePath, true, false);
 		
 		//Identicons
 		toadlets.add(new IdenticonController(this,
 				pr.getHLSimpleClient(),
 				"",
-				basePath+"/GetIdenticon"));
+				"/WebOfTrust/GetIdenticon"));
 		
 		toadlets.add(new IdentityManagement(this,
 				pr.getHLSimpleClient(),

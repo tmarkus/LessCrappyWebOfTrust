@@ -136,7 +136,7 @@ public class ShowIdentityController extends freenet.plugin.web.HTMLFileReaderToa
 			
 				Map<String, List<String>> own_props = graph.getVertexProperties(own_vertex_id);
 				
-				Element form = doc.createElement("form").attr("method", "post").attr("action", "/"+WebOfTrust.namespace+"/ShowIdentity?id="+id);
+				Element form = doc.createElement("form").attr("method", "post").attr("action", WebOfTrust.basePath+"/ShowIdentity?id="+id);
 				Element fieldset = doc.createElement("fieldset");
 				fieldset.appendChild(doc.createElement("legend").text(own_props.get(IVertex.NAME).get(0)));
 				form.appendChild(fieldset);
@@ -144,7 +144,7 @@ public class ShowIdentityController extends freenet.plugin.web.HTMLFileReaderToa
 				fieldset.appendChild(doc.createElement("input").attr("type", "hidden").attr("name", "identity_id").attr("value", id));
 				fieldset.appendChild(doc.createElement("input").attr("type", "hidden").attr("name", "own_identity_id").attr("value", own_props.get(IVertex.ID).get(0)));
 				fieldset.appendText("Trust: ");
-				fieldset.appendChild(doc.createElement("input").attr("type", "text").attr("name", "trust_value").attr("value", current_trust_value));
+				fieldset.appendChild(doc.createElement("input").attr("type", "number").attr("name", "trust_value").attr("value", current_trust_value));
 				fieldset.appendText("Comment: ");
 				fieldset.appendChild(doc.createElement("input").attr("type", "text").attr("name", "trust_comment").attr("value", current_comment));
 				fieldset.appendChild(doc.createElement("input").attr("type", "submit").attr("value", "Update"));
@@ -182,7 +182,7 @@ public class ShowIdentityController extends freenet.plugin.web.HTMLFileReaderToa
 					else												peerName = "(Not yet downloaded)";
 					String peerID = peer_identity_props.get(IVertex.ID).get(0);
 
-					Element a = doc.createElement("a").attr("href", "/"+WebOfTrust.namespace+"/ShowIdentity?id="+peerID).text(peerName+" ("+peerID+")").attr("name", Integer.toString(i));
+					Element a = doc.createElement("a").attr("href", WebOfTrust.basePath+"/ShowIdentity?id="+peerID).text(peerName+" ("+peerID+")").attr("name", Integer.toString(i));
 					Element tr = doc.createElement("tr")
 							.appendChild(doc.createElement("td").text(Integer.toString(i)))
 							.appendChild(doc.createElement("td").appendChild(a))
@@ -194,7 +194,7 @@ public class ShowIdentityController extends freenet.plugin.web.HTMLFileReaderToa
 					if (props.containsKey(IVertex.OWN_IDENTITY))
 					{
 						Element delete_edge_form = doc.createElement("form");
-						delete_edge_form.attr("action", "/"+WebOfTrust.namespace+"/ShowIdentity?id="+id + "#"+(i-1));
+						delete_edge_form.attr("action", "/"+WebOfTrust.basePath+"/ShowIdentity?id="+id + "#"+(i-1));
 						delete_edge_form.attr("method", "post");
 						delete_edge_form.appendChild(doc.createElement("input").attr("type", "submit").attr("value", "Remove"));
 						delete_edge_form.appendChild(doc.createElement("input").attr("type", "hidden").attr("value", "remove_edge").attr("name", "action"));
@@ -230,7 +230,7 @@ public class ShowIdentityController extends freenet.plugin.web.HTMLFileReaderToa
 				String peerName = peer_identity_props.get("name").get(0);
 				String peerID = peer_identity_props.get("id").get(0);
 				
-				Element a = doc.createElement("a").attr("href", "/"+WebOfTrust.namespace+"/ShowIdentity?id="+peerID).text(peerName+" ("+peerID+")");
+				Element a = doc.createElement("a").attr("href", "/"+WebOfTrust.basePath+"/ShowIdentity?id="+peerID).text(peerName+" ("+peerID+")");
 				tableTrusters.appendChild(doc.createElement("tr")
 						.appendChild(doc.createElement("td").text(Integer.toString(i)))
 						.appendChild(doc.createElement("td").appendChild(a))

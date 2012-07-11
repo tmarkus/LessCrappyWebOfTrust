@@ -1,18 +1,13 @@
-- getIdentitiesByScore can work with a VertexIterator basically iterating the resultset until the vertex_id changes (new element) or the end is reached
--- wraps around a resultset
--- requires sorting
--- reduce the number of db calls for getIdentityByScore & friends
+- getIdentitiesByScore can work with a VertexIterator basically
+     iterating the resultset until the vertex_id changes (new element) or the end is reached (done)
+-- wraps around a resultset (done)
+-- requires sorting (done)
+-- reduce the number of db calls for getIdentityByScore & friends (todo)
 - Fix the bucket leaking problem
 
 - 19:24 < puddinpop> I haven't done anything else except refresh the page, now when I try to go to the manage page I get a "Invalid key: java.net.MalformedURLException: 
 There is no @ in that URI! (restore.html)"  "Expected a Freenet key, but got:restore.html" I fixed it.  It was missing the trailing / after WebOfTrust
 
-- 09:57 < TheSeeker> digger3 you'll find if(ctx.isAllowedFullAccess()) in the code in lots of places.  if(!ctx.isAllowedFullAccess())  too
-   	if(container.publicGatewayMode() && !ctx.isAllowedFullAccess()) {
-		super.sendErrorPage(ctx, 403, NodeL10n.getBase().getString("Toadlet.unauthorizedTitle"), 
-NodeL10n.getBase().getString("Toadlet.unauthorized"));
-		return;
-	}
 
 - write identity insert keys to plain text file
 - ShowIdentity with id that hasn't been fetched yet throws NullPointerException, should just display in UI that the identity hasn't been fetched yet
