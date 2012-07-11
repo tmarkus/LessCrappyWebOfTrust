@@ -104,11 +104,6 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		this.webInterface = new WebInterface(pluginContext);
 
 		//setup the manage page
-		toadlets.add(new OverviewController(this,
-				pr.getHLSimpleClient(),
-				"/staticfiles/html/manage.html",
-				basePath+"/", gf));
-
 		FileReaderToadlet oc = new OverviewController(this,
 				pr.getHLSimpleClient(),
 				"/staticfiles/html/manage.html",

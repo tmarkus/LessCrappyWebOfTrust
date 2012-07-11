@@ -1,8 +1,3 @@
-- getIdentitiesByScore can work with a VertexIterator basically
-     iterating the resultset until the vertex_id changes (new element) or the end is reached (done)
--- wraps around a resultset (done)
--- requires sorting (done)
--- reduce the number of db calls for getIdentityByScore & friends (todo)
 - Fix the bucket leaking problem
 
 - 19:24 < puddinpop> I haven't done anything else except refresh the page, now when I try to go to the manage page I get a "Invalid key: java.net.MalformedURLException: 
