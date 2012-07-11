@@ -219,8 +219,9 @@ public class IdentityManagement extends freenet.plugin.web.HTMLFileReaderToadlet
 		
 		try
 		{
+			graph.getConnection().setAutoCommit(false); //start transaction
+
 			long vertex_id = graph.createVertex();
-			graph.getConnection().setAutoCommit(false);
 			graph.updateVertexProperty(vertex_id, IVertex.ID, Utils.getIDFromKey(requestURI));
 			graph.updateVertexProperty(vertex_id, IVertex.NAME, " ... still fetching ...");
 			graph.updateVertexProperty(vertex_id, IVertex.OWN_IDENTITY, "true");
@@ -233,7 +234,7 @@ public class IdentityManagement extends freenet.plugin.web.HTMLFileReaderToadlet
 		}
 		finally
 		{
-			graph.getConnection().setAutoCommit(true);
+			graph.getConnection().setAutoCommit(true); //commit transaction
 		}
 	}
 

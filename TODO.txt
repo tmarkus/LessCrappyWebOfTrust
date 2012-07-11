@@ -14,7 +14,6 @@ NodeL10n.getBase().getString("Toadlet.unauthorized"));
 		return;
 	}
 
-- schedule WoT score calculation updates using requestScheduler
 - write identity insert keys to plain text file
 - ShowIdentity with id that hasn't been fetched yet throws NullPointerException, should just display in UI that the identity hasn't been fetched yet
 - Beautify HTML pages for various actions
