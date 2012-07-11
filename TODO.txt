@@ -1,3 +1,4 @@
+- check that an ssk request schedule always gets removed from the backlog even if the XML contains errors and thus an identity update isn't executed.
 - Fix the bucket leaking problem
 - write identity insert keys to plain text file
 - create page where you can search for an identity and go to its identity info page (listing all identities is CRAZY)
