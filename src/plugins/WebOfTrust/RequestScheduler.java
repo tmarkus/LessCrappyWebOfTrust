@@ -113,7 +113,7 @@ public class RequestScheduler extends Thread {
 		}
 		
 		//cancel all running requests
-		System.out.println("Cancelling all running requests...");
+		System.err.println("Cancelling all running requests...");
 		synchronized(inFlight) {
 			Iterator<ClientGetter> iter = inFlight.iterator();
 			while(iter.hasNext())
@@ -123,6 +123,7 @@ public class RequestScheduler extends Thread {
 				getter.cancel(null, main.getPR().getNode().clientCore.clientContext);
 			}
 		}
+		System.err.println("All requests canceled.");
 	}
 
 	private void insertOwnIdentities() throws SQLException {
