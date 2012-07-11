@@ -42,9 +42,60 @@ public abstract class FileReaderToadlet extends Toadlet {
 
 	
 	public void handleMethodGET(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
-		writeHTMLReply(ctx, 200, "pageContent", readFile());
+			writeHTMLReply(ctx, 200, "pageContent", readFile());
+	}
+	
+	@Override
+	protected void writeReply(ToadletContext ctx, int code, String mime, String title, String output)
+	{
+		if (ctx.isAllowedFullAccess())
+		{
+
+			try {
+				super.writeReply(ctx, code, mime, title, output);
+			} catch (ToadletContextClosedException e) {
+				e.printStackTrace();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+		else
+		{
+			try {
+				super.writeReply(ctx, 403, "", "", "");
+			} catch (ToadletContextClosedException e) {
+				e.printStackTrace();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
 	}
 
+	@Override
+	protected void writeHTMLReply(ToadletContext ctx, int code, String desc, String output)
+	{
+		if (ctx.isAllowedFullAccess())
+		{
+			try {
+				super.writeHTMLReply(ctx, code, desc, output);
+			} catch (ToadletContextClosedException e) {
+				e.printStackTrace();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+		else
+		{
+			try {
+				super.writeHTMLReply(ctx, 403, "", "");
+			} catch (ToadletContextClosedException e) {
+				e.printStackTrace();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+	}
+	
 	
 	
 	@Override
