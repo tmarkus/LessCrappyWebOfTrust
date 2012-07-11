@@ -119,41 +119,48 @@ public class IdentityUpdater implements ClientGetCallback{
 
 						if (element.getNodeType() != Node.TEXT_NODE)
 						{
-							final NamedNodeMap attr = element.getAttributes();
-							final FreenetURI peerIdentityKey = new FreenetURI(attr.getNamedItem("Identity").getNodeValue());
-							final String trustComment = attr.getNamedItem("Comment").getNodeValue();
-							final Byte trustValue = Byte.parseByte(attr.getNamedItem("Value").getNodeValue());
-							
-							long peer = getPeerIdentity(graph, peerIdentityKey);
-							long edge = graph.addEdge(identity, peer);
 							try
 							{
-								graph.updateEdgeProperty(edge, IEdge.COMMENT, trustComment);
-								graph.updateEdgeProperty(edge, IEdge.SCORE, Byte.toString(trustValue));
-							}
-							catch(SQLException e)
-							{
-								System.out.println("Failed to add comment or score relation to graph database!");
-								System.out.println("Comment = "+trustComment+", Score = "+ Byte.toString(trustValue));
-								System.out.println("Identity: " + peerIdentityKey);
-								throw e;
-							}
-							//fetch the new identity if the USK value we're referred to seeing is newer than the one we are already aware of
-							final long current_ref_edition = peerIdentityKey.getEdition();
-							final Map<String, List<String>> peerProperties = graph.getVertexProperties(peer);
-							long stored_edition = -1;
-							if (peerProperties != null && peerProperties.containsKey(IVertex.EDITION))
-							{
-								stored_edition = Long.parseLong(graph.getVertexProperties(peer).get(IVertex.EDITION).get(0));
-							}
+								final NamedNodeMap attr = element.getAttributes();
+								final FreenetURI peerIdentityKey = new FreenetURI(attr.getNamedItem("Identity").getNodeValue());
+								final String trustComment = attr.getNamedItem("Comment").getNodeValue();
+								final Byte trustValue = Byte.parseByte(attr.getNamedItem("Value").getNodeValue());
+								
+								long peer = getPeerIdentity(graph, peerIdentityKey);
+								long edge = graph.addEdge(identity, peer);
+								try
+								{
+									graph.updateEdgeProperty(edge, IEdge.COMMENT, trustComment);
+									graph.updateEdgeProperty(edge, IEdge.SCORE, Byte.toString(trustValue));
+								}
+								catch(SQLException e)
+								{
+									System.out.println("Failed to add comment or score relation to graph database!");
+									System.out.println("Comment = "+trustComment+", Score = "+ Byte.toString(trustValue));
+									System.out.println("Identity: " + peerIdentityKey);
+									throw e;
+								}
+								//fetch the new identity if the USK value we're referred to seeing is newer than the one we are already aware of
+								final long current_ref_edition = peerIdentityKey.getEdition();
+								final Map<String, List<String>> peerProperties = graph.getVertexProperties(peer);
+								long stored_edition = -1;
+								if (peerProperties != null && peerProperties.containsKey(IVertex.EDITION))
+								{
+									stored_edition = Long.parseLong(graph.getVertexProperties(peer).get(IVertex.EDITION).get(0));
+								}
 
-							if(stored_edition < current_ref_edition)
-							{
-								//update request uri to latest know edition
-								graph.updateVertexProperty(peer, IVertex.REQUEST_URI, peerIdentityKey.toASCIIString());
+								if(stored_edition < current_ref_edition)
+								{
+									//update request uri to latest know edition
+									graph.updateVertexProperty(peer, IVertex.REQUEST_URI, peerIdentityKey.toASCIIString());
 
-								//start fetching it
-								rs.addBacklog(peerIdentityKey);
+									//start fetching it
+									rs.addBacklog(peerIdentityKey);
+								}								
+							}
+							catch(NumberFormatException e)
+							{
+								e.printStackTrace();
 							}
 						}
 					}
