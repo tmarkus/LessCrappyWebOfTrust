@@ -1,4 +1,3 @@
-- deregister navigation category from UI
 - Fix the bucket leaking problem
 - write identity insert keys to plain text file
 - Beautify HTML pages for various actions
