@@ -248,6 +248,7 @@ public class ShowIdentityController extends freenet.plugin.web.HTMLFileReaderToa
 		catch(Exception ex)
 		{
 			ex.printStackTrace();
+			writeReply(ctx, 200, "text/plain", "error retrieve identity", "Cannot display identity, maybe it hasn't been retrieved from Freenet yet.");
 		}
 		finally
 		{

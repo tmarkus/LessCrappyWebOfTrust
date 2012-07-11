@@ -1,6 +1,5 @@
 - Fix the bucket leaking problem
 - write identity insert keys to plain text file
-- ShowIdentity with id that hasn't been fetched yet throws NullPointerException, should just display in UI that the identity hasn't been fetched yet
 - Beautify HTML pages for various actions
 - create page where you can search for an identity and go to its identity info page (listing all identities is CRAZY)
 - check whether we can output evil HTML? (this would be bad)
