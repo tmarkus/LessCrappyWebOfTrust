@@ -11,7 +11,6 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 
 import plugins.WebOfTrust.WebOfTrust;
-import plugins.WebOfTrust.ScoreComputer;
 import plugins.WebOfTrust.datamodel.IVertex;
 
 import thomasmarkus.nl.freenet.graphdb.H2Graph;
@@ -98,32 +97,6 @@ public class OverviewController extends freenet.plugin.web.HTMLFileReaderToadlet
 		}
 	}
 	
-	public void handleMethodPOST(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException, SQLException
-	{
-		H2Graph graph = null;
-		try
-		{
-			graph = gf.getGraph();
-			String action = request.getPartAsStringFailsafe("action", 20000);
-			
-			//generate the web of trust for each of the ownIdentities that we have
-			if (action.equals("generate"))
-			{
-				ScoreComputer sc = new ScoreComputer(graph);
-				for(long vertex_id : graph.getVertexByPropertyValue("ownIdentity", "true"))
-				{
-					Map<String, List<String>> props = graph.getVertexProperties(vertex_id);
-					sc.compute(props.get("id").get(0));
-				}
-			}
-			handleMethodGET(uri, request, ctx);
-		}
-		finally
-		{
-			graph.close();
-		}
-	}
-
 	@Override
 	public void terminate() throws SQLException {
 		

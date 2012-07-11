@@ -34,6 +34,7 @@ public class RequestScheduler extends Thread {
 	private static final long MAX_TIME_SINCE_LAST_INSERT = (60 * 1000) * 60; //don't insert faster than once per hour
 	private static final long MINIMAL_SLEEP_TIME = (1*1000) * 120; // 2 minutes
 	private static final long MINIMAL_SLEEP_TIME_WITH_BIG_BACKLOG = (1*1000); // 1 second
+	private static final long MINIMAL_SLEEP_TIME_WOT_UPDATE = (60*1000) * 60 * 2; // update WoT once per 2 hour;
 	private static final long MAX_DB_CONNECTIONS = 5;
 	
 	private WebOfTrust main;
@@ -48,6 +49,8 @@ public class RequestScheduler extends Thread {
 	private ClientGetCallback cc;
 	private FetchContext fc;
 
+	private long wot_last_updated = 0;
+	
 	public RequestScheduler(WebOfTrust main, H2GraphFactory gf, HighLevelSimpleClient hl)
 	{
 		this.main = main;
@@ -79,6 +82,9 @@ public class RequestScheduler extends Thread {
 				//check if our own identities need to be inserted and do it if needed
 				insertOwnIdentities();
 
+				//update the Web of Trust
+				updateWoT();
+				
 				//chill out a bit
 				try {
 					if (getBacklogSize() > 10)
@@ -276,6 +282,33 @@ public class RequestScheduler extends Thread {
 		}
 	}
 
+	/**
+	 * Update the web of trust values
+	 * @throws SQLException
+	 */
+	
+	private void updateWoT() throws SQLException
+	{
+		if (System.currentTimeMillis() - wot_last_updated > MINIMAL_SLEEP_TIME_WOT_UPDATE)
+		{
+			wot_last_updated = System.currentTimeMillis();
+			
+			H2Graph graph = gf.getGraph();
+			try
+			{
+				ScoreComputer sc = new ScoreComputer(graph);
+				for(long vertex_id : graph.getVertexByPropertyValue("ownIdentity", "true"))
+				{
+					sc.compute( graph.getVertexProperties(vertex_id).get("id").get(0) );
+				}
+			}
+			finally
+			{
+				graph.close();
+			}
+		}
+	}
+	
 	public FreenetURI getBacklogItem()
 	{
 		synchronized (backlog) {
