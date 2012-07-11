@@ -145,6 +145,11 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		//tell everybody else that we are no longer running
 		isRunning = false;
 		
+		
+		//remove Navigation category
+		pr.getPageMaker().removeNavigationCategory("WebOfTrust.menuName.name");
+		
+		//deregister toadlets
 		ToadletContainer toadletContainer = pr.getToadletContainer();
 		for (FileReaderToadlet pageToadlet : toadlets) {
 			try {
