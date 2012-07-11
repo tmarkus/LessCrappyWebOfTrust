@@ -5,6 +5,7 @@
 - specify the identity restore key format
 - use priority queue for fetches to make sure that own identities are fetched before all others on the queue
 - make priority levels and such configurable
+- rewrite score computation algorithm and make it readable and easy to modify
 - investigate: freenet:CHK@axAXtKUbJBGBqG-P3BnexykoFVTI4tOWaOmjeC1LTZs,ft2FxCgqHo5DJxaeydT4FT6wOM4AP6LYTKfxANmOZT8,AAIC--8/trace
 - Beautify HTML pages for various actions (CSS)
 - Make the DB backend configurable (it's why we're using JDBC afterall...)
