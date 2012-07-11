@@ -12,7 +12,7 @@
 	<property name="freenetjar" value="/home/tmarkus/checkouts/fred/dist/freenet.jar"/>
 	<property name="freenet-extjar" value="/home/tmarkus/checkouts/fred/lib/freenet-ext.jar"/>
 
-	<target name="compile"> 
+	<target name="compile" depends="clean"> 
 		<mkdir dir="${build}"/>
 
 		<tstamp/>
