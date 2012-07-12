@@ -54,7 +54,7 @@ import freenet.support.io.Closer;
 
 
 
-public class OwnIdentityInserter implements Runnable, ClientPutCallback {
+public class OwnIdentityInserter implements Runnable, ClientPutCallback  {
 
 	private H2GraphFactory gf;
 	private String ownID;

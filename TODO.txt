@@ -1,23 +1,26 @@
-- check that an ssk request schedule always gets removed from the backlog even if the XML contains errors and thus an identity update isn't executed.
-- Fix the bucket leaking problem
-- write identity insert keys to plain text file
-- create page where you can search for an identity and go to its identity info page (listing all identities is CRAZY)
-- check whether we can output evil HTML? (this would be bad), always send HTML output through the freenet filter
-- specify the identity restore key format
-- use priority queue for fetches to make sure that own identities are fetched before all others on the queue
-- make priority levels and such configurable
+=== Until first BETA ===
 - rewrite score computation algorithm and make it readable and easy to modify
+- write identity insert keys to plain text file
+- check whether we can output evil HTML? (this would be bad), always send HTML output through the freenet filter
+- use priority queue for fetches to make sure that own identities are fetched before all others on the queue
+-- required for quickly restoring multiple identities
+- make priority levels and such configurable
 - investigate: freenet:CHK@axAXtKUbJBGBqG-P3BnexykoFVTI4tOWaOmjeC1LTZs,ft2FxCgqHo5DJxaeydT4FT6wOM4AP6LYTKfxANmOZT8,AAIC--8/trace
+-- investigate concurrency issues with db when bootstrapping due to timeouts
 - Beautify HTML pages for various actions (CSS)
-- Make the DB backend configurable (it's why we're using JDBC afterall...)
+- Make the DB backend configurable (it's why we're using JDBC after all...)
 -- This is actually a graphdatabase todo though..., probably requires refactoring of connection pool with some other library
 
 
-- RELEASE FOR BETA TESTING
+=== After first BETA ===
 
+- Fix the bucket leaking problem (if it still exists)
+- specify the identity restore key format
+- create page where you can search for an identity and go to its identity info page (listing all identities is CRAZY)
 - add random delay to identity insertion? -> after a restart of freenet local identities may be inserted at similar times.
---- Correlating USK updates times could lead to identity compromise.
+-- Correlating USK updates times could lead to identity compromise.
 
-FAR FUTURE:
+
+=== FAR FUTURE ===
 - add event pushing framework thingy such that plugins don't need to fetch the full WoT every N minutes
-- clean-up some vertices from the the WoT using some criterium
+- check that an ssk request schedule always gets removed from the backlog even if the XML contains errors and thus an identity update isn't executed.
