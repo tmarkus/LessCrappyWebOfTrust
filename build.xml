@@ -8,9 +8,18 @@
 	<property name="lib" location="lib"/>
 	<property name="dist" location="dist"/>
 
-	<!-- This location MUST point to a freenet jar. Change it if needed. -->
-	<property name="freenetjar" value="/home/tmarkus/checkouts/fred/dist/freenet.jar"/>
-	<property name="freenet-extjar" value="/home/tmarkus/checkouts/fred/lib/freenet-ext.jar"/>
+	<property name="freenetFolder" value="/home/tmarkus/checkouts/fred"/>
+
+<path id="class.path">
+  <fileset dir="${lib}">
+    <include name="**/*.jar" />
+  </fileset>
+  <fileset dir="${freenetFolder}">
+	    <include name="dist/freenet.jar" />
+	    <include name="lib/freenet-ext.jar" />
+  </fileset>
+</path>
+
 
 	<target name="compile" depends="clean"> 
 		<mkdir dir="${build}"/>
@@ -21,13 +30,7 @@
 			<sourcepath>
 				<pathelement path="${build}"/>
 			</sourcepath>
-			<classpath>
-				<pathelement location="${freenetjar}"/>
-				<pathelement location="${freenet-extjar}"/>
-				<pathelement location="${lib}/*.jar"/>
-				<pathelement location="${lib}/jsoup-1.6.1.jar"/>
-				<pathelement location="${lib}/h2graph.jar"/>
-			</classpath>
+			<classpath refid="class.path" />
 		</javac>
 		
 		
