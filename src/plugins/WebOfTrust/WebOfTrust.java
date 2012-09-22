@@ -5,6 +5,25 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
 
+import org.neo4j.graphdb.DynamicRelationshipType;
+import org.neo4j.graphdb.GraphDatabaseService;
+import org.neo4j.graphdb.Node;
+import org.neo4j.graphdb.Relationship;
+import org.neo4j.graphdb.Transaction;
+import org.neo4j.graphdb.factory.GraphDatabaseFactory;
+import org.neo4j.graphdb.factory.GraphDatabaseSetting;
+import org.neo4j.graphdb.factory.GraphDatabaseSettings;
+import org.neo4j.graphdb.index.IndexProvider;
+import org.neo4j.index.lucene.LuceneIndexProvider;
+import org.neo4j.kernel.EmbeddedGraphDatabase;
+import org.neo4j.kernel.GraphDatabaseAPI;
+import org.neo4j.kernel.InternalAbstractGraphDatabase;
+import org.neo4j.kernel.ListIndexIterable;
+import org.neo4j.kernel.impl.cache.CacheProvider;
+import org.neo4j.kernel.impl.cache.SoftCacheProvider;
+import org.neo4j.server.WrappingNeoServerBootstrapper;
+
+import plugins.WebOfTrust.datamodel.IVertex;
 import plugins.WebOfTrust.pages.IdenticonController;
 import plugins.WebOfTrust.pages.IdentityManagement;
 import plugins.WebOfTrust.pages.OverviewController;
@@ -45,13 +64,21 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	private WebInterface webInterface;
 	private final List<FileReaderToadlet> toadlets = new ArrayList<FileReaderToadlet>();
 	private HighLevelSimpleClient hl;
-	private H2GraphFactory gf;
+	
+	private GraphDatabaseService db;
+	private WrappingNeoServerBootstrapper srv;
+	
 	private RequestScheduler rs;
 
 	public volatile boolean isRunning = true;
 	private FCPInterface fpi; 
 	private final static Logger LOGGER = Logger.getLogger(WebOfTrust.class.getName());
 
+	public GraphDatabaseService getDB()
+	{
+		return this.db;
+	}
+	
 	public HighLevelSimpleClient getHL()
 	{
 		return this.hl;
@@ -71,22 +98,18 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		FetchContext fc = hl.getFetchContext();
 		fc.followRedirects = true;
 
-		try {
-			//init graph
-			this.gf = new H2GraphFactory(db_path, RequestScheduler.MAX_REQUESTS*5);	
+		//init neo4j embedded db
+		GraphDatabaseService db = setupNeo4j();
+		
+		//setup the web ui for neo4j
+		//TODO: include the jars required (system/lib ?)
+		
+		//setup fcp plugin handler
+		this.fpi = new FCPInterface(db);
 
-			//setup fcp plugin handler
-			this.fpi = new FCPInterface(gf);
-
-			//setup requestscheduler
-			this.rs = new RequestScheduler(this, gf, hl);
-			new Thread(rs). start ( );
-		} 
-		catch (ClassNotFoundException e) {
-			e.printStackTrace();
-		} catch (SQLException e) {
-			e.printStackTrace();
-		}		
+		//setup requestscheduler
+		this.rs = new RequestScheduler(this, db, hl);
+		new Thread(rs). start ( );		
 		//setup web interface
 		try {
 			setupWebinterface();
@@ -95,6 +118,45 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		}
 
 		LOGGER.info("Completed initialization.");
+	}
+
+	protected GraphDatabaseService setupNeo4j() {
+		//the cache providers
+		ArrayList<CacheProvider> cacheList = new ArrayList<CacheProvider>();
+		cacheList.add( new SoftCacheProvider() );
+ 
+		//the index providers
+		IndexProvider lucene = new LuceneIndexProvider();
+		ArrayList<IndexProvider> provs = new ArrayList<IndexProvider>();
+		provs.add( lucene );
+		ListIndexIterable providers = new ListIndexIterable();
+		providers.setIndexProviders( provs );
+ 
+		//the database setup
+		GraphDatabaseFactory gdbf = new GraphDatabaseFactory();
+		gdbf.setIndexProviders( providers );
+		gdbf.setCacheProviders( cacheList );
+		
+		
+		//db = gdbf.newEmbeddedDatabase(db_path);
+		
+		
+		db = gdbf.newEmbeddedDatabaseBuilder( db_path )
+		.setConfig( GraphDatabaseSettings.node_keys_indexable, IVertex.ID+","+IVertex.OWN_IDENTITY )
+	    .setConfig( GraphDatabaseSettings.relationship_keys_indexable, "relProp1,relProp2" )
+	    .setConfig( GraphDatabaseSettings.node_auto_indexing, GraphDatabaseSetting.TRUE )
+	    .setConfig( GraphDatabaseSettings.relationship_auto_indexing, GraphDatabaseSetting.TRUE ).newGraphDatabase();
+
+		
+
+		/*
+		srv = new WrappingNeoServerBootstrapper( (InternalAbstractGraphDatabase) db );
+		srv.start();
+		*/
+		
+		// The server is now running
+		
+		return db;
 	}
 
 	private void setupWebinterface() throws SQLException
@@ -107,7 +169,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		FileReaderToadlet oc = new OverviewController(this,
 				pr.getHLSimpleClient(),
 				"/staticfiles/html/manage.html",
-				basePath, gf);
+				basePath, db);
 		toadlets.add(oc);
 
 		pr.getPageMaker().addNavigationCategory(basePath,"WebOfTrust.menuName.name", "WebOfTrust.menuName.tooltip", this);
@@ -124,12 +186,12 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		toadlets.add(new IdentityManagement(this,
 				pr.getHLSimpleClient(),
 				"/staticfiles/html/restore.html",
-				basePath+"/restore", gf));
+				basePath+"/restore", db));
 
 		toadlets.add(new ShowIdentityController(this,
 				pr.getHLSimpleClient(),
 				"/staticfiles/html/showIdentity.html",
-				basePath+"/ShowIdentity", gf));
+				basePath+"/ShowIdentity", db));
 
 		for(Toadlet toadlet : toadlets)
 		{
@@ -165,18 +227,15 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		//interrupt the request scheduler
 		rs.interrupt();
 		
-		//kill the database
-		try
-		{
-			if( gf != null ) {
-				System.out.println("Killing the graph database");
-				gf.stop();
-				System.out.println("done");
-			}
-		}
-		catch(SQLException e)
-		{
-			e.printStackTrace();
+		if( db != null ) {
+			System.out.println("Killing the graph database");
+			
+			//srv.stop();
+			
+			//shutdown the graph database
+			db.shutdown();
+
+			System.out.println("done");
 		}
 	}
 

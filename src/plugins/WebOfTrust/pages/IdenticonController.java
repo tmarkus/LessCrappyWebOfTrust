@@ -23,7 +23,7 @@ public class IdenticonController extends freenet.plugin.web.HTMLFileReaderToadle
 	private WebOfTrust main;
 	
 	public IdenticonController(WebOfTrust main, HighLevelSimpleClient client, String filepath, String URLPath) {
-		super(client, filepath, URLPath);
+		super(client,main.getDB(), filepath, URLPath);
 		this.main = main;
 	}
 

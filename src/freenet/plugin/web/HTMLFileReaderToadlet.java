@@ -5,6 +5,8 @@ import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.neo4j.graphdb.GraphDatabaseService;
+
 
 import freenet.client.HighLevelSimpleClient;
 import freenet.clients.http.ToadletContext;
@@ -15,8 +17,8 @@ public abstract class HTMLFileReaderToadlet extends FileReaderToadlet {
 
 	private Map<String, String> context = new HashMap<String, String>();
 	
-	public HTMLFileReaderToadlet(HighLevelSimpleClient client, String filepath, String URLPath) {
-		super(client, filepath, URLPath);
+	public HTMLFileReaderToadlet(HighLevelSimpleClient client, GraphDatabaseService db, String filepath, String URLPath) {
+		super(db, client, filepath, URLPath);
 	}
 
 	public void setContext(Map<String, String> context)

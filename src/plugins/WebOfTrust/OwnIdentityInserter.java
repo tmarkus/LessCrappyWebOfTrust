@@ -33,6 +33,13 @@ import thomasmarkus.nl.freenet.graphdb.H2GraphFactory;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 
+import org.neo4j.graphdb.Direction;
+import org.neo4j.graphdb.GraphDatabaseService;
+import org.neo4j.graphdb.Node;
+import org.neo4j.graphdb.Relationship;
+import org.neo4j.graphdb.Transaction;
+import org.neo4j.graphdb.index.Index;
+import org.neo4j.graphdb.index.ReadableIndex;
 import org.w3c.dom.DOMImplementation;
 
 import org.w3c.dom.Document;
@@ -56,14 +63,14 @@ import freenet.support.io.Closer;
 
 public class OwnIdentityInserter implements Runnable, ClientPutCallback  {
 
-	private H2GraphFactory gf;
+	private GraphDatabaseService db;
 	private String ownID;
 	private HighLevelSimpleClient hl;
 	private WebOfTrust wot;
 	
-	public OwnIdentityInserter(H2GraphFactory gf, String ownID, HighLevelSimpleClient hl, WebOfTrust wot)
+	public OwnIdentityInserter(GraphDatabaseService db, String ownID, HighLevelSimpleClient hl, WebOfTrust wot)
 	{
-		this.gf = gf;
+		this.db = db;
 		this.ownID = ownID;
 		this.hl = hl;
 		this.wot = wot;
@@ -71,34 +78,32 @@ public class OwnIdentityInserter implements Runnable, ClientPutCallback  {
 	
 	@Override
 	public void run() {
+
+		ReadableIndex<Node> nodeIndex = db.index().getNodeAutoIndexer().getAutoIndex();
+		Node own_vertex = nodeIndex.get(IVertex.ID, ownID).getSingle();
 		
-		H2Graph graph = null;
+		Transaction tx = db.beginTx();
 		try {
-			graph = gf.getGraph();
-			
-			//get all the properties of this identity from the graph
-			long own_vertex = graph.getVertexByPropertyValue(IVertex.ID, ownID).get(0);
-			Map<String, List<String>> props = graph.getVertexProperties(own_vertex);
 		
-			if (!props.containsKey(IVertex.DONT_INSERT)) //identity should have some minimal amount of data...
+			if (!own_vertex.hasProperty(IVertex.DONT_INSERT)  ) //identity should have some minimal amount of data...
 			{
 				String old_hash = "";
-				if (props.containsKey(IVertex.HASH))	old_hash = props.get(IVertex.HASH).get(0);
-				final String new_hash = calculateIdentityHash(graph, own_vertex);
+				if (own_vertex.hasProperty(IVertex.HASH))		old_hash = (String) own_vertex.getProperty(IVertex.HASH);
+				final String new_hash = calculateIdentityHash(own_vertex);
 				
 				if (!new_hash.equals(old_hash))
 				{
 					//create the bucket
-					final String xml = createXML(graph, own_vertex, null);
+					final String xml = createXML(own_vertex, null);
 					final Bucket bucket = wot.getPR().getNode().clientCore.persistentTempBucketFactory.makeBucket(xml.length());
-					createXML(graph, own_vertex, bucket);
+					createXML(own_vertex, bucket);
 					bucket.setReadOnly();
 
 					//create XML document
 					long next_edition = 0; //default
-					if (props.containsKey(IVertex.EDITION))	next_edition = Long.parseLong(props.get(IVertex.EDITION).get(0)) + 1;
+					if (own_vertex.hasProperty(IVertex.EDITION))	next_edition =  (Long) own_vertex.getProperty(IVertex.EDITION) + 1;
 					
-					FreenetURI nextInsertURI = new FreenetURI(props.get(IVertex.INSERT_URI).get(0)).setSuggestedEdition(next_edition);
+					FreenetURI nextInsertURI = new FreenetURI((String) own_vertex.getProperty(IVertex.INSERT_URI)).setSuggestedEdition(next_edition);
 					
 					final InsertBlock ib = new InsertBlock(bucket, null, nextInsertURI);
 					final InsertContext ictx = hl.getInsertContext(true);
@@ -116,10 +121,13 @@ public class OwnIdentityInserter implements Runnable, ClientPutCallback  {
 					ClientPutter pu = 	hl.insert(ib, false, null, false, ictx, this, RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS);
 					
 					//update the time when we stored it in the database (as to disallow inserting it every second)
-					graph.updateVertexProperty(own_vertex, IVertex.LAST_INSERT, Long.toString(System.currentTimeMillis()));
-					graph.updateVertexProperty(own_vertex, IVertex.HASH, new_hash);
+
+					own_vertex.setProperty(IVertex.LAST_INSERT, System.currentTimeMillis());
+					own_vertex.setProperty(IVertex.HASH, new_hash);
 				}
 			}
+		
+			tx.success();
 		} catch (TransformerConfigurationException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -150,11 +158,7 @@ public class OwnIdentityInserter implements Runnable, ClientPutCallback  {
 		}
 		finally
 		{
-			try {
-				graph.close();
-			} catch (SQLException e) {
-				e.printStackTrace();
-			}
+			tx.finish();
 		}
 	}
 	
@@ -163,27 +167,25 @@ public class OwnIdentityInserter implements Runnable, ClientPutCallback  {
 
 		System.out.println("IDENTITY INSERT COMPLETE FOR URI: " + cp.getURI().toASCIIString());
 		
+		ReadableIndex<Node> nodeIndex = db.index().getNodeAutoIndexer().getAutoIndex();
+		Node own_vertex = nodeIndex.get(IVertex.ID, ownID).getSingle();
+		
 		//update the insert and request uris in the database
-		H2Graph graph = null;
+		Transaction tx = db.beginTx();
 		try {
-			graph = gf.getGraph();
-			List<Long> own_vertices = graph.getVertexByPropertyValue(IVertex.ID, ownID);
-
-			for(long own_vertex : own_vertices)
-			{
-				Map<String, List<String>> props = graph.getVertexProperties(own_vertex);
-				FreenetURI newRequestURI = new FreenetURI(props.get(IVertex.REQUEST_URI).get(0));
-				long new_edition = cp.getURI().getEdition();
-				newRequestURI = newRequestURI.setSuggestedEdition(new_edition);
-				
-				graph.updateVertexProperty(own_vertex, IVertex.EDITION, Long.toString(cp.getURI().getEdition()));
-				graph.updateVertexProperty(own_vertex, IVertex.REQUEST_URI, newRequestURI.toASCIIString());
+			FreenetURI newRequestURI = new FreenetURI( (String) own_vertex.getProperty(IVertex.REQUEST_URI));
+			long new_edition = cp.getURI().getEdition();
+			newRequestURI = newRequestURI.setSuggestedEdition(new_edition);
 			
-				//TODO: update the insert URI? 
-				
-				//update the hash value after these updates (otherwise infinite insert
-				graph.updateVertexProperty(own_vertex, IVertex.HASH, calculateIdentityHash(graph, own_vertex));
-			}
+			own_vertex.setProperty(IVertex.EDITION, cp.getURI().getEdition());
+			own_vertex.setProperty(IVertex.REQUEST_URI, newRequestURI.toASCIIString());
+		
+			//TODO: update the insert URI? 
+			
+			//update the hash value after these updates (otherwise infinite insert
+			own_vertex.setProperty(IVertex.HASH, calculateIdentityHash(own_vertex));
+		
+			tx.success();
 		} catch (SQLException e) {
 			e.printStackTrace();
 		} catch (MalformedURLException e) {
@@ -194,45 +196,32 @@ public class OwnIdentityInserter implements Runnable, ClientPutCallback  {
 		finally
 		{
 			Closer.close(((ClientPutter) cp).getData());
-			
-			try {
-				graph.close();
-			} catch (SQLException e) {
-				e.printStackTrace();
-			}
+			tx.finish();
 		}
 	}
 	
 	
-	private static String calculateIdentityHash(H2Graph graph, long own_vertex_id) throws SQLException, NoSuchAlgorithmException
+	private static String calculateIdentityHash(Node own_vertex) throws SQLException, NoSuchAlgorithmException
 	{
-		Map<String, List<String>> props = graph.getVertexProperties(own_vertex_id);
-		List<Edge> edges = graph.getOutgoingEdges(own_vertex_id);
 
 		String string_to_hash = "";
-		for(Entry<String, List<String>> pair : props.entrySet())
+		for(String property : own_vertex.getPropertyKeys())
 		{
-			if (! (pair.getKey().equals(IVertex.HASH) || pair.getKey().equals(IVertex.LAST_INSERT))) //don't hash the hash to prevent infinite regression...
+			if (! (property.equals(IVertex.HASH) || property.equals(IVertex.LAST_INSERT))) //don't hash the hash to prevent infinite regression...
 			{
-				string_to_hash += pair.getKey();
-				for(String value : pair.getValue())
-				{
-					string_to_hash += value;
-				}
+				string_to_hash += property;
+				string_to_hash += own_vertex.getProperty(property).toString();
 			}
 		}
-	
-		for(Edge edge : edges)
-		{
-			Map<String, List<String>> edge_props = edge.getProperties();
 
-			for(Entry<String, List<String>> pair : edge_props.entrySet())
+		for(Relationship edge : own_vertex.getRelationships(Direction.OUTGOING))
+		{
+
+			
+			for(String prop : edge.getPropertyKeys())
 			{
-				string_to_hash += pair.getKey();
-				for(String value : pair.getValue())
-				{
-					string_to_hash += value;
-				}
+				string_to_hash += prop;
+				string_to_hash += edge.getProperty(prop).toString();
 			}
 		}
 		
@@ -257,7 +246,7 @@ public class OwnIdentityInserter implements Runnable, ClientPutCallback  {
 	 * @throws IOException 
 	 */
 	
-	private static String createXML(H2Graph graph, long own_identity, Bucket bucket) throws SQLException, TransformerFactoryConfigurationError, ParserConfigurationException, TransformerException, IOException
+	private static String createXML(Node own_identity, Bucket bucket) throws SQLException, TransformerFactoryConfigurationError, ParserConfigurationException, TransformerException, IOException
 	{
 
 		DocumentBuilderFactory xmlFactory = DocumentBuilderFactory.newInstance();
@@ -284,13 +273,12 @@ public class OwnIdentityInserter implements Runnable, ClientPutCallback  {
 		rootElement.setAttribute("Version", Long.toString(WebOfTrust.COMPATIBLE_VERSION));
 		
 		/* Create the identity Element */
-		Map<String, List<String>> props = graph.getVertexProperties(own_identity);
 		
 		Element identityElement = xmlDoc.createElement("Identity");
 		identityElement.setAttribute("Version", Integer.toString(1)); /* Version of the XML format */
 		
-			identityElement.setAttribute("Name",  props.get(IVertex.NAME).get(0));
-			if (props.containsKey(IVertex.PUBLISHES_TRUSTLIST) && props.get(IVertex.PUBLISHES_TRUSTLIST).get(0).equals("true") )
+			identityElement.setAttribute("Name", (String) own_identity.getProperty(IVertex.NAME));
+			if (own_identity.hasProperty(IVertex.PUBLISHES_TRUSTLIST) && (Boolean) own_identity.getProperty(IVertex.PUBLISHES_TRUSTLIST) )
 			{
 				identityElement.setAttribute("PublishesTrustList",   Boolean.toString(true));
 			}
@@ -300,9 +288,9 @@ public class OwnIdentityInserter implements Runnable, ClientPutCallback  {
 			}
 			
 			/* Create the context Elements */
-			if (props.containsKey(IVertex.CONTEXT_NAME)) // do we even have contexts? :)
+			if (own_identity.hasProperty(IVertex.CONTEXT_NAME) ) // do we even have contexts? :)
 			{
-				for(String context : props.get(IVertex.CONTEXT_NAME)) {
+				for(String context : (List<String>) own_identity.getProperty(IVertex.CONTEXT_NAME)) {
 					Element contextElement = xmlDoc.createElement("Context");
 					contextElement.setAttribute("Name", context);
 					identityElement.appendChild(contextElement);
@@ -323,32 +311,32 @@ public class OwnIdentityInserter implements Runnable, ClientPutCallback  {
 			}
 			
 			/* Create the property Elements */
-			for(String propertyName : props.keySet()) {
+			for(String propertyName : own_identity.getPropertyKeys() ) {
 				if (!blackList.contains(propertyName) && !propertyName.contains(IVertex.TRUST+"."))
 				{
 					Element propertyElement = xmlDoc.createElement("Property");
 					propertyElement.setAttribute("Name", propertyName);
-					propertyElement.setAttribute("Value", props.get(propertyName).get(0));
+					propertyElement.setAttribute("Value",  own_identity.getProperty(propertyName).toString());
 					identityElement.appendChild(propertyElement);
 				}
 			}
 			
 			/* Create the trust list Element and its trust Elements */
-			if (props.containsKey(IVertex.PUBLISHES_TRUSTLIST) && props.get(IVertex.PUBLISHES_TRUSTLIST).get(0).equals("true"))
+			if (own_identity.hasProperty(IVertex.PUBLISHES_TRUSTLIST) && (Boolean) own_identity.getProperty(IVertex.PUBLISHES_TRUSTLIST))
 			{
 				Element trustListElement = xmlDoc.createElement("TrustList");
 
-				List<Edge> edges = graph.getOutgoingEdges(own_identity);
-				for(Edge edge : edges)
+				Iterable<Relationship> edges = own_identity.getRelationships(Direction.OUTGOING);
+				for(Relationship edge : edges)
 				{
-					Map<String, List<String>> peer_identity_props = graph.getVertexProperties(edge.vertex_to);
+					Node peer_identity = edge.getEndNode();
 					
-					if(peer_identity_props.containsKey(IVertex.REQUEST_URI))
+					if(peer_identity.hasProperty(IVertex.REQUEST_URI) )
 					{
 						Element trustElement = xmlDoc.createElement("Trust");
-						trustElement.setAttribute("Identity", peer_identity_props.get(IVertex.REQUEST_URI).get(0));
-						trustElement.setAttribute("Value", edge.getProperty(IEdge.SCORE));
-						trustElement.setAttribute("Comment", edge.getProperty(IEdge.COMMENT));
+						trustElement.setAttribute("Identity", (String) peer_identity.getProperty(IVertex.REQUEST_URI));
+						trustElement.setAttribute("Value",  edge.getProperty(IEdge.SCORE).toString());
+						trustElement.setAttribute("Comment", (String) edge.getProperty(IEdge.COMMENT));
 						trustListElement.appendChild(trustElement);
 					}
 				}

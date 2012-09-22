@@ -46,11 +46,15 @@
 
 		<unzip dest="${build}">
 		    	<patternset>
-		        	<include name="**/*.class"/>
+		        	<include name="**/*.*"/>
+		        	<exclude name="**/*.SF"/>
+		        	<exclude name="**/*.DSA"/>
+		        	<exclude name="**/*.RSA"/>
 			</patternset>
     			<fileset dir=".">
         			<include name="lib/*.jar"/>
 			</fileset>
+			
 		</unzip>
 
 	</target>

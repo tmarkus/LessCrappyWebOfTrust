@@ -1,6 +1,10 @@
 package plugins.WebOfTrust;
 
+import java.lang.reflect.Constructor;
 import java.sql.SQLException;
+
+import org.neo4j.graphdb.GraphDatabaseService;
+import org.neo4j.kernel.EmbeddedGraphDatabase;
 
 import plugins.WebOfTrust.fcp.FCPBase;
 
@@ -13,27 +17,27 @@ import freenet.support.api.Bucket;
 
 public class FCPInterface {
 
-	private H2GraphFactory gf;
-
-	public FCPInterface(H2GraphFactory gf)
+	private GraphDatabaseService db;
+	
+	public FCPInterface(GraphDatabaseService db)
 	{
-		this.gf = gf;;
+		this.db = db;
 	}
 
 	public void handle(PluginReplySender prs, SimpleFieldSet sfs, Bucket bucket, int accessType) throws SQLException, PluginNotFoundException {
 		//System.out.println("Received the following message type: " + sfs.get("Message") + " with identifier: " + prs.getIdentifier());
 
-		H2Graph graph = gf.getGraph();
 		try {
 			//find class with the name Message
 			@SuppressWarnings("unchecked")
 			Class<FCPBase> c = (Class<FCPBase>) Class.forName("plugins.WebOfTrust.fcp."+sfs.get("Message"));
-			FCPBase handler = c.newInstance();
+			Constructor<? extends FCPBase> ctor = c.getConstructor();
+			FCPBase handler = ctor.newInstance(db);
 			
 			long start = System.currentTimeMillis();
 			
 			//call its handle method with the input data
-			final SimpleFieldSet reply = handler.handle(graph, sfs);
+			final SimpleFieldSet reply = handler.handle(sfs);
 
 			System.out.println(sfs.get("Message") + " took: " + (System.currentTimeMillis()-start)  + "ms");
 
@@ -49,11 +53,6 @@ public class FCPInterface {
 			reply.putSingle("Message", "Error");
 			reply.putSingle("Description", "Could not match message with reply");
 			prs.send(reply);
-		}
-		finally
-		{
-			
-			graph.close();
 		}
 	}
 }

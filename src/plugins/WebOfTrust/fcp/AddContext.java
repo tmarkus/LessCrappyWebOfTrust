@@ -1,7 +1,14 @@
 package plugins.WebOfTrust.fcp;
 
 import java.sql.SQLException;
+import java.util.LinkedList;
 import java.util.List;
+
+import org.neo4j.graphdb.GraphDatabaseService;
+import org.neo4j.graphdb.Node;
+import org.neo4j.graphdb.Transaction;
+import org.neo4j.graphdb.index.IndexHits;
+import org.neo4j.graphdb.index.ReadableIndex;
 
 import plugins.WebOfTrust.datamodel.IVertex;
 
@@ -10,18 +17,45 @@ import freenet.support.SimpleFieldSet;
 
 public class AddContext extends FCPBase {
 
+	public AddContext(GraphDatabaseService db) {
+		super(db);
+	}
+
 	@Override
-	public SimpleFieldSet handle(H2Graph graph, SimpleFieldSet input) throws SQLException {
+	public SimpleFieldSet handle(SimpleFieldSet input) {
 		final String identityID = input.get("Identity");
 		final String context = input.get("Context");
 
-		List<Long> identity_vertex_ids = graph.getVertexByPropertyValue(IVertex.ID, identityID);
-		for(long identity_vertex_id : identity_vertex_ids)
-		{
-			graph.addVertexProperty(identity_vertex_id, "contextName", context);
-		}
+		IndexHits<Node> identity_vertices = nodeIndex.get(IVertex.ID, identityID);
+		Transaction tx = db.beginTx();
 
-		reply.putOverwrite("Message", "ContextAdded");
+		try
+		{
+			for(Node identity_vertex : identity_vertices)
+			{
+				List<String> contexts = null;
+				if (!identity_vertex.hasProperty(IVertex.CONTEXT_NAME))
+				{
+					contexts = new LinkedList<String>();
+				}
+				else
+				{
+					contexts = (List<String>) identity_vertex.getProperty(IVertex.CONTEXT_NAME);
+				}
+				
+				if (!contexts.contains(context)) contexts.add(context);
+				identity_vertex.setProperty(IVertex.CONTEXT_NAME, contexts);
+			}
+
+			reply.putOverwrite("Message", "ContextAdded");
+			tx.success();
+		}
+		finally
+		{
+			tx.finish();
+			identity_vertices.close();
+		}
+		
 		return reply;
 	}
 }

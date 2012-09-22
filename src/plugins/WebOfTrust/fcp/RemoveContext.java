@@ -1,26 +1,42 @@
 package plugins.WebOfTrust.fcp;
 
-import java.sql.SQLException;
 import java.util.List;
+
+import org.neo4j.graphdb.GraphDatabaseService;
+import org.neo4j.graphdb.Node;
+import org.neo4j.graphdb.Transaction;
 
 import plugins.WebOfTrust.datamodel.IVertex;
 
-import thomasmarkus.nl.freenet.graphdb.H2Graph;
 import freenet.support.SimpleFieldSet;
 
 public class RemoveContext extends FCPBase {
 
+	public RemoveContext(GraphDatabaseService db) {
+		super(db);
+	}
+
 	@Override
-	public SimpleFieldSet handle(H2Graph graph, SimpleFieldSet input) throws SQLException {
+	public SimpleFieldSet handle(SimpleFieldSet input) {
 		final String identityID = input.get("Identity");
 		final String context = input.get("Context");
 
-		List<Long> identity_vertex_ids = graph.getVertexByPropertyValue(IVertex.ID, identityID);
-		for(long identity_vertex_id : identity_vertex_ids)
+		Node vertex = nodeIndex.get(IVertex.ID, identityID).getSingle();
+		
+		List<String> contexts = (List<String>) vertex.getProperty(IVertex.CONTEXT_NAME);
+		contexts.remove(context);
+		
+		Transaction tx = db.beginTx();
+		try
 		{
-			graph.removeVertexPropertyValue(identity_vertex_id, "contextName", context);
+			vertex.setProperty(IVertex.CONTEXT_NAME, contexts);	
+			tx.success();
 		}
-
+		finally
+		{
+			tx.finish();
+		}
+		
 		reply.putOverwrite("Message", "ContextRemoved");
 		return reply;
 	}

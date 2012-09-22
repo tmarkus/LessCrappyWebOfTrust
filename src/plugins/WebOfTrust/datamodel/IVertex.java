@@ -1,6 +1,7 @@
 package plugins.WebOfTrust.datamodel;
 
 public class IVertex {
+	public final static String VERTEX_ID = "vertex_id";
 	public final static String ID = "id";
 	public final static String OWN_IDENTITY = "ownIdentity";
 	public final static String REQUEST_URI = "requestURI";
@@ -10,6 +11,7 @@ public class IVertex {
 	public final static String PUBLISHES_TRUSTLIST = "publishedTrustlist";
 	public final static String EDITION = "edition";
 	public final static String CONTEXT_NAME = "contextName";
+	public final static String DISTANCE = "distance";
 	
 	public final static String FIRST_FETCHED = "firstFetched";
 	public final static String LAST_FETCHED = "lastFetched";

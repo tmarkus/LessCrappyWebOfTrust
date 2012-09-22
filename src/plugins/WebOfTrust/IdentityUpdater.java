@@ -2,21 +2,23 @@ package plugins.WebOfTrust;
 
 import java.net.MalformedURLException;
 import java.sql.SQLException;
-import java.util.List;
-import java.util.Map;
 
+import org.neo4j.graphdb.Direction;
+import org.neo4j.graphdb.GraphDatabaseService;
+import org.neo4j.graphdb.Relationship;
+import org.neo4j.graphdb.Transaction;
+import org.neo4j.graphdb.index.ReadableIndex;
+import org.w3c.dom.DOMException;
 import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
+import plugins.WebOfTrust.datamodel.IContext;
 import plugins.WebOfTrust.datamodel.IEdge;
 import plugins.WebOfTrust.datamodel.IVertex;
+import plugins.WebOfTrust.datamodel.Rel;
 import plugins.WebOfTrust.util.Utils;
-
-import thomasmarkus.nl.freenet.graphdb.Edge;
-import thomasmarkus.nl.freenet.graphdb.H2Graph;
-import thomasmarkus.nl.freenet.graphdb.H2GraphFactory;
 
 import com.db4o.ObjectContainer;
 
@@ -29,15 +31,17 @@ import freenet.keys.FreenetURI;
 
 public class IdentityUpdater implements ClientGetCallback{
 
-	private final H2GraphFactory gf;
+	private final GraphDatabaseService db;
 	private final boolean isOwnIdentity;
 	private RequestScheduler rs;
-
-	public IdentityUpdater(RequestScheduler rs, H2GraphFactory gf, HighLevelSimpleClient hl, boolean isOwnIdentity)
+	private ReadableIndex<org.neo4j.graphdb.Node> nodeIndex;
+	
+	public IdentityUpdater(RequestScheduler rs, GraphDatabaseService db, HighLevelSimpleClient hl, boolean isOwnIdentity)
 	{
-		this.gf = gf;
+		this.db = db;
 		this.isOwnIdentity = isOwnIdentity;
 		this.rs = rs;
+		this.nodeIndex = db.index().getNodeAutoIndexer().getAutoIndex();
 	}
 
 	@Override
@@ -76,36 +80,35 @@ public class IdentityUpdater implements ClientGetCallback{
 		}
 	}
 
-	private void addTrustRelations(Document doc, FreenetURI freenetURI) throws SQLException
+	private void addTrustRelations(Document doc, FreenetURI freenetURI) throws SQLException, MalformedURLException, DOMException
 	{
-		H2Graph graph = gf.getGraph();
+		Transaction tx = db.beginTx();
 		try
 		{
-			graph.setAutoCommit(false);
-			
 			Node ownIdentity = doc.getElementsByTagName("Identity").item(0);
 			final String identityName = ownIdentity.getAttributes().getNamedItem("Name").getNodeValue();
 			final String publishesTrustList = ownIdentity.getAttributes().getNamedItem("PublishesTrustList").getNodeValue();
 			long current_edition = freenetURI.getEdition();
 
 			//setup identiy and possibly store it in the graphstore
-			final long identity = getIdentity(graph, freenetURI, current_edition);
+			final org.neo4j.graphdb.Node identity = getIdentity(freenetURI, current_edition);
 
-			if (current_edition > getCurrentStoredEdition(graph, identity)) //what we are fetching should be newer, if not, don't even bother updating everything
+			if (current_edition > getCurrentStoredEdition(identity)) //what we are fetching should be newer, if not, don't even bother updating everything
 			{
-				updateKeyEditions(graph, freenetURI, current_edition, identity); //always update the keys no matter what
+				updateKeyEditions(freenetURI, current_edition, identity); //always update the keys no matter what
 
 				//always update:
-				graph.updateVertexProperty(identity, IVertex.NAME, identityName);
-				graph.updateVertexProperty(identity, IVertex.PUBLISHES_TRUSTLIST, publishesTrustList);
-				SetContexts(graph, identity, doc.getElementsByTagName("Context"));
-				SetProperties(graph, identity, doc.getElementsByTagName("Property"));
-				graph.updateVertexProperty(identity, IVertex.LAST_FETCHED, Long.toString(System.currentTimeMillis()));
+				identity.setProperty(IVertex.NAME, identityName);
 
+				identity.setProperty(IVertex.PUBLISHES_TRUSTLIST, publishesTrustList);
 
-				//remove all outgoing edges for this peer
-				for(Edge edge : graph.getOutgoingEdges(identity))	graph.removeEdge(edge.id);
-				
+				SetContexts(identity, doc.getElementsByTagName("Context"));
+				SetProperties(identity, doc.getElementsByTagName("Property"));
+
+				identity.setProperty(IVertex.LAST_FETCHED, System.currentTimeMillis());
+
+				for(Relationship rel : identity.getRelationships(Direction.OUTGOING)) rel.delete();
+
 				//Add all the identities that this identity trusts in turn
 				Node list = doc.getElementsByTagName("TrustList").item(0);
 
@@ -125,34 +128,28 @@ public class IdentityUpdater implements ClientGetCallback{
 								final FreenetURI peerIdentityKey = new FreenetURI(attr.getNamedItem("Identity").getNodeValue());
 								final String trustComment = attr.getNamedItem("Comment").getNodeValue();
 								final Byte trustValue = Byte.parseByte(attr.getNamedItem("Value").getNodeValue());
+
+								org.neo4j.graphdb.Node peer = getPeerIdentity(db, peerIdentityKey);
+
+								Relationship edge = peer.createRelationshipTo(identity, Rel.TRUSTS);
 								
-								long peer = getPeerIdentity(graph, peerIdentityKey);
-								long edge = graph.addEdge(identity, peer);
-								try
-								{
-									graph.updateEdgeProperty(edge, IEdge.COMMENT, trustComment);
-									graph.updateEdgeProperty(edge, IEdge.SCORE, Byte.toString(trustValue));
-								}
-								catch(SQLException e)
-								{
-									System.out.println("Failed to add comment or score relation to graph database!");
-									System.out.println("Comment = "+trustComment+", Score = "+ Byte.toString(trustValue));
-									System.out.println("Identity: " + peerIdentityKey);
-									throw e;
-								}
+								edge.setProperty(IEdge.COMMENT, trustComment);
+								edge.setProperty(IEdge.SCORE, trustValue);
+									
 								//fetch the new identity if the USK value we're referred to seeing is newer than the one we are already aware of
 								final long current_ref_edition = peerIdentityKey.getEdition();
-								final Map<String, List<String>> peerProperties = graph.getVertexProperties(peer);
+
+								
 								long stored_edition = -1;
-								if (peerProperties != null && peerProperties.containsKey(IVertex.EDITION))
+								if (peer.hasProperty(IVertex.EDITION))
 								{
-									stored_edition = Long.parseLong(graph.getVertexProperties(peer).get(IVertex.EDITION).get(0));
+									stored_edition = (Long) peer.getProperty(IVertex.EDITION); 
 								}
 
 								if(stored_edition < current_ref_edition)
 								{
 									//update request uri to latest know edition
-									graph.updateVertexProperty(peer, IVertex.REQUEST_URI, peerIdentityKey.toASCIIString());
+									peer.setProperty(IVertex.REQUEST_URI, peerIdentityKey.toASCIIString());
 
 									//start fetching it
 									rs.addBacklog(peerIdentityKey);
@@ -166,133 +163,192 @@ public class IdentityUpdater implements ClientGetCallback{
 						}
 					}
 				}
-			}
-			graph.commit();
+					tx.success();
+				}
 		}
-		catch(Exception ex)
+				finally
+				{
+					tx.finish();
+				}
+		}
+
+		public static org.neo4j.graphdb.Node getPeerIdentity(GraphDatabaseService db, final FreenetURI peerIdentityKey)	throws SQLException 
 		{
-			ex.printStackTrace();
-		}
-		finally
-		{
-			graph.setAutoCommit(true);
-			graph.close();
-		}
-	}
-
-	public static long getPeerIdentity(H2Graph graph, final FreenetURI peerIdentityKey)	throws SQLException 
-	{
-		List<Long> identityMatches = graph.getVertexByPropertyValue(IVertex.ID, Utils.getIDFromKey(peerIdentityKey));
-		long peer;
-
-		//existing identity
-		if (identityMatches.size() > 0) {
-			peer = identityMatches.get(0);
-		}
-		else  {	//or create a new one
-			peer = graph.createVertex();
-			graph.updateVertexProperty(peer, IVertex.REQUEST_URI, peerIdentityKey.toASCIIString());
-			graph.updateVertexProperty(peer, IVertex.ID, Utils.getIDFromKey(peerIdentityKey));
-
-			//default to edition 0, because we want to ensure fetching the identity
-			graph.updateVertexProperty(peer, IVertex.EDITION, "-1");
-
-			//store when we first saw the identity
-			graph.updateVertexProperty(peer, IVertex.FIRST_FETCHED, Long.toString(System.currentTimeMillis()));
-		}
-
-		return peer;
-	}
-
-	private static void SetProperties(H2Graph graph, long identity, NodeList propertiesXML) throws SQLException 
-	{
-		//add all the (new) properties
-		for(int i=0; i < propertiesXML.getLength(); i++)
-		{
-			Node context = propertiesXML.item(i);
-			final NamedNodeMap attr = context.getAttributes();
-			final String name = attr.getNamedItem("Name").getNodeValue();
-			final String value = attr.getNamedItem("Value").getNodeValue();
-
-			graph.updateVertexProperty(identity, name, value);
-		}
-	}
-
-	private long getIdentity(H2Graph graph, FreenetURI identityKey, long current_edition) throws SQLException {
-
-		final String identityID = Utils.getIDFromKey(identityKey);
-		final List<Long> matches = graph.getVertexByPropertyValue(IVertex.ID, identityID);
-		long identity;
-
-		if (matches.size() > 0) {	//existing identity
-			identity = matches.get(0);
-		}
-		else  { //or create a new one
-			identity = graph.createVertex();
-			graph.updateVertexProperty(identity, IVertex.ID, identityID);
-
-			//update the request and insert editions based on the edition
-			if (isOwnIdentity) graph.updateVertexProperty(identity, IVertex.OWN_IDENTITY, Boolean.toString(true));
-		}
-
-		//always try and remove the DONT INSERT property...
-		graph.removeVertexProperty(identity, IVertex.DONT_INSERT);
-		
-		return identity;
-	}
-
-	private static long getCurrentStoredEdition(H2Graph graph, long vertex_id) throws SQLException
-	{
-		Map<String, List<String>> props = graph.getVertexProperties(vertex_id);
-
-		if (props.containsKey(IVertex.EDITION))
-		{
-			return Long.parseLong(props.get(IVertex.EDITION).get(0));
-		}
-		else
-		{
-			return -1;
-		}
-	}
-
-	private static void updateKeyEditions(H2Graph graph, FreenetURI identityKey, long current_edition, long identity) throws SQLException 
-	{
-		if (current_edition > getCurrentStoredEdition(graph, identity))
-		{
-			Map<String, List<String>> props = graph.getVertexProperties(identity);
-			graph.updateVertexProperty(identity, IVertex.EDITION, Long.toString(current_edition));	
-
-			//update the request and insert keys with the most recent known edition
-			graph.updateVertexProperty(identity, IVertex.REQUEST_URI, identityKey.setSuggestedEdition(current_edition).toASCIIString());
-
-			//update the insert uri if we have one
-			if (props.containsKey(IVertex.INSERT_URI))
+			
+			ReadableIndex<org.neo4j.graphdb.Node> nodeIndex = db.index().getNodeAutoIndexer().getAutoIndex();
+			org.neo4j.graphdb.Node peer = nodeIndex.get(IVertex.ID, Utils.getIDFromKey(peerIdentityKey)).getSingle();
+			
+			Transaction tx = db.beginTx();
+			try
 			{
-				try {
-					FreenetURI insertURI = new FreenetURI(props.get(IVertex.INSERT_URI).get(0));
-					insertURI = insertURI.setSuggestedEdition(current_edition);
-					graph.updateVertexProperty(identity, IVertex.INSERT_URI, insertURI.toASCIIString());
-				} catch (MalformedURLException e) {
-					e.printStackTrace();
+				if (peer == null)  {	//create a new identity
+					peer = db.createNode();
+					
+					peer.setProperty(IVertex.REQUEST_URI, peerIdentityKey.toASCIIString());
+					peer.setProperty(IVertex.ID, Utils.getIDFromKey(peerIdentityKey));
+
+					//default to edition 0, because we want to ensure fetching the identity
+					peer.setProperty(IVertex.EDITION, -1l);
+
+					//store when we first saw the identity
+					peer.setProperty(IVertex.FIRST_FETCHED, System.currentTimeMillis());
+				}
+
+				tx.success();
+				
+				return peer;
+			}
+			finally
+			{
+				tx.finish();
+			}
+		}
+
+		private static void SetProperties(org.neo4j.graphdb.Node identity, NodeList propertiesXML) throws SQLException 
+		{
+			//add all the (new) properties
+			for(int i=0; i < propertiesXML.getLength(); i++)
+			{
+				Node context = propertiesXML.item(i);
+				final NamedNodeMap attr = context.getAttributes();
+				final String name = attr.getNamedItem("Name").getNodeValue();
+				final String value = attr.getNamedItem("Value").getNodeValue();
+
+				identity.setProperty(name, value);
+			}
+		}
+
+		private org.neo4j.graphdb.Node getIdentity(FreenetURI identityKey, long current_edition) throws SQLException {
+
+			ReadableIndex<org.neo4j.graphdb.Node> nodeIndex = db.index().getNodeAutoIndexer().getAutoIndex();
+			final String identityID = Utils.getIDFromKey(identityKey);
+			org.neo4j.graphdb.Node identity = nodeIndex.get(IVertex.ID, identityID).getSingle();
+
+			if (identity == null)  { //or create a new one
+				Transaction tx = db.beginTx();
+				try
+				{
+					identity = db.createNode();
+					identity.setProperty(IVertex.ID, identityID);		
+
+					tx.success();
+				}
+				finally
+				{
+					tx.finish();
+				}
+			}
+
+			Transaction tx = db.beginTx();
+			try
+			{
+				//update the request and insert editions based on the edition
+				if (isOwnIdentity) identity.setProperty(IVertex.OWN_IDENTITY, true); 
+
+				//always try and remove the DONT INSERT property...
+				identity.removeProperty(IVertex.DONT_INSERT);
+
+				tx.success();
+			}
+			finally
+			{
+				tx.finish();
+			}
+
+
+			return identity;
+		}
+
+		private static long getCurrentStoredEdition(org.neo4j.graphdb.Node vertex) throws SQLException
+		{
+			if (vertex.hasProperty(IVertex.EDITION))
+			{
+				return (Long) vertex.getProperty(IVertex.EDITION);
+			}
+			else
+			{
+				return -1l;
+			}
+		}
+
+		private void updateKeyEditions(FreenetURI identityKey, long current_edition, org.neo4j.graphdb.Node identity) throws SQLException 
+		{
+			if (current_edition > getCurrentStoredEdition(identity))
+			{
+				Transaction tx = db.beginTx();
+
+				try
+				{
+					identity.setProperty(IVertex.EDITION, current_edition);
+
+					//update the request and insert keys with the most recent known edition
+					identity.setProperty(IVertex.REQUEST_URI, identityKey.setSuggestedEdition(current_edition).toASCIIString());
+
+					tx.success();
+				}
+				finally
+				{
+					tx.finish();
+				}
+
+				//update the insert uri if we have one
+				if (identity.hasProperty(IVertex.INSERT_URI))
+				{
+					try {
+						FreenetURI insertURI = new FreenetURI((String) identity.getProperty(IVertex.INSERT_URI));
+						insertURI = insertURI.setSuggestedEdition(current_edition);
+
+						tx = db.beginTx();
+						try
+						{
+							identity.setProperty(IVertex.INSERT_URI, insertURI.toASCIIString());
+
+							tx.success();
+						}
+						finally {tx.finish();};
+
+					} catch (MalformedURLException e) {
+						e.printStackTrace();
+					}
 				}
 			}
 		}
-	}
 
-	private static void SetContexts(H2Graph graph, long identity, NodeList contextsXML) throws SQLException 
-	{
-		//remove all old contexts
-		graph.removeVertexProperty(identity, IVertex.CONTEXT_NAME);
-
-		//add all the (new) contexts
-		for(int i=0; i < contextsXML.getLength(); i++)
+		private void SetContexts(org.neo4j.graphdb.Node identity, NodeList contextsXML) throws SQLException 
 		{
-			Node context = contextsXML.item(i);
-			final NamedNodeMap attr = context.getAttributes();
-			final String name = attr.getNamedItem("Name").getNodeValue();
+			
+			//remove all old contexts
+			for(Relationship rel :identity.getRelationships(Rel.HAS_CONTEXT))
+			{
+				rel.delete();
+			}
+			
+			
+			//add all the (new) contexts
+			for(int i=0; i < contextsXML.getLength(); i++)
+			{
+				Node context = contextsXML.item(i); //XML node!
+				final NamedNodeMap attr = context.getAttributes();
+				final String name = attr.getNamedItem("Name").getNodeValue();
 
-			graph.addVertexProperty(identity, IVertex.CONTEXT_NAME, name);
+				org.neo4j.graphdb.Node contextNode = nodeIndex.get(IContext.NAME, name).getSingle();
+				if (contextNode == null)
+				{
+					Transaction tx = db.beginTx();
+					try
+					{
+						contextNode = db.createNode();
+						contextNode.setProperty(IContext.NAME, name);
+						tx.success();
+					}
+					finally
+					{
+						tx.finish();
+					}
+				}
+				
+				identity.createRelationshipTo(contextNode, Rel.HAS_CONTEXT);
+			}
 		}
-	}
 
-}
+	}

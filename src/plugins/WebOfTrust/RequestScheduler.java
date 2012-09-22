@@ -11,8 +11,20 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 
+import org.neo4j.cypher.ExecutionEngine;
+import org.neo4j.cypher.ExecutionResult;
+import org.neo4j.graphdb.Direction;
+import org.neo4j.graphdb.GraphDatabaseService;
+import org.neo4j.graphdb.Node;
+import org.neo4j.graphdb.Relationship;
+import org.neo4j.graphdb.Transaction;
+import org.neo4j.graphdb.index.Index;
+import org.neo4j.graphdb.index.IndexHits;
+import org.neo4j.graphdb.index.ReadableIndex;
+
 import plugins.WebOfTrust.datamodel.IEdge;
 import plugins.WebOfTrust.datamodel.IVertex;
+import plugins.WebOfTrust.datamodel.Rel;
 
 import thomasmarkus.nl.freenet.graphdb.EdgeWithProperty;
 import thomasmarkus.nl.freenet.graphdb.H2Graph;
@@ -32,13 +44,13 @@ public class RequestScheduler extends Thread {
 	private static final double PROBABILITY_OF_FETCHING_DIRECTLY_TRUSTED_IDENTITY = 0.7;
 
 	private static final long MAX_TIME_SINCE_LAST_INSERT = (60 * 1000) * 60; //don't insert faster than once per hour
-	private static final long MINIMAL_SLEEP_TIME = (1*1000) * 120; // 2 minutes
+	private static final long MINIMAL_SLEEP_TIME = (1*1000);// * 120; // 2 minutes
 	private static final long MINIMAL_SLEEP_TIME_WITH_BIG_BACKLOG = (1*1000); // 1 second
 	private static final long MINIMAL_SLEEP_TIME_WOT_UPDATE = (60*1000) * 60 * 2; // update WoT once per 2 hour;
 	private static final long MAX_DB_CONNECTIONS = 5;
 	
 	private WebOfTrust main;
-	private final H2GraphFactory gf;
+	private final GraphDatabaseService db;
 	private HighLevelSimpleClient hl;
 
 	private List<ClientGetter> inFlight = new ArrayList<ClientGetter>();
@@ -51,14 +63,14 @@ public class RequestScheduler extends Thread {
 
 	private long wot_last_updated = 0;
 	
-	public RequestScheduler(WebOfTrust main, H2GraphFactory gf, HighLevelSimpleClient hl)
+	public RequestScheduler(WebOfTrust main, GraphDatabaseService db, HighLevelSimpleClient hl)
 	{
 		this.main = main;
-		this.gf = gf;
+		this.db = db;
 		this.hl = hl;
 
 		this.rc = new IdentityUpdaterRequestClient();
-		this.cc = new IdentityUpdater(this, gf, hl, false);
+		this.cc = new IdentityUpdater(this, db, hl, false);
 		this.fc = hl.getFetchContext();
 		this.fc.followRedirects = true;
 	}
@@ -128,41 +140,41 @@ public class RequestScheduler extends Thread {
 
 	private void insertOwnIdentities() throws SQLException {
 
-		H2Graph graph = gf.getGraph();
+		ReadableIndex<Node> nodeIndex = db.index().getNodeAutoIndexer().getAutoIndex();
+		IndexHits<Node> own_identities = nodeIndex.get(IVertex.OWN_IDENTITY, true);
+		
+		Transaction tx = db.beginTx();
 		try
 		{
-			List<Long> own_identities = graph.getVertexByPropertyValue(IVertex.OWN_IDENTITY, "true");
-			for(long own_identity : own_identities)
+			
+			for(Node own_identity : own_identities)
 			{
-				Map<String, List<String>> props = graph.getVertexProperties(own_identity);
-
 				long timestamp = 0;
-				if(props.containsKey(IVertex.LAST_INSERT))
+				if(own_identity.hasProperty(IVertex.LAST_INSERT))
 				{
-					timestamp = Long.parseLong(props.get(IVertex.LAST_INSERT).get(0));	
+					timestamp =  (Long) own_identity.getProperty(IVertex.LAST_INSERT);	
 				}
 
 				if ((System.currentTimeMillis() - MAX_TIME_SINCE_LAST_INSERT) > timestamp)
 				{
-					final String id = props.get(IVertex.ID).get(0);
-					OwnIdentityInserter ii = new OwnIdentityInserter(gf, id, hl, main);
+					final String id = (String) own_identity.getProperty(IVertex.ID);
+					OwnIdentityInserter ii = new OwnIdentityInserter(db, id, hl, main);
 					ii.run();
 				}
 			}
-		}
-		catch(SQLException e)
-		{
-			e.printStackTrace();
+		
+			tx.success();
 		}
 		finally
 		{
-			graph.close();
+			tx.finish();
+			own_identities.close();
 		}
 	}
 
 	private void clearBacklog() 
 	{
-		while(getInFlightSize() < MAX_REQUESTS && getBacklogSize() > 0 && gf.getActiveConnections() < MAX_DB_CONNECTIONS)
+		while(getInFlightSize() < MAX_REQUESTS && getBacklogSize() > 0)
 		{
 			FreenetURI next = getBacklogItem();
 
@@ -191,67 +203,96 @@ public class RequestScheduler extends Thread {
 	}
 
 	private void maintenance() throws SQLException {
+		System.out.println("doing maintenance...");
+		
 		if (getInFlightSize() <= MAX_MAINTENANCE_REQUESTS)
 		{
-			H2Graph graph = gf.getGraph();
+			ReadableIndex<Node> nodeIndex = db.index().getNodeAutoIndexer().getAutoIndex();
+			
 			try
 			{
-				
 				double random = ran.nextDouble();
 				if (random < PROBABILITY_OF_FETCHING_DIRECTLY_TRUSTED_IDENTITY) //fetch random directly connected identity
 				{
-					List<Long> vertices = graph.getVertexByPropertyValue(IVertex.OWN_IDENTITY, "true");
-					for(long vertex_id : vertices)
+					IndexHits<Node> vertices = nodeIndex.get(IVertex.OWN_IDENTITY, true);
+					try
 					{
-						List<EdgeWithProperty> edges = graph.getOutgoingEdgesWithProperty(vertex_id, IEdge.SCORE);
-
-						//get a random edge
-						if (edges.size() > 0)
+						for(Node vertex : vertices)
 						{
-							EdgeWithProperty edge = edges.get( ran.nextInt(edges.size()) );
-
-							//get the node to which that edge is pointing
-							Map<String, List<String>> props = graph.getVertexProperties(edge.vertex_to);
-
-							//add the requestURI to the backlog
-							if (props.containsKey(IVertex.REQUEST_URI))
+							Iterable<Relationship> edges = vertex.getRelationships(Direction.OUTGOING, Rel.TRUSTS);
+							
+							Iterator<Relationship> iter = edges.iterator();
+							List<Relationship> edges_list = new ArrayList<Relationship>();
+							while (iter.hasNext())
 							{
-								addBacklog(new FreenetURI(props.get(IVertex.REQUEST_URI).get(0)));	
+								edges_list.add(iter.next());
+							}
+							
+							//get a random edge
+							if (edges_list.size() > 0)
+							{
+								Relationship edge = edges_list.get( ran.nextInt(edges_list.size()) );
+
+								Node end_node = edge.getEndNode();
+								
+								//add the requestURI to the backlog
+								if (end_node.hasProperty(IVertex.REQUEST_URI))
+								{
+									addBacklog(new FreenetURI((String) edge.getEndNode().getProperty(IVertex.REQUEST_URI)));	
+								}
 							}
 						}
 					}
+					finally
+					{
+						vertices.close();	
+					}
+					
 				}
 				else
 				{
 					//find random identity
-					List<Long> own_vertices = graph.getVertexByPropertyValue(IVertex.OWN_IDENTITY, "true");
-
-					if (own_vertices.size() > 0)
+					IndexHits<Node> own_vertices = nodeIndex.get(IVertex.OWN_IDENTITY, true);
+					
+					try
 					{
-						long own_vertex = own_vertices.get( ran.nextInt(own_vertices.size()));
-						Map<String, List<String>> own_props = graph.getVertexProperties(own_vertex);
-						String own_id = own_props.get("id").get(0);
-
-						//Some identity with a score of 0 or higher and sort by random, limit by 1
-						VertexIterator vertices = graph.getVertices(IVertex.TRUST+"."+own_id, -1, IVertex.REQUEST_URI, true, 1);
-
-						if(vertices.hasNext())
+						Iterator<Node> iter = own_vertices.iterator();
+						List<Node> own_vertices_list = new ArrayList<Node>();
+						while (iter.hasNext())
 						{
-							//add URI to the backlog
-							addBacklog(new FreenetURI(vertices.next().get(IVertex.REQUEST_URI).get(0)));
+							own_vertices_list.add(iter.next());
 						}
+
+						
+						if (own_vertices.hasNext())
+						{
+							Node own_vertex = own_vertices_list.get( ran.nextInt(own_vertices_list.size()));
+							String own_id = (String) own_vertex.getProperty(IVertex.ID);
+
+							//Some identity with a score of 0 or higher and sort by random, limit by 1
+							//TODO: use the traverse NO cypher for this stuff!
+							
+							//true refers to a random element from the set
+							ExecutionEngine engine = new ExecutionEngine( db );
+							ExecutionResult result = engine.execute( "start r=relationship(:TRUSTS) n-[r]->n2 WHERE n2.TRUST >= 0 return n2" );
+							
+							Iterator<Node> vertices = (Iterator<Node>) result.columnAs("n2");
+
+							if(vertices.hasNext())
+							{
+								//add URI to the backlog
+								addBacklog(new FreenetURI((String) vertices.next().getProperty(IVertex.REQUEST_URI)));
+							}
+						}
+					}
+					finally
+					{
+						own_vertices.close();
 					}
 				}
 			}
-			catch(SQLException e)
-			{
+			catch (MalformedURLException e) {
 				e.printStackTrace();
-			} catch (MalformedURLException e) {
-				e.printStackTrace();
-			}
-			finally
-			{
-				graph.close();
 			}
 		}
 	}
@@ -293,19 +334,21 @@ public class RequestScheduler extends Thread {
 		if (System.currentTimeMillis() - wot_last_updated > MINIMAL_SLEEP_TIME_WOT_UPDATE)
 		{
 			wot_last_updated = System.currentTimeMillis();
+
+			ReadableIndex<Node> nodeIndex = db.index().getNodeAutoIndexer().getAutoIndex();
+			ScoreComputer sc = new ScoreComputer(db);
+			IndexHits<Node> vertices = nodeIndex.get(IVertex.OWN_IDENTITY, true);
 			
-			H2Graph graph = gf.getGraph();
 			try
 			{
-				ScoreComputer sc = new ScoreComputer(graph);
-				for(long vertex_id : graph.getVertexByPropertyValue("ownIdentity", "true"))
+				for(Node vertex : vertices)
 				{
-					sc.compute( graph.getVertexProperties(vertex_id).get("id").get(0) );
+					sc.compute((String) vertex.getProperty(IVertex.ID));
 				}
 			}
 			finally
 			{
-				graph.close();
+				vertices.close();
 			}
 		}
 	}

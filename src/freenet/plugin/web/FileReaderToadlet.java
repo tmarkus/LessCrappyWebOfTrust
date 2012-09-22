@@ -8,6 +8,10 @@ import java.io.InputStreamReader;
 import java.net.URI;
 import java.sql.SQLException;
 
+import org.neo4j.graphdb.GraphDatabaseService;
+import org.neo4j.graphdb.Node;
+import org.neo4j.graphdb.index.ReadableIndex;
+
 import freenet.client.HighLevelSimpleClient;
 import freenet.clients.http.LinkEnabledCallback;
 import freenet.clients.http.Toadlet;
@@ -19,11 +23,16 @@ public abstract class FileReaderToadlet extends Toadlet implements LinkEnabledCa
 
 	protected String path;
 	protected String filePath;
+	protected GraphDatabaseService db;
+	protected ReadableIndex<Node> nodeIndex;
 	
-	public FileReaderToadlet(HighLevelSimpleClient client, String filepath, String URLPath) {
+	public FileReaderToadlet(GraphDatabaseService db, HighLevelSimpleClient client, String filepath, String URLPath) {
 		super(client);
 		this.path = URLPath;
 		this.filePath = filepath;
+		this.db = db;
+	
+		nodeIndex = db.index().getNodeAutoIndexer().getAutoIndex();
 	}
 
 	protected String readFile() throws IOException

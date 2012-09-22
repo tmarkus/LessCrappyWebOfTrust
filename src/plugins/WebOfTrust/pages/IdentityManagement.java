@@ -10,6 +10,12 @@ import java.util.Map;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
+import org.neo4j.graphdb.GraphDatabaseService;
+import org.neo4j.graphdb.Node;
+import org.neo4j.graphdb.Relationship;
+import org.neo4j.graphdb.Transaction;
+import org.neo4j.kernel.EmbeddedGraphDatabase;
+import org.neo4j.tooling.GlobalGraphOperations;
 
 
 import plugins.WebOfTrust.IdentityUpdater;
@@ -35,7 +41,7 @@ import freenet.support.api.HTTPRequest;
 
 public class IdentityManagement extends freenet.plugin.web.HTMLFileReaderToadlet {
 	
-	private H2GraphFactory gf;
+	private GraphDatabaseService db;
 	private WebOfTrust main;
 	
 	/**
@@ -52,30 +58,26 @@ public class IdentityManagement extends freenet.plugin.web.HTMLFileReaderToadlet
 	};
 
 	
-	public IdentityManagement(WebOfTrust main, HighLevelSimpleClient client, String filepath, String URLPath, H2GraphFactory gf) {
-		super(client, filepath, URLPath);
+	public IdentityManagement(WebOfTrust main, HighLevelSimpleClient client, String filepath, String URLPath, GraphDatabaseService db) {
+		super(client, main.getDB(), filepath, URLPath);
 		this.main = main;
-		this.gf = gf;
+		this.db = db;
 	}
 
 	public void handleMethodGET(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException
 	{
 		Document doc = Jsoup.parse(readFile());
 		Element identities_div = doc.select("#identities").first();
-		H2Graph graph = null;
 		 
 		try {
-			graph = gf.getGraph();
-			for(long own_vertex : graph.getVertexByPropertyValue(IVertex.OWN_IDENTITY, "true"))
+			for(Node own_vertex : nodeIndex.get(IVertex.OWN_IDENTITY, true))
 			{
-				Map<String, List<String>> props = graph.getVertexProperties(own_vertex);
-				
 				Element p = doc.createElement("p");
-				p.appendChild(doc.createElement("a").attr("href", "ShowIdentity?id="+props.get(IVertex.ID).get(0)).text(props.get(IVertex.NAME).get(0)));
+				p.appendChild(doc.createElement("a").attr("href", "ShowIdentity?id="+(String) own_vertex.getProperty(IVertex.ID)).text((String) own_vertex.getProperty(IVertex.NAME)));
 				
 				Element form = doc.createElement("form").attr("action", "restore.html").attr("method", "post");
 				Element hiddenValue = doc.createElement("input").attr("type", "hidden").attr("name", "action").attr("value", "delete");
-				Element hiddenID = doc.createElement("input").attr("type", "hidden").attr("name", "id").attr("value", props.get(IVertex.ID).get(0));
+				Element hiddenID = doc.createElement("input").attr("type", "hidden").attr("name", "id").attr("value", (String) own_vertex.getProperty(IVertex.ID));
 				Element submit = doc.createElement("input").attr("type", "submit").attr("value", "delete");
 				form.appendChild(hiddenValue);
 				form.appendChild(hiddenID);
@@ -84,16 +86,9 @@ public class IdentityManagement extends freenet.plugin.web.HTMLFileReaderToadlet
 				p.appendChild(form);
 				identities_div.appendChild(p);
 			}
-		} catch (SQLException e) {
-			e.printStackTrace();
 		}
 		finally
 		{
-			try {
-				graph.close();
-			} catch (SQLException e) {
-				e.printStackTrace();
-			}
 		}
 		
 	    writeReply(ctx, 200, "text/html", "content", doc.html());
@@ -102,58 +97,51 @@ public class IdentityManagement extends freenet.plugin.web.HTMLFileReaderToadlet
 	public void handleMethodPOST(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException, SQLException, FetchException
 	{
 	    String action = request.getPartAsStringFailsafe("action", 200);
-		H2Graph graph = null; 
-				
+
+	    Transaction tx = db.beginTx();
 		try
 		{
-			graph =	gf.getGraph();
-			
 		    if(action.equals("restore"))
 		    {
 			    FreenetURI insertURI = new FreenetURI(request.getPartAsStringFailsafe("insertURI", 20000));
-			    restoreIdentity(graph, insertURI);
+			    restoreIdentity(insertURI);
 		    }	
 			else if (action.equals("create"))
 			{
 				String name = request.getPartAsStringFailsafe("name", 2000);
-				createIdentity(graph, name);
+				createIdentity(name);
 			}
 			else if (action.equals("delete"))
 			{
 				String id = request.getPartAsStringFailsafe("id", 2000);
-				removeIdentity(graph, id);
+				removeIdentity(id);
 			}
+		
+		    tx.success();
 		}
 		finally
 		{
-			graph.close();
+			tx.finish();
 		}
 		
 	    handleMethodGET(uri, request, ctx);
 	}
 
-	private void removeIdentity(H2Graph graph, String id) throws SQLException {
-		List<Long> vertices = graph.getVertexByPropertyValue(IVertex.ID, id);
-
-		//remove the vertex itself
-		for(long vertex : vertices)
+	private void removeIdentity(String id) {
+		Node node = nodeIndex.get(IVertex.ID, id).getSingle();
+		for(Relationship rel : node.getRelationships())
 		{
-			graph.removeVertex(vertex);
-			
-			//remove the calculated trust values associated with this identity
-			graph.removePropertyForAllVertices(IVertex.TRUST+"."+id);
+			rel.delete();
 		}
-	
-		
-		
+		node.delete();
 	}
 
-	private void restoreIdentity(H2Graph graph, FreenetURI insertURI) throws SQLException, FetchException, MalformedURLException 
+	private void restoreIdentity(FreenetURI insertURI) throws FetchException, MalformedURLException 
 	{
 			IdentityUpdaterRequestClient rc = new IdentityUpdaterRequestClient();
 			HighLevelSimpleClient hl = main.getHL();
 			RequestScheduler rs = main.getRequestScheduler();
-			ClientGetCallback cc = new IdentityUpdater(rs, gf, hl, true);  
+			ClientGetCallback cc = new IdentityUpdater(rs, db, hl, true);  
 
 			try
 			{
@@ -163,8 +151,18 @@ public class IdentityManagement extends freenet.plugin.web.HTMLFileReaderToadlet
 						.setSuggestedEdition(insertURI.getEdition())
 						.setMetaString(null);
 
-				long own_vertex_id = addOwnIdentity(graph, requestURI, insertURI);
-				graph.updateVertexProperty(own_vertex_id, IVertex.DONT_INSERT, "true");
+				Node own_vertex = addOwnIdentity(requestURI, insertURI);
+
+				Transaction tx = db.beginTx();
+				try
+				{
+					own_vertex.setProperty(IVertex.DONT_INSERT, true);
+					tx.success();
+				}
+				finally
+				{
+					tx.finish();
+				}
 				
 				//Fetch the identity from freenet
 				System.out.println("Starting to fetch your own identity");
@@ -178,7 +176,7 @@ public class IdentityManagement extends freenet.plugin.web.HTMLFileReaderToadlet
 			}
 	}
 
-	private void createIdentity(H2Graph graph, String name) throws SQLException, MalformedURLException {
+	private void createIdentity(String name) throws SQLException, MalformedURLException {
 		//create ssk keypair
 		FreenetURI[] keypair = main.getHL().generateKeyPair(WebOfTrust.namespace);
 		FreenetURI newRequestURI = keypair[1].setKeyType("USK")
@@ -191,21 +189,43 @@ public class IdentityManagement extends freenet.plugin.web.HTMLFileReaderToadlet
 											.setMetaString(null);
 		
 		//create minimal identity in store
-		long own_identity_vertex = addOwnIdentity(graph, newRequestURI, newInsertURI);
+		Node own_identity_vertex = addOwnIdentity(newRequestURI, newInsertURI);
 		
 		//set the name of this identity
-		graph.updateVertexProperty(own_identity_vertex, IVertex.NAME, name);
 		
-		//add trust relations to seed identities
-		for(String key : SEED_IDENTITIES)
-		{
-			FreenetURI seedKey = new FreenetURI(key);
-			String seedID = Utils.getIDFromKey(seedKey);
-			String id = Utils.getIDFromKey(newRequestURI);
-			
-			IdentityUpdater.getPeerIdentity(graph, seedKey); //try to get from the db it and add it otherwise
-			SetTrust.setTrust(graph, id, seedID, "100", "Initial seed identity");
-		}
+			Transaction tx = db.beginTx();
+			try
+			{
+				own_identity_vertex.setProperty(IVertex.NAME, name);
+				tx.success();
+			}
+			finally
+			{
+				tx.finish();
+			}
+
+			//add trust relations to seed identities
+			for(String key : SEED_IDENTITIES)
+			{
+				FreenetURI seedKey = new FreenetURI(key);
+				String seedID = Utils.getIDFromKey(seedKey);
+				String id = Utils.getIDFromKey(newRequestURI);
+				
+				try
+				{
+					IdentityUpdater.getPeerIdentity(db, seedKey); //try to get from the db it and add it otherwise	
+					tx.success();
+				}
+				finally
+				{
+					tx.finish();
+				}
+				
+				
+				SetTrust.setTrust(db, nodeIndex, id, seedID, "100", "Initial seed identity");
+			}
+		
+		
 	}
 
 	/**
@@ -215,26 +235,26 @@ public class IdentityManagement extends freenet.plugin.web.HTMLFileReaderToadlet
 	 * @throws SQLException
 	 */
 	
-	private static long addOwnIdentity(H2Graph graph, FreenetURI requestURI, FreenetURI insertURI) throws SQLException {
+	private Node addOwnIdentity(FreenetURI requestURI, FreenetURI insertURI) throws SQLException {
 		
+		Transaction tx = db.beginTx();
 		try
 		{
-			graph.getConnection().setAutoCommit(false); //start transaction
-
-			long vertex_id = graph.createVertex();
-			graph.updateVertexProperty(vertex_id, IVertex.ID, Utils.getIDFromKey(requestURI));
-			graph.updateVertexProperty(vertex_id, IVertex.NAME, " ... still fetching ...");
-			graph.updateVertexProperty(vertex_id, IVertex.OWN_IDENTITY, "true");
-			graph.updateVertexProperty(vertex_id, IVertex.INSERT_URI, insertURI.toASCIIString());
-			graph.updateVertexProperty(vertex_id, IVertex.REQUEST_URI, requestURI.toASCIIString());
-			graph.updateVertexProperty(vertex_id, IVertex.EDITION, "-1");
-			graph.getConnection().commit();
+			Node vertex = db.createNode();
+			vertex.setProperty(IVertex.ID, Utils.getIDFromKey(requestURI));
+			vertex.setProperty(IVertex.NAME, "... still fetching ...");
+			vertex.setProperty(IVertex.OWN_IDENTITY, true);
+			vertex.setProperty(IVertex.INSERT_URI, insertURI.toASCIIString());
+			vertex.setProperty(IVertex.REQUEST_URI, requestURI.toASCIIString());
+			vertex.setProperty(IVertex.EDITION, -1l);
 			
-			return vertex_id;
+			tx.success();
+			
+			return vertex;
 		}
 		finally
 		{
-			graph.getConnection().setAutoCommit(true); //commit transaction
+			tx.finish();
 		}
 	}
 

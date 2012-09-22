@@ -1,34 +1,49 @@
 package plugins.WebOfTrust.fcp;
 
-import java.sql.SQLException;
+import org.neo4j.graphdb.Direction;
+import org.neo4j.graphdb.GraphDatabaseService;
+import org.neo4j.graphdb.Node;
+import org.neo4j.graphdb.Relationship;
+import org.neo4j.graphdb.Transaction;
 
-import plugins.WebOfTrust.datamodel.IEdge;
 import plugins.WebOfTrust.datamodel.IVertex;
+import plugins.WebOfTrust.datamodel.Rel;
 
-import thomasmarkus.nl.freenet.graphdb.H2Graph;
 import freenet.support.SimpleFieldSet;
 
 public class RemoveTrust extends FCPBase {
 
+	public RemoveTrust(GraphDatabaseService db) {
+		super(db);
+	}
+
 	@Override
-	public SimpleFieldSet handle(H2Graph graph, SimpleFieldSet input) throws SQLException 
+	public SimpleFieldSet handle(SimpleFieldSet input) 
 	{
 		final String trusterID = getMandatoryParameter(input, "Truster");
 		final String trusteeID = getMandatoryParameter(input, "Trustee");
 
-		long truster = graph.getVertexByPropertyValue(IVertex.ID, trusterID).get(0);
-		long trustee = graph.getVertexByPropertyValue(IVertex.ID, trusteeID).get(0);
+		
+		Node truster = nodeIndex.get(IVertex.ID, trusterID).getSingle();
+		Node trustee = nodeIndex.get(IVertex.ID, trusteeID).getSingle();
 
+		Transaction tx = db.beginTx();
 		try
 		{
-			long edge = graph.getEdgeByVerticesAndProperty(truster, trustee, IEdge.SCORE);	
-			graph.removeEdge(edge);
+			for(Relationship rel : truster.getRelationships(Direction.OUTGOING, Rel.TRUSTS))
+			{
+				if (rel.getEndNode().equals(trustee))
+				{
+					rel.delete();
+				}
+			}
+			tx.success();
 		}
-		catch(SQLException e) 
+		finally
 		{
-			System.out.println("Failed to find edge with vertex_from: " + truster + " vertex_to: " + trustee + " and the 'score' property");
+			tx.finish();
 		}
-
+		
 		reply.putOverwrite("Message", "TrustRemoved");
 		reply.putOverwrite("Truster", trusterID);
 		reply.putOverwrite("Trustee", trusteeID);
