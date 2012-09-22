@@ -42,7 +42,6 @@ public class RequestScheduler extends Thread {
 	public static final int MAX_REQUESTS = 5; 
 	public String DB_TRANSACTION_LOCK = "yes";
 	
-	
 	private static final int MAX_MAINTENANCE_REQUESTS = 1; 
 	private static final double PROBABILITY_OF_FETCHING_DIRECTLY_TRUSTED_IDENTITY = 0.7;
 
@@ -50,7 +49,6 @@ public class RequestScheduler extends Thread {
 	private static final long MINIMAL_SLEEP_TIME = (1*1000)*5;// * 120; // 2 minutes
 	private static final long MINIMAL_SLEEP_TIME_WITH_BIG_BACKLOG = (1*1000); // 1 second
 	private static final long MINIMAL_SLEEP_TIME_WOT_UPDATE = (60*1000) * 60 * 2; // update WoT once per 2 hour;
-	private static final long MAX_DB_CONNECTIONS = 5;
 	
 	private WebOfTrust main;
 	private final GraphDatabaseService db;
@@ -306,6 +304,7 @@ public class RequestScheduler extends Thread {
 			uri.setSuggestedEdition(-uri.getEdition()); //note: negative edition!
 
 			Iterator<String> iter = backlog.iterator();
+			Set<String> toRemove = new HashSet<String>();
 			while(iter.hasNext())
 			{
 				String existingURIString = iter.next();
@@ -318,11 +317,16 @@ public class RequestScheduler extends Thread {
 						{
 							return; //skip, because we want to add the same uri with an older edition, that doesn't make sense.	
 						}
+						else
+						{
+							toRemove.add(existingURIString);
+						}
 					}
 				} catch (MalformedURLException e) {
 					e.printStackTrace();
 				}
 			}
+			backlog.removeAll(toRemove);
 			backlog.add(uri.toASCIIString());	
 		}
 	}
