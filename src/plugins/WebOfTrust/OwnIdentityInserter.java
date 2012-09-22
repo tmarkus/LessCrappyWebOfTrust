@@ -10,8 +10,6 @@ import java.security.NoSuchAlgorithmException;
 import java.sql.SQLException;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
 
 import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilder;
@@ -27,9 +25,6 @@ import javax.xml.transform.stream.StreamResult;
 
 import plugins.WebOfTrust.datamodel.IEdge;
 import plugins.WebOfTrust.datamodel.IVertex;
-import thomasmarkus.nl.freenet.graphdb.Edge;
-import thomasmarkus.nl.freenet.graphdb.H2Graph;
-import thomasmarkus.nl.freenet.graphdb.H2GraphFactory;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 
@@ -38,7 +33,6 @@ import org.neo4j.graphdb.GraphDatabaseService;
 import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.Relationship;
 import org.neo4j.graphdb.Transaction;
-import org.neo4j.graphdb.index.Index;
 import org.neo4j.graphdb.index.ReadableIndex;
 import org.w3c.dom.DOMImplementation;
 
@@ -118,7 +112,7 @@ public class OwnIdentityInserter implements Runnable, ClientPutCallback  {
 
 					//insert the damn thing
 					System.out.println("INSERTING OWN IDENTITY");
-					ClientPutter pu = 	hl.insert(ib, false, null, false, ictx, this, RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS);
+					ClientPutter pu = hl.insert(ib, false, null, false, ictx, this, RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS);
 					
 					//update the time when we stored it in the database (as to disallow inserting it every second)
 

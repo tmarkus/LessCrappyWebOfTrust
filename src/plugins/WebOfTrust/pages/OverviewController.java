@@ -9,9 +9,12 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.neo4j.graphdb.GraphDatabaseService;
 import org.neo4j.graphdb.Node;
+import org.neo4j.graphdb.Relationship;
+import org.neo4j.tooling.GlobalGraphOperations;
 
 import plugins.WebOfTrust.WebOfTrust;
 import plugins.WebOfTrust.datamodel.IVertex;
+import plugins.WebOfTrust.datamodel.Rel;
 
 
 import freenet.client.HighLevelSimpleClient;
@@ -35,14 +38,24 @@ public class OverviewController extends freenet.plugin.web.HTMLFileReaderToadlet
 		{
 			Document doc = Jsoup.parse(readFile());
 			Element stats_div = doc.select("#stats").first();
+
+			long count_identities = 0;
+			long count_trust_relations = 0;
 			
-			long count_vertices = 666;
-			long count_edges = 666;
+			GlobalGraphOperations ggo = GlobalGraphOperations.at(db);
+			for(Node node : ggo.getAllNodes())
+			{
+				if (node.hasProperty(IVertex.ID)) count_identities +=1;
+			}
+			for(Relationship rel : ggo.getAllRelationships())
+			{
+				if (rel.isType(Rel.TRUSTS)) count_trust_relations +=1;
+			}
 			
 			Element list = doc.createElement("ul");
 			
-			list.appendChild(doc.createElement("li").text("Number of identities: " + count_vertices));
-			list.appendChild(doc.createElement("li").text("Number of trust relations: " + count_edges));
+			list.appendChild(doc.createElement("li").text("Number of identities: " + count_identities));
+			list.appendChild(doc.createElement("li").text("Number of trust relations: " + count_trust_relations));
 			list.appendChild(doc.createElement("li").text("Number of requests in flight currently: " + main.getRequestScheduler().getInFlightSize()));
 			list.appendChild(doc.createElement("li").text("Backlog: " + main.getRequestScheduler().getBacklogSize()));
 			list.appendChild(doc.createElement("li").text("Number of active db connections: " + 666));

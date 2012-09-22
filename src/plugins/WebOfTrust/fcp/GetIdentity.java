@@ -7,6 +7,7 @@ import org.neo4j.graphdb.GraphDatabaseService;
 import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.Relationship;
 
+import plugins.WebOfTrust.datamodel.IContext;
 import plugins.WebOfTrust.datamodel.IEdge;
 import plugins.WebOfTrust.datamodel.IVertex;
 import plugins.WebOfTrust.datamodel.Rel;
@@ -69,8 +70,9 @@ public class GetIdentity extends FCPBase {
 		if(identity.hasProperty(IVertex.CONTEXT_NAME))
 		{
 			int contextCounter=0;
-			for(String context : (List<String>) identity.getProperty(IVertex.CONTEXT_NAME))
+			for(Relationship rel : identity.getRelationships(Direction.OUTGOING, Rel.HAS_CONTEXT))
 			{
+				String context = (String) rel.getEndNode().getProperty(IContext.NAME);
 				if (index.equals(""))	reply.putOverwrite("Context" + contextCounter, context);
 				else					reply.putOverwrite("Contexts" + index + ".Context" + contextCounter++, context);
 				contextCounter += 1;

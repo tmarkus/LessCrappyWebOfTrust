@@ -2,11 +2,15 @@ package plugins.WebOfTrust.fcp;
 
 import java.util.List;
 
+import org.neo4j.graphdb.Direction;
 import org.neo4j.graphdb.GraphDatabaseService;
 import org.neo4j.graphdb.Node;
+import org.neo4j.graphdb.Relationship;
 import org.neo4j.graphdb.Transaction;
 
+import plugins.WebOfTrust.datamodel.IContext;
 import plugins.WebOfTrust.datamodel.IVertex;
+import plugins.WebOfTrust.datamodel.Rel;
 
 import freenet.support.SimpleFieldSet;
 
@@ -22,21 +26,22 @@ public class RemoveContext extends FCPBase {
 		final String context = input.get("Context");
 
 		Node vertex = nodeIndex.get(IVertex.ID, identityID).getSingle();
-		
-		List<String> contexts = (List<String>) vertex.getProperty(IVertex.CONTEXT_NAME);
-		contexts.remove(context);
-		
+
 		Transaction tx = db.beginTx();
 		try
 		{
-			vertex.setProperty(IVertex.CONTEXT_NAME, contexts);	
+
+			for(Relationship rel : vertex.getRelationships(Direction.OUTGOING, Rel.HAS_CONTEXT))
+			{
+				if (rel.getProperty(IContext.NAME).equals(context)) rel.delete();
+			}
 			tx.success();
 		}
 		finally
 		{
 			tx.finish();
 		}
-		
+	
 		reply.putOverwrite("Message", "ContextRemoved");
 		return reply;
 	}

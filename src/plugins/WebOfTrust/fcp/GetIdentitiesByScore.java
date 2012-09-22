@@ -14,8 +14,10 @@ import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.Relationship;
 import org.neo4j.tooling.GlobalGraphOperations;
 
+import plugins.WebOfTrust.datamodel.IContext;
 import plugins.WebOfTrust.datamodel.IEdge;
 import plugins.WebOfTrust.datamodel.IVertex;
+import plugins.WebOfTrust.datamodel.Rel;
 
 import freenet.support.SimpleFieldSet;
 
@@ -57,60 +59,41 @@ public class GetIdentitiesByScore extends GetIdentity {
 			treeOwnerProperties.add(IVertex.TRUST+"."+treeOwner.getProperty(IVertex.ID));
 		}
 		
-		
-		List<String> queryProperties = new LinkedList<String>();
-		queryProperties.addAll(treeOwnerProperties);
-		queryProperties.add(IVertex.NAME);
-		queryProperties.add(IVertex.CONTEXT_NAME);
-		queryProperties.add(IVertex.ID);
-		queryProperties.add(IVertex.REQUEST_URI);
-		
-		Map<String, String> requiredProperties = new HashMap<String, String>(); 
-		requiredProperties.put(IVertex.CONTEXT_NAME, context);
-		
-		long start = System.currentTimeMillis();
-		
-		System.out.println("Big query took: " + (System.currentTimeMillis() - start) + "ms");
-		
 		reply.putSingle("Message", "Identities");
 		int i = 0;
 
-		GlobalGraphOperations ggo = GlobalGraphOperations.at(db);
-		Iterator<Node> vertices = ggo.getAllNodes().iterator();
-		while(vertices.hasNext())
+		
+		for ( Relationship hasContextRel : nodeIndex.get(IContext.NAME, context).getSingle().getRelationships(Direction.INCOMING, Rel.HAS_CONTEXT))
 		{
-			Node vertex = vertices.next();
-			if (vertex.hasProperty(IVertex.CONTEXT_NAME) && ((List<String>) vertex.getProperty(IVertex.CONTEXT_NAME)).contains(context) )
+			Node vertex = hasContextRel.getStartNode();
+			//check whether the identity has a name (and we thus have retrieved it at least once)
+			if (vertex.hasProperty(IVertex.NAME))
 			{
-				//check whether the identity has a name (and we thus have retrieved it at least once)
-				if (vertex.hasProperty(IVertex.NAME))
+				Node max_score_owner_id = null; //identity which has the maximum trust directly assigned (possibly none)
+				Integer max_score = Integer.MIN_VALUE;
+				
+				for(Node own_identity : treeOwnerList)
 				{
-					Node max_score_owner_id = null; //identity which has the maximum trust directly assigned (possibly none)
-					Integer max_score = Integer.MIN_VALUE;
-					
-					for(Node own_identity : treeOwnerList)
+					for(Relationship rel : own_identity.getRelationships(Direction.OUTGOING))
 					{
-						for(Relationship rel : own_identity.getRelationships(Direction.OUTGOING))
+						if (rel.getEndNode().equals(vertex))
 						{
-							if (rel.getEndNode().equals(vertex))
+							final int score = (Integer) rel.getProperty(IEdge.SCORE);
+							if (score > max_score) 
 							{
-								final int score = (Integer) rel.getProperty(IEdge.SCORE);
-								if (score > max_score) 
-								{
-									max_score = score;
-									max_score_owner_id = own_identity;
-								}
+								max_score = score;
+								max_score_owner_id = own_identity;
 							}
 						}
 					}
-
-					addIdentityReplyFields(vertex, max_score_owner_id, Integer.toString(i));
-					
-					if (includeTrustValue)	reply.putOverwrite("Score" + i, Integer.toString(max_score));
-					reply.putOverwrite("ScoreOwner" + i, (String) max_score_owner_id.getProperty(IVertex.ID));
-
-					i += 1;
 				}
+
+				addIdentityReplyFields(vertex, max_score_owner_id, Integer.toString(i));
+				
+				if (includeTrustValue)	reply.putOverwrite("Score" + i, Integer.toString(max_score));
+				reply.putOverwrite("ScoreOwner" + i, (String) max_score_owner_id.getProperty(IVertex.ID));
+
+				i += 1;
 			}
 		}
 		return reply;

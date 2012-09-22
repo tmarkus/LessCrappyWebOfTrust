@@ -121,12 +121,12 @@ public class ShowIdentityController extends freenet.plugin.web.HTMLFileReaderToa
 
 			for(Node own_vertex : nodeIndex.get(IVertex.OWN_IDENTITY, true))
 			{
-				int current_trust_value = 0;
+				byte current_trust_value = 0;
 				String current_comment = "";
 				
 				for(Relationship edge : own_vertex.getRelationships(Direction.OUTGOING, Rel.TRUSTS))
 				{
-						current_trust_value = (Integer) edge.getProperty(IEdge.SCORE);
+						current_trust_value = (Byte) edge.getProperty(IEdge.SCORE);
 						current_comment = (String) edge.getProperty(IEdge.COMMENT);
 				}
 			
@@ -138,7 +138,7 @@ public class ShowIdentityController extends freenet.plugin.web.HTMLFileReaderToa
 				fieldset.appendChild(doc.createElement("input").attr("type", "hidden").attr("name", "identity_id").attr("value", id));
 				fieldset.appendChild(doc.createElement("input").attr("type", "hidden").attr("name", "own_identity_id").attr("value", (String) own_vertex.getProperty(IVertex.ID)));
 				fieldset.appendText("Trust: ");
-				fieldset.appendChild(doc.createElement("input").attr("type", "number").attr("name", "trust_value").attr("value", Integer.toString(current_trust_value)));
+				fieldset.appendChild(doc.createElement("input").attr("type", "number").attr("name", "trust_value").attr("value", Byte.toString(current_trust_value)));
 				fieldset.appendText("Comment: ");
 				fieldset.appendChild(doc.createElement("input").attr("type", "text").attr("name", "trust_comment").attr("value", current_comment));
 				fieldset.appendChild(doc.createElement("input").attr("type", "submit").attr("value", "Update"));
@@ -166,7 +166,7 @@ public class ShowIdentityController extends freenet.plugin.web.HTMLFileReaderToa
 				
 				if (edge.hasProperty(IEdge.SCORE) && edge.hasProperty(IEdge.COMMENT))
 				{
-					int trustValue = (Integer) edge.getProperty(IEdge.SCORE);
+					byte trustValue = (Byte) edge.getProperty(IEdge.SCORE);
 					String trustComment = (String) edge.getProperty(IEdge.COMMENT);
 					
 					String peerName;
@@ -216,7 +216,7 @@ public class ShowIdentityController extends freenet.plugin.web.HTMLFileReaderToa
 			for(Relationship edge : id_vertex.getRelationships(Direction.INCOMING, Rel.TRUSTS))
 			{
 				Node peer_identity = edge.getEndNode();
-				int trustValue = (Integer) edge.getProperty(IEdge.SCORE);
+				byte trustValue = (Byte) edge.getProperty(IEdge.SCORE);
 				String trustComment = (String) edge.getProperty(IEdge.COMMENT);
 				String peerName = (String) peer_identity.getProperty(IVertex.NAME);
 				String peerID = (String) peer_identity.getProperty(IVertex.ID);
@@ -225,7 +225,7 @@ public class ShowIdentityController extends freenet.plugin.web.HTMLFileReaderToa
 				tableTrusters.appendChild(doc.createElement("tr")
 						.appendChild(doc.createElement("td").text(Integer.toString(i)))
 						.appendChild(doc.createElement("td").appendChild(a))
-						.appendChild(doc.createElement("td").text(Integer.toString(trustValue)))
+						.appendChild(doc.createElement("td").text(Byte.toString(trustValue)))
 						.appendChild(doc.createElement("td").text(trustComment))
 						);
 

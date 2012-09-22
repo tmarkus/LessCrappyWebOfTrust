@@ -1,22 +1,17 @@
 package plugins.WebOfTrust.fcp;
 
-import java.sql.SQLException;
 
-import org.apache.lucene.index.IndexNotFoundException;
 import org.neo4j.graphdb.Direction;
 import org.neo4j.graphdb.GraphDatabaseService;
 import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.Relationship;
 import org.neo4j.graphdb.Transaction;
 import org.neo4j.graphdb.index.ReadableIndex;
-import org.neo4j.server.rest.repr.NodeIndexRepresentation;
-import org.neo4j.server.rrd.sampler.NodeIdsInUseSampleable;
 
 import plugins.WebOfTrust.datamodel.IEdge;
 import plugins.WebOfTrust.datamodel.IVertex;
 import plugins.WebOfTrust.datamodel.Rel;
 
-import thomasmarkus.nl.freenet.graphdb.H2Graph;
 import freenet.support.SimpleFieldSet;
 
 public class SetTrust extends FCPBase {
@@ -65,7 +60,7 @@ public class SetTrust extends FCPBase {
 		{
 			if (relation == null) relation = truster.createRelationshipTo(trustee, Rel.TRUSTS);
 			
-			relation.setProperty(IEdge.SCORE, Integer.parseInt(trustValue));
+			relation.setProperty(IEdge.SCORE, Byte.parseByte(trustValue));
 			relation.setProperty(IEdge.COMMENT, trustComment);
 			
 			tx.success();

@@ -1,18 +1,16 @@
 package plugins.WebOfTrust.fcp;
 
-import java.sql.SQLException;
-import java.util.LinkedList;
-import java.util.List;
-
+import org.neo4j.graphdb.Direction;
 import org.neo4j.graphdb.GraphDatabaseService;
 import org.neo4j.graphdb.Node;
+import org.neo4j.graphdb.Relationship;
 import org.neo4j.graphdb.Transaction;
 import org.neo4j.graphdb.index.IndexHits;
-import org.neo4j.graphdb.index.ReadableIndex;
 
+import plugins.WebOfTrust.datamodel.IContext;
 import plugins.WebOfTrust.datamodel.IVertex;
+import plugins.WebOfTrust.datamodel.Rel;
 
-import thomasmarkus.nl.freenet.graphdb.H2Graph;
 import freenet.support.SimpleFieldSet;
 
 public class AddContext extends FCPBase {
@@ -33,18 +31,15 @@ public class AddContext extends FCPBase {
 		{
 			for(Node identity_vertex : identity_vertices)
 			{
-				List<String> contexts = null;
-				if (!identity_vertex.hasProperty(IVertex.CONTEXT_NAME))
+				Node contextNode = nodeIndex.get(IContext.NAME, context).getSingle();
+				
+				boolean hasContext = false;
+				for(Relationship rel : identity_vertex.getRelationships(Direction.OUTGOING, Rel.HAS_CONTEXT))
 				{
-					contexts = new LinkedList<String>();
-				}
-				else
-				{
-					contexts = (List<String>) identity_vertex.getProperty(IVertex.CONTEXT_NAME);
+					if (rel.getEndNode().equals(contextNode)) hasContext = true;
 				}
 				
-				if (!contexts.contains(context)) contexts.add(context);
-				identity_vertex.setProperty(IVertex.CONTEXT_NAME, contexts);
+				if (!hasContext) identity_vertex.createRelationshipTo(contextNode, Rel.HAS_CONTEXT);
 			}
 
 			reply.putOverwrite("Message", "ContextAdded");

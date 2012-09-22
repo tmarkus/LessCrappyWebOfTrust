@@ -5,10 +5,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.neo4j.graphdb.Direction;
 import org.neo4j.graphdb.GraphDatabaseService;
 import org.neo4j.graphdb.Node;
+import org.neo4j.graphdb.Relationship;
 
+import plugins.WebOfTrust.datamodel.IContext;
 import plugins.WebOfTrust.datamodel.IVertex;
+import plugins.WebOfTrust.datamodel.Rel;
 import thomasmarkus.nl.freenet.graphdb.H2Graph;
 import freenet.support.SimpleFieldSet;
 
@@ -23,8 +27,6 @@ public class GetOwnIdentities extends FCPBase {
 
 		reply.putSingle("Message", "OwnIdentities");
 		
-		
-		
 		int i = 0;
 		for(Node ownIdentity : nodeIndex.get(IVertex.OWN_IDENTITY, true))
 		{
@@ -34,11 +36,10 @@ public class GetOwnIdentities extends FCPBase {
 			reply.putOverwrite("Nickname" + i, (String) ownIdentity.getProperty(IVertex.NAME));
 
 			int contextCounter = 0;
-			if (ownIdentity.hasProperty(IVertex.CONTEXT_NAME))
+			
+			for(Relationship rel : ownIdentity.getRelationships(Direction.OUTGOING, Rel.HAS_CONTEXT))
 			{
-				for (String context : (List<String>) ownIdentity.getProperty(IVertex.CONTEXT_NAME)) {
-					reply.putOverwrite("Contexts" + i + ".Context" + contextCounter++, context);
-				}
+				reply.putOverwrite("Contexts" + i + ".Context" + contextCounter++, (String) rel.getEndNode().getProperty(IContext.NAME));
 			}
 
 			//TODO: only include properties that aren't one of the above
