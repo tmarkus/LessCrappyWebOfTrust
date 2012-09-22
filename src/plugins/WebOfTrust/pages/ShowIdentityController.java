@@ -16,6 +16,7 @@ import org.neo4j.graphdb.Relationship;
 import org.neo4j.graphdb.Transaction;
 
 import plugins.WebOfTrust.WebOfTrust;
+import plugins.WebOfTrust.datamodel.IContext;
 import plugins.WebOfTrust.datamodel.IEdge;
 import plugins.WebOfTrust.datamodel.IVertex;
 import plugins.WebOfTrust.datamodel.Rel;
@@ -49,12 +50,12 @@ public class ShowIdentityController extends freenet.plugin.web.HTMLFileReaderToa
 			final String id = request.getParam("id");
 			
 			//get the identity vertex & properties
-			final Node id_vertex = nodeIndex.get(IVertex.ID, id).getSingle();
-			final boolean is_own_identity = id_vertex.hasProperty(IVertex.OWN_IDENTITY);
+			final Node identity = nodeIndex.get(IVertex.ID, id).getSingle();
+			final boolean is_own_identity = identity.hasProperty(IVertex.OWN_IDENTITY);
 			
 			info_div.append("<h1>Identity properties</h1>");
 			SortedSet<String> sortedKeys = new TreeSet<String>();
-			for(String key : id_vertex.getPropertyKeys()) sortedKeys.add(key);
+			for(String key : identity.getPropertyKeys()) sortedKeys.add(key);
 			
 			Element propertiesForm = doc.createElement("form").attr("action", "#").attr("method", "post");
 			propertiesForm.appendChild(doc.createElement("input").attr("type", "hidden").attr("name", "action").val("modify_properties"));
@@ -71,7 +72,7 @@ public class ShowIdentityController extends freenet.plugin.web.HTMLFileReaderToa
 			int property_index = 0;
 			for(String key : sortedKeys)
 			{
-				Object value = id_vertex.getProperty(key);
+				Object value = identity.getProperty(key);
 				if (is_own_identity)
 				{
 					Element propertyName = doc.createElement("input").attr("type", "text").attr("name", "propertyName"+property_index).val(key);
@@ -107,6 +108,13 @@ public class ShowIdentityController extends freenet.plugin.web.HTMLFileReaderToa
 				table.appendChild(tr);
 			}
 
+			Element contexts = doc.createElement("div");
+			for(Relationship rel : identity.getRelationships(Direction.OUTGOING, Rel.HAS_CONTEXT))
+			{
+				contexts.append("<p>"+(String) rel.getEndNode().getProperty(IContext.NAME)+"</p>");
+			}
+			propertiesForm.appendChild(contexts);
+			
 			
 			//submit button
 			if (is_own_identity)
@@ -161,7 +169,7 @@ public class ShowIdentityController extends freenet.plugin.web.HTMLFileReaderToa
 									);
 			
 			int i = 1;
-			for(Relationship edge : id_vertex.getRelationships(Direction.OUTGOING, Rel.TRUSTS))
+			for(Relationship edge : identity.getRelationships(Direction.OUTGOING, Rel.TRUSTS))
 			{
 				
 				if (edge.hasProperty(IEdge.SCORE) && edge.hasProperty(IEdge.COMMENT))
@@ -185,7 +193,7 @@ public class ShowIdentityController extends freenet.plugin.web.HTMLFileReaderToa
 					tableTrust.appendChild(tr);
 					
 					//identity we are displaying is a local one, thus display additional options!
-					if (id_vertex.hasProperty(IVertex.OWN_IDENTITY))
+					if (identity.hasProperty(IVertex.OWN_IDENTITY))
 					{
 						Element delete_edge_form = doc.createElement("form");
 						delete_edge_form.attr("action", WebOfTrust.basePath+"/ShowIdentity?id="+id + "#"+(i-1));
@@ -213,12 +221,16 @@ public class ShowIdentityController extends freenet.plugin.web.HTMLFileReaderToa
 									.appendChild(doc.createElement("th").text("Comment"))
 									);
 			i = 1;
-			for(Relationship edge : id_vertex.getRelationships(Direction.INCOMING, Rel.TRUSTS))
+			for(Relationship edge : identity.getRelationships(Direction.INCOMING, Rel.TRUSTS))
 			{
-				Node peer_identity = edge.getEndNode();
+				Node peer_identity = edge.getStartNode();
 				byte trustValue = (Byte) edge.getProperty(IEdge.SCORE);
 				String trustComment = (String) edge.getProperty(IEdge.COMMENT);
-				String peerName = (String) peer_identity.getProperty(IVertex.NAME);
+				
+				String peerName;
+				try	{ peerName = (String) peer_identity.getProperty(IVertex.NAME);	}
+				catch(org.neo4j.graphdb.NotFoundException e)	{ peerName = "... not retrieved yet ..."; }
+				
 				String peerID = (String) peer_identity.getProperty(IVertex.ID);
 				
 				Element a = doc.createElement("a").attr("href", WebOfTrust.basePath+"/ShowIdentity?id="+peerID).text(peerName+" ("+peerID+")");

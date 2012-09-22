@@ -36,31 +36,34 @@ public class GetIdentity extends FCPBase {
 		return reply;
 	}
 
-	protected void addIdentityReplyFields(Node own_id, Node identity, String index) 
+	protected void addIdentityReplyFields(Node ownIdentity, Node identity, String index) 
 	{
 		reply.putOverwrite("Identity" + index, (String) identity.getProperty(IVertex.ID));
 		reply.putOverwrite("Nickname"+index,  (String) identity.getProperty(IVertex.NAME));
 		reply.putOverwrite("RequestURI"+index,  (String) identity.getProperty(IVertex.REQUEST_URI));
 
+		//TODO: requires traversel framework to find the edge at depth one connecting the two nodes?
+		//TODO: optimize!!!
+
 		//initial values
 		reply.putOverwrite("Trust"+index, "null");
 		reply.putOverwrite("Rank"+index, "null");
-		
-		
-		//TODO: requires traversel framework to find the edge at depth one connecting the two nodes?
-		//TODO: optimize!!!
-		for (Relationship edge : own_id.getRelationships(Direction.OUTGOING, Rel.TRUSTS))
+
+		if (ownIdentity != null)
 		{
-			if (edge.getEndNode().equals(identity))
+			for (Relationship edge : ownIdentity.getRelationships(Direction.OUTGOING, Rel.TRUSTS))
 			{
-				reply.putOverwrite("Trust"+index, edge.getProperty(IEdge.SCORE).toString());
-				reply.putOverwrite("Rank"+index, "666");
+				if (edge.getEndNode().equals(identity))
+				{
+					reply.putOverwrite("Trust"+index, edge.getProperty(IEdge.SCORE).toString());
+					reply.putOverwrite("Rank"+index, "666");
+				}
 			}
 		}
 
 		try
 		{
-			reply.putOverwrite("Score"+index, (String) identity.getProperty(IVertex.TRUST+"."+own_id.getProperty(IVertex.ID)));	
+			reply.putOverwrite("Score"+index, (String) identity.getProperty(IVertex.TRUST+"."+ownIdentity.getProperty(IVertex.ID)));	
 		}
 		catch(NullPointerException e) //trust not stored in db
 		{

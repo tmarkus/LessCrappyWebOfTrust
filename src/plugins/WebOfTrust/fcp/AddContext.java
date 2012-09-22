@@ -32,13 +32,24 @@ public class AddContext extends FCPBase {
 			for(Node identity_vertex : identity_vertices)
 			{
 				Node contextNode = nodeIndex.get(IContext.NAME, context).getSingle();
-				
+
+				//check whether the identity already has the context or not
 				boolean hasContext = false;
-				for(Relationship rel : identity_vertex.getRelationships(Direction.OUTGOING, Rel.HAS_CONTEXT))
+				
+				//add the context if it doesn't exist yet
+				if (contextNode == null) {
+					contextNode = db.createNode();
+					contextNode.setProperty(IContext.NAME, context);
+				}
+				else
 				{
-					if (rel.getEndNode().equals(contextNode)) hasContext = true;
+					for(Relationship rel : identity_vertex.getRelationships(Direction.OUTGOING, Rel.HAS_CONTEXT))
+					{
+						if (rel.getEndNode().equals(contextNode)) hasContext = true;
+					}
 				}
 				
+				//if not, add a relationship to the context node
 				if (!hasContext) identity_vertex.createRelationshipTo(contextNode, Rel.HAS_CONTEXT);
 			}
 

@@ -1,18 +1,14 @@
 package plugins.WebOfTrust.fcp;
 
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import org.neo4j.graphdb.Direction;
 import org.neo4j.graphdb.GraphDatabaseService;
 import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.Relationship;
-import org.neo4j.tooling.GlobalGraphOperations;
 
 import plugins.WebOfTrust.datamodel.IContext;
 import plugins.WebOfTrust.datamodel.IEdge;
@@ -62,40 +58,43 @@ public class GetIdentitiesByScore extends GetIdentity {
 		reply.putSingle("Message", "Identities");
 		int i = 0;
 
-		
+		//get all identities with a specific context
 		for ( Relationship hasContextRel : nodeIndex.get(IContext.NAME, context).getSingle().getRelationships(Direction.INCOMING, Rel.HAS_CONTEXT))
 		{
-			Node vertex = hasContextRel.getStartNode();
+			Node identity = hasContextRel.getStartNode();
 			//check whether the identity has a name (and we thus have retrieved it at least once)
-			if (vertex.hasProperty(IVertex.NAME))
+			if (identity.hasProperty(IVertex.NAME))
 			{
-				Node max_score_owner_id = null; //identity which has the maximum trust directly assigned (possibly none)
+				Node max_score_owner = null; //identity which has the maximum trust directly assigned (possibly none)
 				Integer max_score = Integer.MIN_VALUE;
 				
 				for(Node own_identity : treeOwnerList)
 				{
-					for(Relationship rel : own_identity.getRelationships(Direction.OUTGOING))
+					for(Relationship rel : own_identity.getRelationships(Direction.OUTGOING, Rel.TRUSTS))
 					{
-						if (rel.getEndNode().equals(vertex))
+						if (rel.getEndNode().equals(identity))
 						{
 							final int score = (Integer) rel.getProperty(IEdge.SCORE);
 							if (score > max_score) 
 							{
 								max_score = score;
-								max_score_owner_id = own_identity;
+								max_score_owner = own_identity;
 							}
 						}
 					}
 				}
 
-				addIdentityReplyFields(vertex, max_score_owner_id, Integer.toString(i));
+				addIdentityReplyFields(max_score_owner, identity, Integer.toString(i));
 				
 				if (includeTrustValue)	reply.putOverwrite("Score" + i, Integer.toString(max_score));
-				reply.putOverwrite("ScoreOwner" + i, (String) max_score_owner_id.getProperty(IVertex.ID));
+				if (max_score_owner != null) reply.putOverwrite("ScoreOwner" + i, (String) max_score_owner.getProperty(IVertex.ID));
 
 				i += 1;
 			}
 		}
+		
+		System.out.println("GetIdentitiesByScore returned " + i + " identities for the context: " + context);
+		
 		return reply;
 	}
 }

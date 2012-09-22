@@ -16,6 +16,8 @@ import org.neo4j.kernel.impl.cache.CacheProvider;
 import org.neo4j.kernel.impl.cache.SoftCacheProvider;
 import org.neo4j.server.WrappingNeoServerBootstrapper;
 
+import plugins.WebOfTrust.datamodel.IContext;
+import plugins.WebOfTrust.datamodel.IEdge;
 import plugins.WebOfTrust.datamodel.IVertex;
 import plugins.WebOfTrust.pages.IdenticonController;
 import plugins.WebOfTrust.pages.IdentityManagement;
@@ -134,8 +136,8 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		
 		
 		db = gdbf.newEmbeddedDatabaseBuilder( db_path )
-		.setConfig( GraphDatabaseSettings.node_keys_indexable, IVertex.ID+","+IVertex.OWN_IDENTITY )
-	    .setConfig( GraphDatabaseSettings.relationship_keys_indexable, "relProp1,relProp2" )
+		.setConfig( GraphDatabaseSettings.node_keys_indexable, IVertex.ID+","+IVertex.OWN_IDENTITY+","+IContext.NAME )
+	    .setConfig( GraphDatabaseSettings.relationship_keys_indexable, IEdge.SCORE )
 	    .setConfig( GraphDatabaseSettings.node_auto_indexing, GraphDatabaseSetting.TRUE )
 	    .setConfig( GraphDatabaseSettings.relationship_auto_indexing, GraphDatabaseSetting.TRUE ).newGraphDatabase();
 

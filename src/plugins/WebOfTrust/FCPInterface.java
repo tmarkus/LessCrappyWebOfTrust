@@ -31,7 +31,8 @@ public class FCPInterface {
 			//find class with the name Message
 			@SuppressWarnings("unchecked")
 			Class<FCPBase> c = (Class<FCPBase>) Class.forName("plugins.WebOfTrust.fcp."+sfs.get("Message"));
-			Constructor<? extends FCPBase> ctor = c.getConstructor();
+			
+			Constructor<? extends FCPBase> ctor = c.getConstructor(GraphDatabaseService.class);
 			FCPBase handler = ctor.newInstance(db);
 			
 			long start = System.currentTimeMillis();

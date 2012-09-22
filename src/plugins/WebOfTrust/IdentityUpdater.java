@@ -2,6 +2,8 @@ package plugins.WebOfTrust;
 
 import java.net.MalformedURLException;
 import java.sql.SQLException;
+import java.util.HashSet;
+import java.util.Set;
 
 import org.neo4j.graphdb.Direction;
 import org.neo4j.graphdb.GraphDatabaseService;
@@ -65,14 +67,16 @@ public class IdentityUpdater implements ClientGetCallback{
 	public void onSuccess(FetchResult fr, ClientGetter cg, ObjectContainer oc) {
 
 		try{
-			//deregister our request
-			rs.removeInFlight(cg);
+			synchronized (rs.DB_TRANSACTION_LOCK) {
+				//deregister our request
+				rs.removeInFlight(cg);
 
-			//parse the xml
-			Document doc = Utils.getXMLDoc(fr);
+				//parse the xml
+				Document doc = Utils.getXMLDoc(fr);
 
-			//try to add additional trust relations
-			addTrustRelations(doc, cg.getURI());
+				//try to add additional trust relations
+				addTrustRelations(doc, cg.getURI());
+			}
 		}
 		catch(Exception e)
 		{
@@ -89,15 +93,16 @@ public class IdentityUpdater implements ClientGetCallback{
 
 		//setup identiy and possibly store it in the graphstore
 		final org.neo4j.graphdb.Node identity = getIdentity(freenetURI, current_edition);
-
+		
 		if (current_edition > getCurrentStoredEdition(identity)) //what we are fetching should be newer, if not, don't even bother updating everything
 		{
-			updateKeyEditions(freenetURI, current_edition, identity); //always update the keys no matter what
-
 			//always update:
+			
 			Transaction tx = db.beginTx();
 			try
 			{
+				updateKeyEditions(freenetURI, current_edition, identity); //always update the keys no matter what
+				
 				identity.setProperty(IVertex.NAME, identityName);
 				identity.setProperty(IVertex.PUBLISHES_TRUSTLIST, publishesTrustList);
 			
@@ -106,7 +111,7 @@ public class IdentityUpdater implements ClientGetCallback{
 
 				identity.setProperty(IVertex.LAST_FETCHED, System.currentTimeMillis());
 
-				for(Relationship rel : identity.getRelationships(Direction.OUTGOING)) rel.delete();
+				for(Relationship rel : identity.getRelationships(Direction.OUTGOING, Rel.TRUSTS)) rel.delete();
 				
 				tx.success();
 			}
@@ -134,9 +139,20 @@ public class IdentityUpdater implements ClientGetCallback{
 						final Byte trustValue = Byte.parseByte(attr.getNamedItem("Value").getNodeValue());
 
 						tx = db.beginTx();
+						org.neo4j.graphdb.Node peer;
 						try
 						{
-							org.neo4j.graphdb.Node peer = getPeerIdentity(db, peerIdentityKey);
+							peer = getPeerIdentity(db, peerIdentityKey);
+							tx.success();
+						}
+						finally
+						{
+							tx.finish();
+						}
+						
+						tx = db.beginTx();
+						try
+						{
 							Relationship edge = peer.createRelationshipTo(identity, Rel.TRUSTS);
 
 							edge.setProperty(IEdge.COMMENT, trustComment);
@@ -265,7 +281,6 @@ public class IdentityUpdater implements ClientGetCallback{
 		if (current_edition > getCurrentStoredEdition(identity))
 		{
 			Transaction tx = db.beginTx();
-
 			try
 			{
 				identity.setProperty(IVertex.EDITION, current_edition);
@@ -273,58 +288,61 @@ public class IdentityUpdater implements ClientGetCallback{
 				//update the request and insert keys with the most recent known edition
 				identity.setProperty(IVertex.REQUEST_URI, identityKey.setSuggestedEdition(current_edition).toASCIIString());
 
+
+				//update the insert uri if we have one
+				if (identity.hasProperty(IVertex.INSERT_URI))
+				{
+					try {
+						FreenetURI insertURI = new FreenetURI((String) identity.getProperty(IVertex.INSERT_URI));
+						insertURI = insertURI.setSuggestedEdition(current_edition);
+
+						identity.setProperty(IVertex.INSERT_URI, insertURI.toASCIIString());
+
+					} catch (MalformedURLException e) {
+						e.printStackTrace();
+					}
+				}
+				
 				tx.success();
 			}
 			finally
 			{
 				tx.finish();
 			}
-
-			//update the insert uri if we have one
-			if (identity.hasProperty(IVertex.INSERT_URI))
-			{
-				try {
-					FreenetURI insertURI = new FreenetURI((String) identity.getProperty(IVertex.INSERT_URI));
-					insertURI = insertURI.setSuggestedEdition(current_edition);
-
-					tx = db.beginTx();
-					try
-					{
-						identity.setProperty(IVertex.INSERT_URI, insertURI.toASCIIString());
-
-						tx.success();
-					}
-					finally {tx.finish();};
-
-				} catch (MalformedURLException e) {
-					e.printStackTrace();
-				}
-			}
 		}
 	}
 
-	private void SetContexts(org.neo4j.graphdb.Node identity, NodeList contextsXML) throws SQLException 
+	private void SetContexts(org.neo4j.graphdb.Node identity, NodeList contextsXML) 
 	{
-		//remove all old contexts
-		for(Relationship rel :identity.getRelationships(Rel.HAS_CONTEXT))
-		{
-			rel.delete();
-		}
-
 		//add all the (new) contexts
+		Set<String> contexts = new HashSet<String>();
 		for(int i=0; i < contextsXML.getLength(); i++)
 		{
 			Node context = contextsXML.item(i); //XML node!
 			final NamedNodeMap attr = context.getAttributes();
 			final String name = attr.getNamedItem("Name").getNodeValue();
+			contexts.add(name);
+		}
+		
+		//remove all old contexts
+		for(Relationship rel : identity.getRelationships(Direction.OUTGOING, Rel.HAS_CONTEXT))
+		{
+			final String storedContext = (String) rel.getEndNode().getProperty(IContext.NAME);
+			
+			if (!contexts.contains(storedContext)) 	rel.delete();
+			else									contexts.remove(storedContext);
+		}
 
+		//add the new contexts that aren't in the graph yet
+		for(String name : contexts)
+		{
 			org.neo4j.graphdb.Node contextNode = nodeIndex.get(IContext.NAME, name).getSingle();
 			if (contextNode == null)
 			{
 					contextNode = db.createNode();
 					contextNode.setProperty(IContext.NAME, name);
 			}
-
+		
 			identity.createRelationshipTo(contextNode, Rel.HAS_CONTEXT);
 		}
 	}
