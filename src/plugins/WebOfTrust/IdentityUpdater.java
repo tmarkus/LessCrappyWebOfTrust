@@ -86,12 +86,12 @@ public class IdentityUpdater implements ClientGetCallback{
 
 	private void addTrustRelations(Document doc, FreenetURI freenetURI) throws SQLException, MalformedURLException, DOMException
 	{
-		Node ownIdentity = doc.getElementsByTagName("Identity").item(0);
-		final String identityName = ownIdentity.getAttributes().getNamedItem("Name").getNodeValue();
-		final String publishesTrustList = ownIdentity.getAttributes().getNamedItem("PublishesTrustList").getNodeValue();
+		Node identityXMLNode = doc.getElementsByTagName("Identity").item(0);
+		final String identityName = identityXMLNode.getAttributes().getNamedItem("Name").getNodeValue();
+		final String publishesTrustList = identityXMLNode.getAttributes().getNamedItem("PublishesTrustList").getNodeValue();
 		long current_edition = freenetURI.getEdition();
 
-		//setup identiy and possibly store it in the graphstore
+		//setup identity and possibly store it in the graphstore
 		final org.neo4j.graphdb.Node identity = getIdentity(freenetURI, current_edition);
 		
 		if (current_edition > getCurrentStoredEdition(identity)) //what we are fetching should be newer, if not, don't even bother updating everything
@@ -153,7 +153,7 @@ public class IdentityUpdater implements ClientGetCallback{
 						tx = db.beginTx();
 						try
 						{
-							Relationship edge = peer.createRelationshipTo(identity, Rel.TRUSTS);
+							Relationship edge = identity.createRelationshipTo(peer, Rel.TRUSTS);
 
 							edge.setProperty(IEdge.COMMENT, trustComment);
 							edge.setProperty(IEdge.SCORE, trustValue);
