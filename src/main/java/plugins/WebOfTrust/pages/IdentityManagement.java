@@ -3,7 +3,6 @@ package plugins.WebOfTrust.pages;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URI;
-import java.sql.SQLException;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -87,7 +86,7 @@ public class IdentityManagement extends freenet.plugin.web.HTMLFileReaderToadlet
 	    writeReply(ctx, 200, "text/html", "content", doc.html());
 	}
 	
-	public void handleMethodPOST(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException, SQLException, FetchException
+	public void handleMethodPOST(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException, FetchException
 	{
 	    String action = request.getPartAsStringFailsafe("action", 200);
 
@@ -169,7 +168,7 @@ public class IdentityManagement extends freenet.plugin.web.HTMLFileReaderToadlet
 			}
 	}
 
-	private void createIdentity(String name) throws SQLException, MalformedURLException {
+	private void createIdentity(String name) throws MalformedURLException {
 		//create ssk keypair
 		FreenetURI[] keypair = main.getHL().generateKeyPair(WebOfTrust.namespace);
 		FreenetURI newRequestURI = keypair[1].setKeyType("USK")
@@ -225,10 +224,9 @@ public class IdentityManagement extends freenet.plugin.web.HTMLFileReaderToadlet
 	 * add minimal identity features to graph store
 	 * @param requestURI
 	 * @param insertURI
-	 * @throws SQLException
 	 */
 	
-	private Node addOwnIdentity(FreenetURI requestURI, FreenetURI insertURI) throws SQLException {
+	private Node addOwnIdentity(FreenetURI requestURI, FreenetURI insertURI) {
 		
 		Transaction tx = db.beginTx();
 		try

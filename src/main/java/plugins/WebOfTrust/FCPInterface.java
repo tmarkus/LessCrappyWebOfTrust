@@ -1,7 +1,6 @@
 package plugins.WebOfTrust;
 
 import java.lang.reflect.Constructor;
-import java.sql.SQLException;
 
 import org.neo4j.graphdb.GraphDatabaseService;
 
@@ -21,7 +20,7 @@ public class FCPInterface {
 		this.db = db;
 	}
 
-	public void handle(PluginReplySender prs, SimpleFieldSet sfs, Bucket bucket, int accessType) throws SQLException, PluginNotFoundException {
+	public void handle(PluginReplySender prs, SimpleFieldSet sfs, Bucket bucket, int accessType) throws PluginNotFoundException {
 		//System.out.println("Received the following message type: " + sfs.get("Message") + " with identifier: " + prs.getIdentifier());
 
 		try {

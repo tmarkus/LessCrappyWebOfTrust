@@ -1,24 +1,17 @@
 package plugins.WebOfTrust;
 
-import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.List;
 
-import org.neo4j.graphdb.GraphDatabaseService;
 import org.neo4j.graphdb.factory.GraphDatabaseFactory;
 import org.neo4j.graphdb.index.IndexProvider;
 import org.neo4j.index.lucene.LuceneIndexProvider;
-import org.neo4j.kernel.InternalAbstractGraphDatabase;
 import org.neo4j.kernel.ListIndexIterable;
 import org.neo4j.kernel.impl.cache.CacheProvider;
 import org.neo4j.kernel.impl.cache.SoftCacheProvider;
 
-import plugins.WebOfTrust.datamodel.IVertex;
-
-
 public class Test {
 
-	public static void main(String[] args) throws ClassNotFoundException, SQLException
+	public static void main(String[] args) throws ClassNotFoundException
 	{
 		
 		
@@ -39,7 +32,7 @@ public class Test {
 		gdbf.setCacheProviders( cacheList );
 		
 		
-		GraphDatabaseService db = gdbf.newEmbeddedDatabase("db");
+		//GraphDatabaseService db = gdbf.newEmbeddedDatabase("db");
 		
 		/*
 		db = gdbf.newEmbeddedDatabaseBuilder( db_path )

@@ -2,7 +2,6 @@ package plugins.WebOfTrust.pages;
 
 import java.io.IOException;
 import java.net.URI;
-import java.sql.SQLException;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
@@ -323,6 +322,6 @@ public class ShowIdentityController extends freenet.plugin.web.HTMLFileReaderToa
 	}
 	
 	@Override
-	public void terminate() throws SQLException {
+	public void terminate() {
 	}
 }

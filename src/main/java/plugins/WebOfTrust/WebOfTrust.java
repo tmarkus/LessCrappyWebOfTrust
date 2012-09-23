@@ -1,6 +1,5 @@
 package plugins.WebOfTrust;
 
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
@@ -102,12 +101,9 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		//setup requestscheduler
 		this.rs = new RequestScheduler(this, db, hl);
 		new Thread(rs). start ( );		
+
 		//setup web interface
-		try {
-			setupWebinterface();
-		} catch (SQLException e) {
-			e.printStackTrace();
-		}
+		setupWebinterface();
 
 		LOGGER.info("Completed initialization.");
 	}
@@ -151,7 +147,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		return db;
 	}
 
-	private void setupWebinterface() throws SQLException
+	private void setupWebinterface()
 	{
 		LOGGER.info("Setting up webinterface");
 		PluginContext pluginContext = new PluginContext(pr);
@@ -206,12 +202,8 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		//deregister toadlets
 		ToadletContainer toadletContainer = pr.getToadletContainer();
 		for (FileReaderToadlet pageToadlet : toadlets) {
-			try {
 				toadletContainer.unregister(pageToadlet);
 				pageToadlet.terminate();
-			} catch (SQLException e) {
-				e.printStackTrace();
-			}
 		}
 
 		if (webInterface != null) webInterface.kill();
@@ -272,9 +264,8 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	public void handle(PluginReplySender prs, SimpleFieldSet sfs, Bucket bucket, int accessType) {
 		try {
 			fpi.handle(prs, sfs, bucket, accessType);
-		} catch (SQLException e) {
-			e.printStackTrace();
-		} catch (PluginNotFoundException e) {
+		}
+		catch (PluginNotFoundException e) {
 			e.printStackTrace();
 		}
 	}

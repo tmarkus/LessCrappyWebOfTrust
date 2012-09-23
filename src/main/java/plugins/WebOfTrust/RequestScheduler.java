@@ -302,7 +302,6 @@ public class RequestScheduler extends Thread {
 
 	/**
 	 * Update the web of trust values
-	 * @throws SQLException
 	 */
 	
 	private void updateWoT()
@@ -310,10 +309,7 @@ public class RequestScheduler extends Thread {
 		if (System.currentTimeMillis() - wot_last_updated > MINIMAL_SLEEP_TIME_WOT_UPDATE)
 		{
 			wot_last_updated = System.currentTimeMillis();
-
-			ReadableIndex<Node> nodeIndex = db.index().getNodeAutoIndexer().getAutoIndex();
 			ScoreComputer sc = new ScoreComputer(db);
-			
 			sc.compute();
 		}
 	}

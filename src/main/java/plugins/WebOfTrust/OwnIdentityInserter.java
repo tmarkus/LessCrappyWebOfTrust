@@ -7,7 +7,6 @@ import java.math.BigInteger;
 import java.net.MalformedURLException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.sql.SQLException;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -139,9 +138,6 @@ public class OwnIdentityInserter implements Runnable, ClientPutCallback  {
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-		} catch (SQLException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
 		} catch (TransformerException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -182,8 +178,6 @@ public class OwnIdentityInserter implements Runnable, ClientPutCallback  {
 			own_vertex.setProperty(IVertex.HASH, calculateIdentityHash(own_vertex));
 		
 			tx.success();
-		} catch (SQLException e) {
-			e.printStackTrace();
 		} catch (MalformedURLException e) {
 			e.printStackTrace();
 		} catch (NoSuchAlgorithmException e) {
@@ -197,7 +191,7 @@ public class OwnIdentityInserter implements Runnable, ClientPutCallback  {
 	}
 	
 	
-	private static String calculateIdentityHash(Node own_vertex) throws SQLException, NoSuchAlgorithmException
+	private static String calculateIdentityHash(Node own_vertex) throws NoSuchAlgorithmException
 	{
 
 		String string_to_hash = "";

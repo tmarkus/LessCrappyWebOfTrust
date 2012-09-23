@@ -1,7 +1,6 @@
 package plugins.WebOfTrust;
 
 import java.net.MalformedURLException;
-import java.sql.SQLException;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -84,7 +83,7 @@ public class IdentityUpdater implements ClientGetCallback{
 		}
 	}
 
-	private void addTrustRelations(Document doc, FreenetURI freenetURI) throws SQLException, MalformedURLException, DOMException
+	private void addTrustRelations(Document doc, FreenetURI freenetURI) throws MalformedURLException, DOMException
 	{
 		Node identityXMLNode = doc.getElementsByTagName("Identity").item(0);
 		final String identityName = identityXMLNode.getAttributes().getNamedItem("Name").getNodeValue();
@@ -188,7 +187,7 @@ public class IdentityUpdater implements ClientGetCallback{
 			}
 		}
 	}
-	public static org.neo4j.graphdb.Node getPeerIdentity(GraphDatabaseService db, final FreenetURI peerIdentityKey)	throws SQLException 
+	public static org.neo4j.graphdb.Node getPeerIdentity(GraphDatabaseService db, final FreenetURI peerIdentityKey) 
 	{
 		ReadableIndex<org.neo4j.graphdb.Node> nodeIndex = db.index().getNodeAutoIndexer().getAutoIndex();
 		org.neo4j.graphdb.Node peer = nodeIndex.get(IVertex.ID, Utils.getIDFromKey(peerIdentityKey)).getSingle();
@@ -209,7 +208,7 @@ public class IdentityUpdater implements ClientGetCallback{
 		return peer;
 	}
 
-	private static void SetProperties(org.neo4j.graphdb.Node identity, NodeList propertiesXML) throws SQLException 
+	private static void SetProperties(org.neo4j.graphdb.Node identity, NodeList propertiesXML) 
 	{
 		//add all the (new) properties
 		for(int i=0; i < propertiesXML.getLength(); i++)
@@ -223,7 +222,7 @@ public class IdentityUpdater implements ClientGetCallback{
 		}
 	}
 
-	private org.neo4j.graphdb.Node getIdentity(FreenetURI identityKey, long current_edition) throws SQLException {
+	private org.neo4j.graphdb.Node getIdentity(FreenetURI identityKey, long current_edition) {
 
 		ReadableIndex<org.neo4j.graphdb.Node> nodeIndex = db.index().getNodeAutoIndexer().getAutoIndex();
 		final String identityID = Utils.getIDFromKey(identityKey);
@@ -264,7 +263,7 @@ public class IdentityUpdater implements ClientGetCallback{
 		return identity;
 	}
 
-	private static long getCurrentStoredEdition(org.neo4j.graphdb.Node vertex) throws SQLException
+	private static long getCurrentStoredEdition(org.neo4j.graphdb.Node vertex)
 	{
 		if (vertex.hasProperty(IVertex.EDITION))
 		{
@@ -276,7 +275,7 @@ public class IdentityUpdater implements ClientGetCallback{
 		}
 	}
 
-	private void updateKeyEditions(FreenetURI identityKey, long current_edition, org.neo4j.graphdb.Node identity) throws SQLException 
+	private void updateKeyEditions(FreenetURI identityKey, long current_edition, org.neo4j.graphdb.Node identity) 
 	{
 		if (current_edition > getCurrentStoredEdition(identity))
 		{

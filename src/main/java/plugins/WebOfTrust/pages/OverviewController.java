@@ -2,7 +2,6 @@ package plugins.WebOfTrust.pages;
 
 import java.io.IOException;
 import java.net.URI;
-import java.sql.SQLException;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -100,7 +99,7 @@ public class OverviewController extends freenet.plugin.web.HTMLFileReaderToadlet
 	}
 	
 	@Override
-	public void terminate() throws SQLException {
+	public void terminate() {
 		
 	}
 }
