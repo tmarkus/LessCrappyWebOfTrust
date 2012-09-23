@@ -1,4 +1,5 @@
 - decrease transaction level in IdentityUpdater
+- don't randomly select to fetch an identity with a negative trust value
 
 === Until first BETA ===
 - write identity insert keys to plain text file
