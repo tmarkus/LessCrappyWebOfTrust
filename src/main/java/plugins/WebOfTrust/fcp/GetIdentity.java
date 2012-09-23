@@ -1,10 +1,9 @@
 package plugins.WebOfTrust.fcp;
 
-import java.util.List;
-
 import org.neo4j.graphdb.Direction;
 import org.neo4j.graphdb.GraphDatabaseService;
 import org.neo4j.graphdb.Node;
+import org.neo4j.graphdb.NotFoundException;
 import org.neo4j.graphdb.Relationship;
 
 import plugins.WebOfTrust.datamodel.IContext;
@@ -65,7 +64,7 @@ public class GetIdentity extends FCPBase {
 		{
 			reply.putOverwrite("Score"+index, Integer.toString((Integer) identity.getProperty(IVertex.TRUST+"."+ownIdentity.getProperty(IVertex.ID))));	
 		}
-		catch(NullPointerException e) //trust not stored in db
+		catch(NotFoundException e) //trust not stored in db
 		{
 			reply.putOverwrite("Score"+index, "null");
 		}
