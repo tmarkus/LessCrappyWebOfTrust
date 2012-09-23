@@ -1,35 +1,26 @@
 package plugins.WebOfTrust;
 
 import java.net.MalformedURLException;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 
-import org.neo4j.cypher.ExecutionEngine;
-import org.neo4j.cypher.ExecutionResult;
 import org.neo4j.graphdb.Direction;
 import org.neo4j.graphdb.GraphDatabaseService;
 import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.Relationship;
 import org.neo4j.graphdb.Transaction;
-import org.neo4j.graphdb.index.Index;
 import org.neo4j.graphdb.index.IndexHits;
 import org.neo4j.graphdb.index.ReadableIndex;
+import org.neo4j.tooling.GlobalGraphOperations;
 
-import plugins.WebOfTrust.datamodel.IEdge;
 import plugins.WebOfTrust.datamodel.IVertex;
 import plugins.WebOfTrust.datamodel.Rel;
 
-import thomasmarkus.nl.freenet.graphdb.EdgeWithProperty;
-import thomasmarkus.nl.freenet.graphdb.H2Graph;
-import thomasmarkus.nl.freenet.graphdb.H2GraphFactory;
-import thomasmarkus.nl.freenet.graphdb.VertexIterator;
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
 import freenet.client.HighLevelSimpleClient;
@@ -139,7 +130,7 @@ public class RequestScheduler extends Thread {
 		System.err.println("All requests canceled.");
 	}
 
-	private void insertOwnIdentities() throws SQLException {
+	private void insertOwnIdentities() {
 
 		ReadableIndex<Node> nodeIndex = db.index().getNodeAutoIndexer().getAutoIndex();
 		IndexHits<Node> own_identities = nodeIndex.get(IVertex.OWN_IDENTITY, true);
@@ -203,14 +194,14 @@ public class RequestScheduler extends Thread {
 		}
 	}
 
-	private void maintenance() throws SQLException {
+	private void maintenance() {
 		if (getInFlightSize() <= MAX_MAINTENANCE_REQUESTS)
 		{
 			ReadableIndex<Node> nodeIndex = db.index().getNodeAutoIndexer().getAutoIndex();
 			
 			try
 			{
-				double random = ran.nextDouble();
+				final double random = ran.nextDouble();
 				if (random < PROBABILITY_OF_FETCHING_DIRECTLY_TRUSTED_IDENTITY) //fetch random directly connected identity
 				{
 					IndexHits<Node> vertices = nodeIndex.get(IVertex.OWN_IDENTITY, true);
@@ -218,27 +209,24 @@ public class RequestScheduler extends Thread {
 					{
 						for(Node vertex : vertices)
 						{
-							Iterable<Relationship> edges = vertex.getRelationships(Direction.OUTGOING, Rel.TRUSTS);
+							final Iterable<Relationship> edges = vertex.getRelationships(Direction.OUTGOING, Rel.TRUSTS);
+							final List<Relationship> edges_list = new ArrayList<Relationship>();
 							
-							Iterator<Relationship> iter = edges.iterator();
-							List<Relationship> edges_list = new ArrayList<Relationship>();
-							while (iter.hasNext())
+							for(Relationship rel : edges)
 							{
-								edges_list.add(iter.next());
+								edges_list.add(rel);
 							}
 							
 							//get a random edge
 							if (edges_list.size() > 0)
 							{
-								Relationship edge = edges_list.get( ran.nextInt(edges_list.size()) );
-
-								Node end_node = edge.getEndNode();
+								final Node end_node = edges_list.get( ran.nextInt(edges_list.size()) ).getEndNode();
 								
 								//add the requestURI to the backlog
-								if (end_node.hasProperty(IVertex.REQUEST_URI))
-								{
-									addBacklog(new FreenetURI((String) edge.getEndNode().getProperty(IVertex.REQUEST_URI)));	
-								}
+								addBacklog(new FreenetURI((String) end_node.getProperty(IVertex.REQUEST_URI)));	
+								
+								//stop adding other entries after adding just this one
+								return;
 							}
 						}
 					}
@@ -248,46 +236,29 @@ public class RequestScheduler extends Thread {
 					}
 					
 				}
-				else
+				else //select any random identity (doesn't have to be directly connected to a local identity)
 				{
-					//find random identity
-					IndexHits<Node> own_vertices = nodeIndex.get(IVertex.OWN_IDENTITY, true);
+					//count all identities
+					GlobalGraphOperations ggo = GlobalGraphOperations.at(db);
+					int count = 0;
+					for(Node node : ggo.getAllNodes())
+					{
+						if (node.hasProperty(IVertex.ID)) count += 1;
+					}
 					
-					try
+					//select random identity
+					int skip = ran.nextInt(count);
+					int i = 0;
+					for(Node node : ggo.getAllNodes())
 					{
-						Iterator<Node> iter = own_vertices.iterator();
-						List<Node> own_vertices_list = new ArrayList<Node>();
-						while (iter.hasNext())
+						if (skip == i)
 						{
-							own_vertices_list.add(iter.next());
-						}
-
-						
-						if (own_vertices.hasNext())
-						{
-							Node own_vertex = own_vertices_list.get( ran.nextInt(own_vertices_list.size()));
-							String own_id = (String) own_vertex.getProperty(IVertex.ID);
-
-							//Some identity with a score of 0 or higher and sort by random, limit by 1
-							//TODO: use the traverse NO cypher for this stuff!
+							//add URI to the backlog
+							addBacklog(new FreenetURI((String) node.getProperty(IVertex.REQUEST_URI)));
 							
-							//true refers to a random element from the set
-							ExecutionEngine engine = new ExecutionEngine( db );
-							ExecutionResult result = engine.execute( "start r=relationship(:TRUSTS) n-[r]->n2 WHERE n2.TRUST >= 0 return n2" );
-							
-							Iterator<Node> vertices = (Iterator<Node>) result.columnAs("n2");
-
-							if(vertices.hasNext())
-							{
-								//add URI to the backlog
-								addBacklog(new FreenetURI((String) vertices.next().getProperty(IVertex.REQUEST_URI)));
-							}
+							return; //not really required, but faster than iterating through all nodes
 						}
-					}
-					finally
-					{
-						own_vertices.close();
-					}
+					}	
 				}
 			}
 			catch (MalformedURLException e) {
@@ -334,7 +305,7 @@ public class RequestScheduler extends Thread {
 	 * @throws SQLException
 	 */
 	
-	private void updateWoT() throws SQLException
+	private void updateWoT()
 	{
 		if (System.currentTimeMillis() - wot_last_updated > MINIMAL_SLEEP_TIME_WOT_UPDATE)
 		{

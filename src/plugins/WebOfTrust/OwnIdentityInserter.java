@@ -23,8 +23,10 @@ import javax.xml.transform.TransformerFactoryConfigurationError;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
+import plugins.WebOfTrust.datamodel.IContext;
 import plugins.WebOfTrust.datamodel.IEdge;
 import plugins.WebOfTrust.datamodel.IVertex;
+import plugins.WebOfTrust.datamodel.Rel;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 
@@ -282,13 +284,14 @@ public class OwnIdentityInserter implements Runnable, ClientPutCallback  {
 			}
 			
 			/* Create the context Elements */
-			if (own_identity.hasProperty(IVertex.CONTEXT_NAME) ) // do we even have contexts? :)
+			for(Relationship rel : own_identity.getRelationships(Direction.OUTGOING, Rel.HAS_CONTEXT))
 			{
-				for(String context : (List<String>) own_identity.getProperty(IVertex.CONTEXT_NAME)) {
-					Element contextElement = xmlDoc.createElement("Context");
-					contextElement.setAttribute("Name", context);
-					identityElement.appendChild(contextElement);
-				}
+				String context = (String) rel.getEndNode().getProperty(IContext.NAME);
+			
+				Element contextElement = xmlDoc.createElement("Context");
+				contextElement.setAttribute("Name", context);
+				identityElement.appendChild(contextElement);
+			
 			}
 
 			/* Create a list of properties we SHOULD NOT insert */
@@ -306,7 +309,7 @@ public class OwnIdentityInserter implements Runnable, ClientPutCallback  {
 			
 			/* Create the property Elements */
 			for(String propertyName : own_identity.getPropertyKeys() ) {
-				if (!blackList.contains(propertyName) && !propertyName.contains(IVertex.TRUST+"."))
+				if (!blackList.contains(propertyName) && !propertyName.contains(IVertex.TRUST+".") && !propertyName.contains(IVertex.DISTANCE+"."))
 				{
 					Element propertyElement = xmlDoc.createElement("Property");
 					propertyElement.setAttribute("Name", propertyName);

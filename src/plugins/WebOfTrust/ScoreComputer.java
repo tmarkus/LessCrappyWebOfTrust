@@ -31,7 +31,7 @@ public class ScoreComputer {
 		this.db = db;
 	}
 
-	public void compute(String ownIdentityID) throws SQLException
+	public void compute(String ownIdentityID)
 	{
 		
 		System.out.println("Starting trust calculation for " + ownIdentityID);
