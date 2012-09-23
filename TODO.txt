@@ -1,16 +1,10 @@
-- GetIdentityByScore can find identities with a particular context that don't have a trust score calculated yet... FIX! based on treeOwner parameter
-
 === Until first BETA ===
 - write identity insert keys to plain text file
 - check whether we can output evil HTML? (this would be bad), always send HTML output through the freenet filter
 - use priority queue for fetches to make sure that own identities are fetched before all others on the queue
 -- required for quickly restoring multiple identities
 - make priority levels and such configurable
-- investigate: freenet:CHK@axAXtKUbJBGBqG-P3BnexykoFVTI4tOWaOmjeC1LTZs,ft2FxCgqHo5DJxaeydT4FT6wOM4AP6LYTKfxANmOZT8,AAIC--8/trace
--- investigate concurrency issues with db when bootstrapping due to timeouts
 - Beautify HTML pages for various actions (CSS)
-- Make the DB backend configurable (it's why we're using JDBC after all...)
--- This is actually a graphdatabase todo though..., probably requires refactoring of connection pool with some other library
 
 
 === After first BETA ===
