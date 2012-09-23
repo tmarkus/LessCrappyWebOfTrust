@@ -6,6 +6,7 @@ import org.neo4j.graphdb.GraphDatabaseService;
 import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.Path;
 import org.neo4j.graphdb.Transaction;
+import org.neo4j.graphdb.index.IndexHits;
 import org.neo4j.graphdb.index.ReadableIndex;
 import org.neo4j.graphdb.traversal.Evaluators;
 import org.neo4j.graphdb.traversal.TraversalDescription;
@@ -19,92 +20,92 @@ import plugins.WebOfTrust.datamodel.Rel;
 public class ScoreComputer {
 
 	private final GraphDatabaseService db;
-
+	ReadableIndex<Node> nodeIndex;
+	
 	protected static final float decay = 0.4f;
 
 	public ScoreComputer(GraphDatabaseService db)
 	{
 		this.db = db;
+		this.nodeIndex = db.index().getNodeAutoIndexer().getAutoIndex();
 	}
 
-	public void compute(String ownIdentityID)
+	public void compute()
 	{
-		
-		System.out.println("Starting trust calculation for " + ownIdentityID);
-		
+		System.out.println("Starting trust calculations...");
+
 		synchronized (db) {
 			
-		}
-		final String trustProperty = IVertex.TRUST+"."+ownIdentityID;
-		final String distanceProperty = IVertex.DISTANCE + "." + ownIdentityID;
-
-		ReadableIndex<Node> nodeIndex = db.index().getNodeAutoIndexer().getAutoIndex();
-
 		//delete the calculated trust values for all identities for this ownIdentity
 		System.out.println("Resetting graph by removing many properties...");
-		resetGraph(trustProperty, distanceProperty);
+		resetGraph();
 		System.out.println("Finished resetting graph");
-		
-		//assign 100 trust to local identity
-		Node own_identity = initOwnIdentity(ownIdentityID, trustProperty, distanceProperty, nodeIndex);
 
-		//traverse the graph
-		
-		
-		TraversalDescription td = Traversal.description()
-	            .breadthFirst()
-	            .relationships( Rel.TRUSTS, Direction.OUTGOING )
-	            .evaluator( Evaluators.excludeStartPosition() )
-	            .evaluator( Evaluators.toDepth(6) );
-		
-		for(Path path : td.traverse(own_identity))
+		final IndexHits<Node> vertices = nodeIndex.get(IVertex.OWN_IDENTITY, true);
+		for(Node vertex : vertices)
 		{
-			final Node current_node = path.endNode();
+			System.out.println("Calculating for: " + vertex.getProperty(IVertex.ID));
 			
-			Transaction tx = db.beginTx();
-			try
+			final String trustProperty = IVertex.TRUST+"."+vertex.getProperty(IVertex.ID);
+			final String distanceProperty = IVertex.DISTANCE + "." + vertex.getProperty(IVertex.ID);
+
+			//assign 100 trust to local identity
+			initOwnIdentity(vertex, trustProperty, distanceProperty, nodeIndex);
+
+			//traverse the graph
+			TraversalDescription td = Traversal.description()
+		            .breadthFirst()
+		            .relationships( Rel.TRUSTS, Direction.OUTGOING )
+		            .evaluator( Evaluators.excludeStartPosition() )
+		            .evaluator( Evaluators.toDepth(6) );
+			
+			for(Path path : td.traverse(vertex))
 			{
-				current_node.setProperty(distanceProperty, (byte) path.length());
+				final Node current_node = path.endNode();
 				
-				final int parent_trust = (Integer) path.lastRelationship().getStartNode().getProperty(trustProperty);
-
-				if (parent_trust > 0)
+				Transaction tx = db.beginTx();
+				try
 				{
-					final byte score = (Byte) path.lastRelationship().getProperty(IEdge.SCORE);
-					final int current_trust = (Integer) current_node.getProperty(trustProperty);
+					current_node.setProperty(distanceProperty, (byte) path.length());
+					
+					final int parent_trust = (Integer) path.lastRelationship().getStartNode().getProperty(trustProperty);
 
-					int normalized_parent_trust = Math.min(parent_trust, 100);
-					normalized_parent_trust = Math.max(normalized_parent_trust, -100);
-					
-					if (path.length() == 1)
+					if (parent_trust > 0)
 					{
-						current_node.setProperty(trustProperty, (int) score);
+						final byte score = (Byte) path.lastRelationship().getProperty(IEdge.SCORE);
+						final int current_trust = (Integer) current_node.getProperty(trustProperty);
+
+						int normalized_parent_trust = Math.min(parent_trust, 100);
+						normalized_parent_trust = Math.max(normalized_parent_trust, -100);
+						
+						if (path.length() == 1)
+						{
+							current_node.setProperty(trustProperty, (int) score);
+						}
+						else if (normalized_parent_trust > 0 && score != 0)
+						{
+								current_node.setProperty(trustProperty, (int) (current_trust + Math.round(
+																					(100.0 / normalized_parent_trust) *
+																					((score/100.0)*Math.pow(decay, path.length()-1)
+																					)*100))
+								);
+								
+						}
 					}
-					else if (normalized_parent_trust > 0 && score != 0)
-					{
-							current_node.setProperty(trustProperty, (int) (current_trust + Math.round(
-																				(100.0 / normalized_parent_trust) *
-																				((score/100.0)*Math.pow(decay, path.length()-1)
-																				)*100))
-							);
-							
-					}
+						
+					tx.success();
 				}
-					
-				tx.success();
-			}
-			finally
-			{
-				tx.finish();
-			}
+				finally
+				{
+					tx.finish();
+				}
+			}	}
 		}
-	
+		
 		System.out.println("Down with trust calculation.");
 	}
 
-	protected Node initOwnIdentity(String ownIdentityID, final String trustProperty, final String distanceProperty, ReadableIndex<Node> nodeIndex) {
-		Node own_vertex = nodeIndex.get(IVertex.ID, ownIdentityID).getSingle();
-	
+	protected void initOwnIdentity(Node own_vertex, final String trustProperty, final String distanceProperty, ReadableIndex<Node> nodeIndex) {
 		Transaction tx = db.beginTx();
 		try
 		{
@@ -116,11 +117,9 @@ public class ScoreComputer {
 		{
 			tx.finish();
 		}
-		
-		return own_vertex;
 	}
 
-	protected void resetGraph(final String trustProperty, final String distanceProperty) {
+	protected void resetGraph() {
 		GlobalGraphOperations util = GlobalGraphOperations.at(db);
 
 		Transaction tx = db.beginTx();
@@ -130,8 +129,18 @@ public class ScoreComputer {
 			{
 				if (node.hasProperty(IVertex.ID))
 				{
-					node.setProperty(trustProperty, 0);
-					node.removeProperty(distanceProperty);
+					//remove all (old trust properties from removed local identities)
+					for(String prop : node.getPropertyKeys())
+					{
+						if (prop.startsWith(IVertex.TRUST) || prop.startsWith(IVertex.DISTANCE)) node.removeProperty(prop);  
+					}
+
+					final IndexHits<Node> vertices = nodeIndex.get(IVertex.OWN_IDENTITY, true);
+					for(Node localIdentity : vertices)
+					{
+						node.setProperty(IVertex.TRUST+"."+localIdentity.getProperty(IVertex.ID), 0);
+						node.removeProperty(IVertex.DISTANCE+"."+localIdentity.getProperty(IVertex.ID));	
+					}
 				}
 			}
 

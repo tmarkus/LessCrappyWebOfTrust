@@ -313,19 +313,8 @@ public class RequestScheduler extends Thread {
 
 			ReadableIndex<Node> nodeIndex = db.index().getNodeAutoIndexer().getAutoIndex();
 			ScoreComputer sc = new ScoreComputer(db);
-			IndexHits<Node> vertices = nodeIndex.get(IVertex.OWN_IDENTITY, true);
 			
-			try
-			{
-				for(Node vertex : vertices)
-				{
-					sc.compute((String) vertex.getProperty(IVertex.ID));
-				}
-			}
-			finally
-			{
-				vertices.close();
-			}
+			sc.compute();
 		}
 	}
 	
