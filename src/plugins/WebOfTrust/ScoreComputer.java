@@ -32,6 +32,9 @@ public class ScoreComputer {
 		
 		System.out.println("Starting trust calculation for " + ownIdentityID);
 		
+		synchronized (db) {
+			
+		}
 		final String trustProperty = IVertex.TRUST+"."+ownIdentityID;
 		final String distanceProperty = IVertex.DISTANCE + "." + ownIdentityID;
 

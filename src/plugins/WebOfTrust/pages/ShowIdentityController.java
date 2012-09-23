@@ -108,14 +108,6 @@ public class ShowIdentityController extends freenet.plugin.web.HTMLFileReaderToa
 				table.appendChild(tr);
 			}
 
-			Element contexts = doc.createElement("div");
-			for(Relationship rel : identity.getRelationships(Direction.OUTGOING, Rel.HAS_CONTEXT))
-			{
-				contexts.append("<p>"+(String) rel.getEndNode().getProperty(IContext.NAME)+"</p>");
-			}
-			propertiesForm.appendChild(contexts);
-			
-			
 			//submit button
 			if (is_own_identity)
 			{
@@ -123,6 +115,20 @@ public class ShowIdentityController extends freenet.plugin.web.HTMLFileReaderToa
 				propertiesForm.appendChild(modifySubmit);
 			}
 			info_div.appendChild(propertiesForm);
+
+
+			//display available contexts
+			Element contexts = doc.createElement("div");
+			contexts.append("<h2>Contexts</h2>");
+			Element contexts_list = doc.createElement("ul");
+			for(Relationship rel : identity.getRelationships(Direction.OUTGOING, Rel.HAS_CONTEXT))
+			{
+				Element li = doc.createElement("li");
+				li.text((String) rel.getEndNode().getProperty(IContext.NAME));
+				contexts_list.appendChild(li);
+			}
+			info_div.appendChild(contexts.appendChild(contexts_list));
+
 			
 			//allow specifying an updated trust value
 			info_div.append("<h1>Local trust assignments to this identity:</h1>");
