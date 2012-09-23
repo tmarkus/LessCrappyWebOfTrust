@@ -1,14 +1,10 @@
 package plugins.WebOfTrust;
 
-import java.sql.SQLException;
-import java.util.HashSet;
-import java.util.Set;
 
 import org.neo4j.graphdb.Direction;
 import org.neo4j.graphdb.GraphDatabaseService;
 import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.Path;
-import org.neo4j.graphdb.Relationship;
 import org.neo4j.graphdb.Transaction;
 import org.neo4j.graphdb.index.ReadableIndex;
 import org.neo4j.graphdb.traversal.Evaluators;
