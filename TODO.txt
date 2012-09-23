@@ -1,8 +1,6 @@
 - GetIdentityByScore can find identities with a particular context that don't have a trust score calculated yet... FIX! based on treeOwner parameter
-- ShowIdentity doesn't seem to display the correct outgoing trust relationships? Need to check whether this is a ShowIdentity issue or a IdentityUpdater issue
 
 === Until first BETA ===
-- rewrite score computation algorithm and make it readable and easy to modify
 - write identity insert keys to plain text file
 - check whether we can output evil HTML? (this would be bad), always send HTML output through the freenet filter
 - use priority queue for fetches to make sure that own identities are fetched before all others on the queue
