@@ -92,26 +92,26 @@ public class IdentityUpdater implements ClientGetCallback{
 
 		//setup identity and possibly store it in the graphstore
 		final org.neo4j.graphdb.Node identity = getIdentity(freenetURI, current_edition);
-		
+
 		if (current_edition > getCurrentStoredEdition(identity)) //what we are fetching should be newer, if not, don't even bother updating everything
 		{
 			//always update:
-			
+
 			Transaction tx = db.beginTx();
 			try
 			{
 				updateKeyEditions(freenetURI, current_edition, identity); //always update the keys no matter what
-				
+
 				identity.setProperty(IVertex.NAME, identityName);
 				identity.setProperty(IVertex.PUBLISHES_TRUSTLIST, Boolean.parseBoolean(publishesTrustList));
-			
+
 				SetContexts(identity, doc.getElementsByTagName("Context"));
 				SetProperties(identity, doc.getElementsByTagName("Property"));
 
 				identity.setProperty(IVertex.LAST_FETCHED, System.currentTimeMillis());
 
 				for(Relationship rel : identity.getRelationships(Direction.OUTGOING, Rel.TRUSTS)) rel.delete();
-				
+
 				tx.success();
 			}
 			finally
@@ -126,32 +126,23 @@ public class IdentityUpdater implements ClientGetCallback{
 			{
 				NodeList children = list.getChildNodes();
 
-				for(int i=0; i < children.getLength(); i++)
+				tx = db.beginTx();
+				try
 				{
-					Node element = children.item(i);
-
-					if (element.getNodeType() != Node.TEXT_NODE)
+					for(int i=0; i < children.getLength(); i++)
 					{
-						final NamedNodeMap attr = element.getAttributes();
-						final FreenetURI peerIdentityKey = new FreenetURI(attr.getNamedItem("Identity").getNodeValue());
-						final String trustComment = attr.getNamedItem("Comment").getNodeValue();
-						final Byte trustValue = Byte.parseByte(attr.getNamedItem("Value").getNodeValue());
+						Node element = children.item(i);
 
-						tx = db.beginTx();
-						org.neo4j.graphdb.Node peer;
-						try
+						if (element.getNodeType() != Node.TEXT_NODE)
 						{
+							final NamedNodeMap attr = element.getAttributes();
+							final FreenetURI peerIdentityKey = new FreenetURI(attr.getNamedItem("Identity").getNodeValue());
+							final String trustComment = attr.getNamedItem("Comment").getNodeValue();
+							final Byte trustValue = Byte.parseByte(attr.getNamedItem("Value").getNodeValue());
+
+							org.neo4j.graphdb.Node peer;
 							peer = getPeerIdentity(db, peerIdentityKey);
-							tx.success();
-						}
-						finally
-						{
-							tx.finish();
-						}
-						
-						tx = db.beginTx();
-						try
-						{
+
 							Relationship edge = identity.createRelationshipTo(peer, Rel.TRUSTS);
 
 							edge.setProperty(IEdge.COMMENT, trustComment);
@@ -166,7 +157,7 @@ public class IdentityUpdater implements ClientGetCallback{
 								stored_edition = (Long) peer.getProperty(IVertex.EDITION); 
 							}
 
-							if(stored_edition < current_ref_edition)
+							if(stored_edition < current_ref_edition && trustValue >= 0)
 							{
 								//update request uri to latest know edition
 								peer.setProperty(IVertex.REQUEST_URI, peerIdentityKey.toASCIIString());
@@ -174,16 +165,19 @@ public class IdentityUpdater implements ClientGetCallback{
 								//start fetching it
 								rs.addBacklog(peerIdentityKey);
 							}								
-							
-							tx.success();
 						}
-						finally
-						{
-							tx.finish();
-						}
-
 					}
+					tx.success();
 				}
+				catch(Exception e)
+				{
+					e.printStackTrace();
+				}
+				finally
+				{
+					tx.finish();
+				}
+
 			}
 		}
 	}
@@ -204,7 +198,7 @@ public class IdentityUpdater implements ClientGetCallback{
 			//store when we first saw the identity
 			peer.setProperty(IVertex.FIRST_FETCHED, System.currentTimeMillis());
 		}
-	
+
 		return peer;
 	}
 
@@ -301,7 +295,7 @@ public class IdentityUpdater implements ClientGetCallback{
 						e.printStackTrace();
 					}
 				}
-				
+
 				tx.success();
 			}
 			finally
@@ -322,12 +316,12 @@ public class IdentityUpdater implements ClientGetCallback{
 			final String name = attr.getNamedItem("Name").getNodeValue();
 			contexts.add(name);
 		}
-		
+
 		//remove all old contexts
 		for(Relationship rel : identity.getRelationships(Direction.OUTGOING, Rel.HAS_CONTEXT))
 		{
 			final String storedContext = (String) rel.getEndNode().getProperty(IContext.NAME);
-			
+
 			if (!contexts.contains(storedContext)) 	rel.delete();
 			else									contexts.remove(storedContext);
 		}
@@ -338,10 +332,10 @@ public class IdentityUpdater implements ClientGetCallback{
 			org.neo4j.graphdb.Node contextNode = nodeIndex.get(IContext.NAME, name).getSingle();
 			if (contextNode == null)
 			{
-					contextNode = db.createNode();
-					contextNode.setProperty(IContext.NAME, name);
+				contextNode = db.createNode();
+				contextNode.setProperty(IContext.NAME, name);
 			}
-		
+
 			identity.createRelationshipTo(contextNode, Rel.HAS_CONTEXT);
 		}
 	}

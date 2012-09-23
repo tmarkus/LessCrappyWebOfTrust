@@ -68,7 +68,12 @@ public class GetIdentity extends FCPBase {
 		{
 			reply.putOverwrite("Score"+index, "null");
 		}
-
+		catch(NullPointerException e) //trust also not stored in db
+		{
+			reply.putOverwrite("Score"+index, "null");
+		}
+		
+		
 		if(identity.hasProperty(IVertex.CONTEXT_NAME))
 		{
 			int contextCounter=0;

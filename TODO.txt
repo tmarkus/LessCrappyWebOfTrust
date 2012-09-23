@@ -1,3 +1,5 @@
+- decrease transaction level in IdentityUpdater
+
 === Until first BETA ===
 - write identity insert keys to plain text file
 - check whether we can output evil HTML? (this would be bad), always send HTML output through the freenet filter
