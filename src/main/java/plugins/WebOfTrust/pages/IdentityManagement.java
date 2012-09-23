@@ -237,6 +237,7 @@ public class IdentityManagement extends freenet.plugin.web.HTMLFileReaderToadlet
 			vertex.setProperty(IVertex.ID, Utils.getIDFromKey(requestURI));
 			vertex.setProperty(IVertex.NAME, "... still fetching ...");
 			vertex.setProperty(IVertex.OWN_IDENTITY, true);
+			vertex.setProperty(IVertex.PUBLISHES_TRUSTLIST, true);
 			vertex.setProperty(IVertex.INSERT_URI, insertURI.toASCIIString());
 			vertex.setProperty(IVertex.REQUEST_URI, requestURI.toASCIIString());
 			vertex.setProperty(IVertex.EDITION, -1l);

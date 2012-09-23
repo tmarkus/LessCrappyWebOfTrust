@@ -235,14 +235,13 @@ public class OwnIdentityInserter implements Runnable, ClientPutCallback  {
 	 * Create the XML export of all the interesting properties of an OWN identity
 	 * @param own_identity - a long vertex id
 	 * @return
-	 * @throws SQLException
 	 * @throws TransformerFactoryConfigurationError
 	 * @throws ParserConfigurationException
 	 * @throws TransformerException
 	 * @throws IOException 
 	 */
 	
-	private static String createXML(Node own_identity, Bucket bucket) throws SQLException, TransformerFactoryConfigurationError, ParserConfigurationException, TransformerException, IOException
+	protected String createXML(Node own_identity, Bucket bucket) throws TransformerFactoryConfigurationError, ParserConfigurationException, TransformerException, IOException
 	{
 
 		DocumentBuilderFactory xmlFactory = DocumentBuilderFactory.newInstance();
@@ -323,7 +322,7 @@ public class OwnIdentityInserter implements Runnable, ClientPutCallback  {
 			{
 				Element trustListElement = xmlDoc.createElement("TrustList");
 
-				Iterable<Relationship> edges = own_identity.getRelationships(Direction.OUTGOING);
+				Iterable<Relationship> edges = own_identity.getRelationships(Direction.OUTGOING, Rel.TRUSTS);
 				for(Relationship edge : edges)
 				{
 					Node peer_identity = edge.getEndNode();
