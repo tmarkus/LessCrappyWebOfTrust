@@ -4,12 +4,9 @@ import java.lang.reflect.Constructor;
 import java.sql.SQLException;
 
 import org.neo4j.graphdb.GraphDatabaseService;
-import org.neo4j.kernel.EmbeddedGraphDatabase;
 
 import plugins.WebOfTrust.fcp.FCPBase;
 
-import thomasmarkus.nl.freenet.graphdb.H2Graph;
-import thomasmarkus.nl.freenet.graphdb.H2GraphFactory;
 import freenet.pluginmanager.PluginNotFoundException;
 import freenet.pluginmanager.PluginReplySender;
 import freenet.support.SimpleFieldSet;

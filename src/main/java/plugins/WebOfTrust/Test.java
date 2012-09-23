@@ -12,12 +12,9 @@ import org.neo4j.kernel.InternalAbstractGraphDatabase;
 import org.neo4j.kernel.ListIndexIterable;
 import org.neo4j.kernel.impl.cache.CacheProvider;
 import org.neo4j.kernel.impl.cache.SoftCacheProvider;
-import org.neo4j.server.WrappingNeoServerBootstrapper;
 
 import plugins.WebOfTrust.datamodel.IVertex;
 
-import thomasmarkus.nl.freenet.graphdb.H2Graph;
-import thomasmarkus.nl.freenet.graphdb.H2GraphFactory;
 
 public class Test {
 
@@ -53,11 +50,11 @@ public class Test {
 
 		*/
 
-		
+		/*
 		WrappingNeoServerBootstrapper srv = new WrappingNeoServerBootstrapper( (InternalAbstractGraphDatabase) db );
 		srv.start();
 		srv.stop();
-		
+		*/
 
 		
 		

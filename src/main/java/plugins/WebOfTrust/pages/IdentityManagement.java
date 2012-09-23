@@ -4,8 +4,6 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.sql.SQLException;
-import java.util.List;
-import java.util.Map;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -14,8 +12,6 @@ import org.neo4j.graphdb.GraphDatabaseService;
 import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.Relationship;
 import org.neo4j.graphdb.Transaction;
-import org.neo4j.kernel.EmbeddedGraphDatabase;
-import org.neo4j.tooling.GlobalGraphOperations;
 
 
 import plugins.WebOfTrust.IdentityUpdater;
@@ -25,9 +21,6 @@ import plugins.WebOfTrust.RequestScheduler;
 import plugins.WebOfTrust.datamodel.IVertex;
 import plugins.WebOfTrust.fcp.SetTrust;
 import plugins.WebOfTrust.util.Utils;
-
-import thomasmarkus.nl.freenet.graphdb.H2Graph;
-import thomasmarkus.nl.freenet.graphdb.H2GraphFactory;
 
 import freenet.client.FetchException;
 import freenet.client.HighLevelSimpleClient;
