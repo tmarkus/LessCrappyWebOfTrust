@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 
-<project name="stb" default="dist" basedir=".">
+<project name="LCWoT" default="dist" basedir="." xmlns:ivy="antlib:org.apache.ivy.ant">
 	<property file="override.properties" />
 
 	<property name="src" location="src"/>
@@ -10,18 +10,17 @@
 
 	<property name="freenetFolder" value="/home/tmarkus/checkouts/fred"/>
 
-<path id="class.path">
-  <fileset dir="${lib}">
-    <include name="**/*.jar" />
-  </fileset>
-  <fileset dir="${freenetFolder}">
-	    <include name="dist/freenet.jar" />
-	    <include name="lib/freenet-ext.jar" />
-  </fileset>
-</path>
+	<path id="class.path">
+	  <fileset dir="${lib}">
+	    <include name="**/*.jar" />
+	  </fileset>
+	  <fileset dir="${freenetFolder}">
+		    <include name="dist/freenet.jar" />
+		    <include name="lib/freenet-ext.jar" />
+	  </fileset>
+	</path>
 
-
-	<target name="compile" depends="clean"> 
+	<target name="compile" depends="clean, resolve"> 
 		<mkdir dir="${build}"/>
 
 		<tstamp/>
@@ -57,6 +56,11 @@
 			
 		</unzip>
 
+	</target>
+
+	<target name="resolve" description="--> retrieve dependencies with ivy">
+		<ivy:settings file="ivysettings.xml"/>
+        	<ivy:retrieve type="jar" />
 	</target>
 
 	<target name="dist" depends="compile">

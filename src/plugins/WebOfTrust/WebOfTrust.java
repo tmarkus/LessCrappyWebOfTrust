@@ -14,7 +14,6 @@ import org.neo4j.index.lucene.LuceneIndexProvider;
 import org.neo4j.kernel.ListIndexIterable;
 import org.neo4j.kernel.impl.cache.CacheProvider;
 import org.neo4j.kernel.impl.cache.SoftCacheProvider;
-import org.neo4j.server.WrappingNeoServerBootstrapper;
 
 import plugins.WebOfTrust.datamodel.IContext;
 import plugins.WebOfTrust.datamodel.IEdge;
@@ -60,7 +59,6 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	private HighLevelSimpleClient hl;
 	
 	private GraphDatabaseService db;
-	private WrappingNeoServerBootstrapper srv;
 	
 	private RequestScheduler rs;
 
