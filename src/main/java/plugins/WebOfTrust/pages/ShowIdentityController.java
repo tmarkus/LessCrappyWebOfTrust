@@ -53,14 +53,14 @@ public class ShowIdentityController extends freenet.plugin.web.HTMLFileReaderToa
 			final boolean is_own_identity = identity.hasProperty(IVertex.OWN_IDENTITY);
 			
 			info_div.append("<h1>Identity properties</h1>");
-			SortedSet<String> sortedKeys = new TreeSet<String>();
+			final SortedSet<String> sortedKeys = new TreeSet<String>();
 			for(String key : identity.getPropertyKeys()) sortedKeys.add(key);
 			
-			Element propertiesForm = doc.createElement("form").attr("action", "#").attr("method", "post");
+			final Element propertiesForm = doc.createElement("form").attr("action", "#").attr("method", "post");
 			propertiesForm.appendChild(doc.createElement("input").attr("type", "hidden").attr("name", "action").val("modify_properties"));
 			propertiesForm.appendChild(doc.createElement("input").attr("type", "hidden").attr("name", "identity").val(id));
 
-			Element table = doc.createElement("table");
+			final Element table = doc.createElement("table");
 			propertiesForm.appendChild(table);
 			table.appendChild(
 								doc.createElement("tr").appendChild(
@@ -139,8 +139,11 @@ public class ShowIdentityController extends freenet.plugin.web.HTMLFileReaderToa
 				
 				for(Relationship edge : own_vertex.getRelationships(Direction.OUTGOING, Rel.TRUSTS))
 				{
-						current_trust_value = (Byte) edge.getProperty(IEdge.SCORE);
-						current_comment = (String) edge.getProperty(IEdge.COMMENT);
+						if (edge.getEndNode().equals(identity))
+						{
+							current_trust_value = (Byte) edge.getProperty(IEdge.SCORE);
+							current_comment = (String) edge.getProperty(IEdge.COMMENT);
+						}
 				}
 			
 				Element form = doc.createElement("form").attr("method", "post").attr("action", WebOfTrust.basePath+"/ShowIdentity?id="+id);
