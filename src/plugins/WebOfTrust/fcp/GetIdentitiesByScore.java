@@ -65,31 +65,42 @@ public class GetIdentitiesByScore extends GetIdentity {
 			//check whether the identity has a name (and we thus have retrieved it at least once)
 			if (identity.hasProperty(IVertex.NAME))
 			{
-				Node max_score_owner = null; //identity which has the maximum trust directly assigned (possibly none)
-				Integer max_score = Integer.MIN_VALUE;
 				
-				for(Node own_identity : treeOwnerList)
+				//determine whether we have a calculated trust value for this identity larger than 0
+				boolean goodTrust = false;
+				for(String prop : treeOwnerProperties)
 				{
-					for(Relationship rel : own_identity.getRelationships(Direction.OUTGOING, Rel.TRUSTS))
+					if (identity.hasProperty(prop) && (Integer) identity.getProperty(prop) >= 0) goodTrust = true; 
+				}
+				
+				if (goodTrust)
+				{
+					Node max_score_owner = null; //identity which has the maximum trust directly assigned (possibly none)
+					Integer max_score = Integer.MIN_VALUE;
+					
+					for(Node own_identity : treeOwnerList)
 					{
-						if (rel.getEndNode().equals(identity))
+						for(Relationship rel : own_identity.getRelationships(Direction.OUTGOING, Rel.TRUSTS))
 						{
-							final int score = (Integer) rel.getProperty(IEdge.SCORE);
-							if (score > max_score) 
+							if (rel.getEndNode().equals(identity))
 							{
-								max_score = score;
-								max_score_owner = own_identity;
+								final int score = (Byte) rel.getProperty(IEdge.SCORE);
+								if (score > max_score) 
+								{
+									max_score = score;
+									max_score_owner = own_identity;
+								}
 							}
 						}
 					}
+
+					addIdentityReplyFields(max_score_owner, identity, Integer.toString(i));
+					
+					if (includeTrustValue)	reply.putOverwrite("Score" + i, Integer.toString(max_score));
+					if (max_score_owner != null) reply.putOverwrite("ScoreOwner" + i, (String) max_score_owner.getProperty(IVertex.ID));
+
+					i += 1;
 				}
-
-				addIdentityReplyFields(max_score_owner, identity, Integer.toString(i));
-				
-				if (includeTrustValue)	reply.putOverwrite("Score" + i, Integer.toString(max_score));
-				if (max_score_owner != null) reply.putOverwrite("ScoreOwner" + i, (String) max_score_owner.getProperty(IVertex.ID));
-
-				i += 1;
 			}
 		}
 		

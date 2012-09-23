@@ -204,8 +204,6 @@ public class RequestScheduler extends Thread {
 	}
 
 	private void maintenance() throws SQLException {
-		System.out.println("doing maintenance...");
-		
 		if (getInFlightSize() <= MAX_MAINTENANCE_REQUESTS)
 		{
 			ReadableIndex<Node> nodeIndex = db.index().getNodeAutoIndexer().getAutoIndex();
