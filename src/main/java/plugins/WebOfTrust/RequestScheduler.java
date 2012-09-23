@@ -264,6 +264,10 @@ public class RequestScheduler extends Thread {
 			catch (MalformedURLException e) {
 				e.printStackTrace();
 			}
+			catch (IllegalArgumentException e)
+			{
+				System.out.println("Not scheduling any tasks, because the graph database doesn't contain identities.");
+			}
 		}
 	}
 

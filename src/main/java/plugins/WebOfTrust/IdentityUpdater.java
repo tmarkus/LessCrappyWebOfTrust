@@ -103,7 +103,7 @@ public class IdentityUpdater implements ClientGetCallback{
 				updateKeyEditions(freenetURI, current_edition, identity); //always update the keys no matter what
 				
 				identity.setProperty(IVertex.NAME, identityName);
-				identity.setProperty(IVertex.PUBLISHES_TRUSTLIST, publishesTrustList);
+				identity.setProperty(IVertex.PUBLISHES_TRUSTLIST, Boolean.parseBoolean(publishesTrustList));
 			
 				SetContexts(identity, doc.getElementsByTagName("Context"));
 				SetProperties(identity, doc.getElementsByTagName("Property"));

@@ -119,15 +119,37 @@ public class IdentityManagement extends freenet.plugin.web.HTMLFileReaderToadlet
 	    handleMethodGET(uri, request, ctx);
 	}
 
+	/**
+	 * Remove a local identity
+	 * @param id
+	 */
+	
 	private void removeIdentity(String id) {
-		Node node = nodeIndex.get(IVertex.ID, id).getSingle();
-		for(Relationship rel : node.getRelationships())
+		
+		Transaction tx = db.beginTx();
+		try
 		{
-			rel.delete();
+			Node node = nodeIndex.get(IVertex.ID, id).getSingle();
+			for(Relationship rel : node.getRelationships())
+			{
+				rel.delete();
+			}
+			node.delete();
+			tx.success();
 		}
-		node.delete();
+		finally
+		{
+			tx.finish();
+		}
 	}
 
+	/**
+	 * Restore an identity using the insert USK
+	 * @param insertURI
+	 * @throws FetchException
+	 * @throws MalformedURLException
+	 */
+	
 	private void restoreIdentity(FreenetURI insertURI) throws FetchException, MalformedURLException 
 	{
 			IdentityUpdaterRequestClient rc = new IdentityUpdaterRequestClient();
