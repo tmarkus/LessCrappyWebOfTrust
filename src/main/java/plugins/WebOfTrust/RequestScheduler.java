@@ -30,7 +30,7 @@ import freenet.keys.FreenetURI;
 
 public class RequestScheduler extends Thread {
 
-	public static final int MAX_REQUESTS = 5; 
+	public static final int MAX_REQUESTS = 10; 
 	public String DB_TRANSACTION_LOCK = "yes";
 	
 	private static final int MAX_MAINTENANCE_REQUESTS = 1; 
@@ -55,12 +55,16 @@ public class RequestScheduler extends Thread {
 
 	private long wot_last_updated = 0;
 	
+	private final ReadableIndex<Node> nodeIndex;
+
+	
 	public RequestScheduler(WebOfTrust main, GraphDatabaseService db, HighLevelSimpleClient hl)
 	{
 		this.main = main;
 		this.db = db;
 		this.hl = hl;
-
+		this.nodeIndex = db.index().getNodeAutoIndexer().getAutoIndex();
+		
 		this.rc = new IdentityUpdaterRequestClient();
 		this.cc = new IdentityUpdater(this, db, hl, false);
 		this.fc = hl.getFetchContext();
@@ -107,6 +111,12 @@ public class RequestScheduler extends Thread {
 			{
 				System.out.println("An exception was thrown in the requestScheduler. Please report with sufficient details!");
 				e.printStackTrace();
+				
+				try {
+					Thread.sleep(5000);
+				} catch (InterruptedException e1) {
+					e1.printStackTrace();
+				}
 			}
 		}
 		
@@ -131,8 +141,6 @@ public class RequestScheduler extends Thread {
 	}
 
 	private void insertOwnIdentities() {
-
-		ReadableIndex<Node> nodeIndex = db.index().getNodeAutoIndexer().getAutoIndex();
 		IndexHits<Node> own_identities = nodeIndex.get(IVertex.OWN_IDENTITY, true);
 		
 		Transaction tx = db.beginTx();
@@ -159,8 +167,8 @@ public class RequestScheduler extends Thread {
 		}
 		finally
 		{
-			tx.finish();
 			own_identities.close();
+			tx.finish();
 		}
 	}
 

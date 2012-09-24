@@ -104,7 +104,7 @@ public class OwnIdentityInserter implements Runnable, ClientPutCallback  {
 					final InsertContext ictx = hl.getInsertContext(true);
 					
 					
-					//panic check for insertURI inclusion...
+					//panic check for insertURI / private key of SSK inclusion...
 					if (xml.contains(IVertex.INSERT_URI))
 					{
 						System.out.println(xml);
