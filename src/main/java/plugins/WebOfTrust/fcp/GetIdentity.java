@@ -1,5 +1,8 @@
 package plugins.WebOfTrust.fcp;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.neo4j.graphdb.Direction;
 import org.neo4j.graphdb.GraphDatabaseService;
 import org.neo4j.graphdb.Node;
@@ -29,19 +32,25 @@ public class GetIdentity extends FCPBase {
 
 		Node own_id = nodeIndex.get(IVertex.ID, trusterID).getSingle();
 		Node identity = nodeIndex.get(IVertex.ID, identityID).getSingle();
+
+		final List<Relationship> rels = new ArrayList<Relationship>();
+		for(Relationship rel : own_id.getRelationships(Direction.OUTGOING, Rel.TRUSTS))
+		{
+			rels.add(rel);
+		}
 		
-		addIdentityReplyFields(own_id, identity, "");
+		addIdentityReplyFields(own_id, identity, rels, "");
 		
 		return reply;
 	}
 
-	protected void addIdentityReplyFields(Node ownIdentity, Node identity, String index) 
+	protected void addIdentityReplyFields(Node ownIdentity, Node identity, List<Relationship> rels, String index) 
 	{
 		reply.putOverwrite("Identity" + index, (String) identity.getProperty(IVertex.ID));
 		reply.putOverwrite("Nickname"+index,  (String) identity.getProperty(IVertex.NAME));
 		reply.putOverwrite("RequestURI"+index,  (String) identity.getProperty(IVertex.REQUEST_URI));
 
-		//TODO: requires traversel framework to find the edge at depth one connecting the two nodes?
+		//TODO: requires traversal framework to find the edge at depth one connecting the two nodes?
 		//TODO: optimize!!!
 
 		//initial values
@@ -50,7 +59,7 @@ public class GetIdentity extends FCPBase {
 
 		if (ownIdentity != null)
 		{
-			for (Relationship edge : ownIdentity.getRelationships(Direction.OUTGOING, Rel.TRUSTS))
+			for (Relationship edge : rels)
 			{
 				if (edge.getEndNode().equals(identity))
 				{

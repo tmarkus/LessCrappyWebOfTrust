@@ -112,7 +112,7 @@ public class GetIdentitiesByScore extends GetIdentity {
 						}
 					}
 
-					addIdentityReplyFields(max_score_owner, identity, Integer.toString(i));
+					addIdentityReplyFields(max_score_owner, identity, ownIdentityRelationshipsCache.get(max_score_owner), Integer.toString(i));
 					
 					if (includeTrustValue)	reply.putOverwrite("Score" + i, Integer.toString(max_score));
 					if (max_score_owner != null) reply.putOverwrite("ScoreOwner" + i, (String) max_score_owner.getProperty(IVertex.ID));
