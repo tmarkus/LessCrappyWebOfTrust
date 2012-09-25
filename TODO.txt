@@ -1,4 +1,4 @@
-- decrease transaction level in IdentityUpdater
+- use a different graph walking method for fetching a random identity, MUCH more efficient
 - don't randomly select to fetch an identity with a negative trust value
 
 === Until first BETA ===
