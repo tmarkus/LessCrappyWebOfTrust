@@ -1,8 +1,5 @@
 package plugins.WebOfTrust.fcp;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.neo4j.graphdb.Direction;
 import org.neo4j.graphdb.GraphDatabaseService;
 import org.neo4j.graphdb.Node;
@@ -33,40 +30,33 @@ public class GetIdentity extends FCPBase {
 		Node own_id = nodeIndex.get(IVertex.ID, trusterID).getSingle();
 		Node identity = nodeIndex.get(IVertex.ID, identityID).getSingle();
 
-		final List<Relationship> rels = new ArrayList<Relationship>();
-		for(Relationship rel : own_id.getRelationships(Direction.OUTGOING, Rel.TRUSTS))
+		Relationship direct_trust_rel = null;
+		for(final Relationship rel : own_id.getRelationships(Direction.OUTGOING, Rel.TRUSTS))
 		{
-			rels.add(rel);
+			if (rel.getEndNode().equals(identity)) direct_trust_rel = rel;
 		}
 		
-		addIdentityReplyFields(own_id, identity, rels, "");
+		addIdentityReplyFields(direct_trust_rel, identity, "");
 		
 		return reply;
 	}
 
-	protected void addIdentityReplyFields(Node ownIdentity, Node identity, List<Relationship> rels, String index) 
+	protected void addIdentityReplyFields(Relationship max_score_rel, Node identity, String index) 
 	{
 		reply.putOverwrite("Identity" + index, (String) identity.getProperty(IVertex.ID));
 		reply.putOverwrite("Nickname"+index,  (String) identity.getProperty(IVertex.NAME));
 		reply.putOverwrite("RequestURI"+index,  (String) identity.getProperty(IVertex.REQUEST_URI));
 
-		//TODO: requires traversal framework to find the edge at depth one connecting the two nodes?
-		//TODO: optimize!!!
-
 		//initial values
 		reply.putOverwrite("Trust"+index, "null");
 		reply.putOverwrite("Rank"+index, "null");
 
-		if (ownIdentity != null)
+		Node ownIdentity = null;
+		if (max_score_rel != null)
 		{
-			for (Relationship edge : rels)
-			{
-				if (edge.getEndNode().equals(identity))
-				{
-					reply.putOverwrite("Trust"+index, edge.getProperty(IEdge.SCORE).toString());
-					reply.putOverwrite("Rank"+index, "666");
-				}
-			}
+				ownIdentity = max_score_rel.getStartNode();
+				reply.putOverwrite("Trust"+index, max_score_rel.getProperty(IEdge.SCORE).toString());
+				reply.putOverwrite("Rank"+index, "666");
 		}
 
 		try
@@ -86,9 +76,9 @@ public class GetIdentity extends FCPBase {
 		if(identity.hasProperty(IVertex.CONTEXT_NAME))
 		{
 			int contextCounter=0;
-			for(Relationship rel : identity.getRelationships(Direction.OUTGOING, Rel.HAS_CONTEXT))
+			for(Relationship contextRel : identity.getRelationships(Direction.OUTGOING, Rel.HAS_CONTEXT))
 			{
-				String context = (String) rel.getEndNode().getProperty(IContext.NAME);
+				String context = (String) contextRel.getEndNode().getProperty(IContext.NAME);
 				if (index.equals(""))	reply.putOverwrite("Context" + contextCounter, context);
 				else					reply.putOverwrite("Contexts" + index + ".Context" + contextCounter++, context);
 				contextCounter += 1;

@@ -77,13 +77,12 @@ public class GetIdentitiesByScore extends GetIdentity {
 		int i = 0;
 
 		//get all identities with a specific context
-		for ( Relationship hasContextRel : nodeIndex.get(IContext.NAME, context).getSingle().getRelationships(Direction.INCOMING, Rel.HAS_CONTEXT))
+		for (final Relationship hasContextRel : nodeIndex.get(IContext.NAME, context).getSingle().getRelationships(Direction.INCOMING, Rel.HAS_CONTEXT))
 		{
 			final Node identity = hasContextRel.getStartNode();
 			//check whether the identity has a name (and we thus have retrieved it at least once)
 			if (identity.hasProperty(IVertex.NAME))
 			{
-				
 				//determine whether we have a calculated trust value for this identity larger than 0
 				boolean goodTrust = false;
 				for(String prop : treeOwnerProperties)
@@ -93,12 +92,12 @@ public class GetIdentitiesByScore extends GetIdentity {
 				
 				if (goodTrust)
 				{
-					Node max_score_owner = null; //identity which has the maximum trust directly assigned (possibly none)
 					Integer max_score = Integer.MIN_VALUE;
+					Relationship max_score_rel = null; //identity which has the maximum trust directly assigned (possibly none)
 					
-					for(Node own_identity : ownIdentityRelationshipsCache.keySet())
+					for(final Node own_identity : ownIdentityRelationshipsCache.keySet())
 					{
-						for(Relationship rel : ownIdentityRelationshipsCache.get(own_identity))
+						for(final Relationship rel : ownIdentityRelationshipsCache.get(own_identity))
 						{
 							if (rel.getEndNode().equals(identity))
 							{
@@ -106,16 +105,16 @@ public class GetIdentitiesByScore extends GetIdentity {
 								if (score > max_score) 
 								{
 									max_score = score;
-									max_score_owner = own_identity;
+									max_score_rel = rel;
 								}
 							}
 						}
 					}
 
-					addIdentityReplyFields(max_score_owner, identity, ownIdentityRelationshipsCache.get(max_score_owner), Integer.toString(i));
+					addIdentityReplyFields(max_score_rel, identity, Integer.toString(i));
 					
 					if (includeTrustValue)	reply.putOverwrite("Score" + i, Integer.toString(max_score));
-					if (max_score_owner != null) reply.putOverwrite("ScoreOwner" + i, (String) max_score_owner.getProperty(IVertex.ID));
+					if (max_score_rel != null) reply.putOverwrite("ScoreOwner" + i, (String) max_score_rel.getStartNode().getProperty(IVertex.ID));
 
 					i += 1;
 				}
