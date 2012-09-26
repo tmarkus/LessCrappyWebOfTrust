@@ -95,7 +95,7 @@ public class ScoreComputer {
 			}
 		}
 		
-		System.out.println("Down with trust calculation.");
+		System.out.println("Done with trust calculation.");
 	}
 
 	protected void localOverrides(Node own_identity, final String trustProperty) {
