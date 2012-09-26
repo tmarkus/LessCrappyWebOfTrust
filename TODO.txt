@@ -6,10 +6,8 @@
 - make priority levels and such configurable
 - Beautify HTML pages for various actions (CSS)
 
-
 === After first BETA ===
 
-- Fix the bucket leaking problem (if it still exists)
 - specify the identity restore key format
 - create page where you can search for an identity and go to its identity info page (listing all identities is CRAZY)
 - add random delay to identity insertion? -> after a restart of freenet local identities may be inserted at similar times.
