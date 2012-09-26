@@ -205,78 +205,51 @@ public class RequestScheduler extends Thread {
 	private void maintenance() {
 		if (getInFlightSize() <= MAX_MAINTENANCE_REQUESTS)
 		{
-			ReadableIndex<Node> nodeIndex = db.index().getNodeAutoIndexer().getAutoIndex();
-			
-			try
+			for(Node own_identity : nodeIndex.get(IVertex.OWN_IDENTITY, true))
 			{
-				final double random = ran.nextDouble();
-				if (random < PROBABILITY_OF_FETCHING_DIRECTLY_TRUSTED_IDENTITY) //fetch random directly connected identity
+				Node node = getRandomNode(own_identity);
+
+				if (node != null)
 				{
-					IndexHits<Node> vertices = nodeIndex.get(IVertex.OWN_IDENTITY, true);
-					try
-					{
-						for(Node vertex : vertices)
-						{
-							final Iterable<Relationship> edges = vertex.getRelationships(Direction.OUTGOING, Rel.TRUSTS);
-							final List<Relationship> edges_list = new ArrayList<Relationship>();
-							
-							for(Relationship rel : edges)
-							{
-								edges_list.add(rel);
-							}
-							
-							//get a random edge
-							if (edges_list.size() > 0)
-							{
-								final Node end_node = edges_list.get( ran.nextInt(edges_list.size()) ).getEndNode();
-								
-								//add the requestURI to the backlog
-								addBacklog(new FreenetURI((String) end_node.getProperty(IVertex.REQUEST_URI)));	
-								
-								//stop adding other entries after adding just this one
-								return;
-							}
-						}
-					}
-					finally
-					{
-						vertices.close();	
-					}
-					
-				}
-				else //select any random identity (doesn't have to be directly connected to a local identity)
-				{
-					//count all identities
-					GlobalGraphOperations ggo = GlobalGraphOperations.at(db);
-					int count = 0;
-					for(Node node : ggo.getAllNodes())
-					{
-						if (node.hasProperty(IVertex.ID)) count += 1;
-					}
-					
-					//select random identity
-					int skip = ran.nextInt(count);
-					int i = 0;
-					for(Node node : ggo.getAllNodes())
-					{
-						if (skip == i)
-						{
-							//add URI to the backlog
-							addBacklog(new FreenetURI((String) node.getProperty(IVertex.REQUEST_URI)));
-							
-							return; //not really required, but faster than iterating through all nodes
-						}
+					//add the requestURI to the backlog
+					try {
+						addBacklog(new FreenetURI((String) node.getProperty(IVertex.REQUEST_URI)));
+					} catch (MalformedURLException e) {
+						e.printStackTrace();
 					}	
 				}
 			}
-			catch (MalformedURLException e) {
-				e.printStackTrace();
-			}
-			catch (IllegalArgumentException e)
-			{
-				System.out.println("Not scheduling any tasks, because the graph database doesn't contain identities.");
-			}
 		}
+	}
+
+	/**
+	 * Select a random node from the graph by walking through it
+	 * @param own_identity
+	 * @return
+	 */
+	
+	protected Node getRandomNode(Node own_identity) {
+		Node current_node = own_identity;
+
+		for(byte distance=1; distance < 7; distance++)
+		{
+			//count relationships to choose from
+			int nodes = 0;
+			for(final Relationship rel : current_node.getRelationships(Direction.OUTGOING, Rel.TRUSTS))
+			{
+				nodes += 1;
+			}
+			
+			final double value = PROBABILITY_OF_FETCHING_DIRECTLY_TRUSTED_IDENTITY/nodes;
+			for(final Relationship rel : own_identity.getRelationships(Direction.OUTGOING, Rel.TRUSTS))
+			{
+				if (Math.random() < value) return rel.getEndNode();
+				if (Math.random() < 1.0/nodes) current_node = rel.getEndNode();
+			}
+		
+			//no random node selected so, loop again expanding the newly selected node (possibly the same one)
+		}
+		return null; //no node was selected
 	}
 
 	public void addBacklog(FreenetURI uri)
