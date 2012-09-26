@@ -205,11 +205,12 @@ public class RequestScheduler extends Thread {
 	private void maintenance() {
 		if (getInFlightSize() <= MAX_MAINTENANCE_REQUESTS)
 		{
-			for(Node own_identity : nodeIndex.get(IVertex.OWN_IDENTITY, true))
+			for(final Node own_identity : nodeIndex.get(IVertex.OWN_IDENTITY, true))
 			{
-				Node node = getRandomNode(own_identity);
+				final Node node = getRandomNode(own_identity);
 
-				if (node != null)
+				final String trustProperty = IVertex.TRUST + "." + own_identity.getProperty(IVertex.ID);
+				if (node != null && node.hasProperty(trustProperty) && (Integer) node.getProperty(trustProperty) >= 0)
 				{
 					//add the requestURI to the backlog
 					try {

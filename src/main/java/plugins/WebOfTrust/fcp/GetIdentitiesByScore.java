@@ -1,6 +1,5 @@
 package plugins.WebOfTrust.fcp;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -58,18 +57,18 @@ public class GetIdentitiesByScore extends GetIdentity {
 			treeOwnerProperties.add(IVertex.TRUST+"."+treeOwner.getProperty(IVertex.ID));
 		}
 		
-		//build cache of outgoing trust relationships for local identities
-		final Map<Node, List<Relationship>> ownIdentityRelationshipsCache = new HashMap<Node, List<Relationship>>();
-		for(Node own_identity : treeOwnerList)
+		//build cache of identities directly connected to own identity
+		Map<Node, Map<Node, Relationship>> directTrustCache = new HashMap<Node, Map<Node, Relationship>>();
+		for(Node ownIdentity : treeOwnerList)
 		{
-			final List<Relationship> rels = new ArrayList<Relationship>();
+			Map<Node, Relationship> dt = new HashMap<Node, Relationship>();
 			
-			for(Relationship rel : own_identity.getRelationships(Direction.OUTGOING, Rel.TRUSTS))
+			for(Relationship rel : ownIdentity.getRelationships(Direction.OUTGOING, Rel.TRUSTS))
 			{
-				rels.add(rel);
+				dt.put(rel.getEndNode(), rel);
 			}
-		
-			ownIdentityRelationshipsCache.put(own_identity, rels);
+			
+			directTrustCache.put(ownIdentity, dt);
 		}
 		
 		//find all identities for given context
@@ -95,18 +94,16 @@ public class GetIdentitiesByScore extends GetIdentity {
 					Integer max_score = Integer.MIN_VALUE;
 					Relationship max_score_rel = null; //identity which has the maximum trust directly assigned (possibly none)
 					
-					for(final Node own_identity : ownIdentityRelationshipsCache.keySet())
+					for(final Node own_identity : treeOwnerList	)
 					{
-						for(final Relationship rel : ownIdentityRelationshipsCache.get(own_identity))
+						Relationship rel = directTrustCache.get(own_identity).get(identity);
+						if (rel != null)
 						{
-							if (rel.getEndNode().equals(identity))
+							final int score = (Byte) rel.getProperty(IEdge.SCORE);
+							if (score > max_score) 
 							{
-								final int score = (Byte) rel.getProperty(IEdge.SCORE);
-								if (score > max_score) 
-								{
-									max_score = score;
-									max_score_rel = rel;
-								}
+								max_score = score;
+								max_score_rel = rel;
 							}
 						}
 					}

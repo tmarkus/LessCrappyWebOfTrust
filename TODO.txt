@@ -1,6 +1,3 @@
-- use a different graph walking method for fetching a random identity, MUCH more efficient
-- don't randomly select to fetch an identity with a negative trust value
-
 === Until first BETA ===
 - write identity insert keys to plain text file
 - check whether we can output evil HTML? (this would be bad), always send HTML output through the freenet filter
