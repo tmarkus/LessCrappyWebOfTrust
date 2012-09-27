@@ -54,7 +54,7 @@ public class GetIdentitiesByScore extends GetIdentity {
 		final List<String> treeOwnerProperties = new LinkedList<String>();
 		for(Node treeOwner : treeOwnerList)
 		{
-			treeOwnerProperties.add(IVertex.TRUST+"."+treeOwner.getProperty(IVertex.ID));
+			treeOwnerProperties.add(IVertex.TRUST+"_"+treeOwner.getProperty(IVertex.ID));
 		}
 		
 		//build cache of identities directly connected to own identity

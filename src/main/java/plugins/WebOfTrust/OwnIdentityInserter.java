@@ -302,7 +302,7 @@ public class OwnIdentityInserter implements Runnable, ClientPutCallback  {
 			
 			/* Create the property Elements */
 			for(String propertyName : own_identity.getPropertyKeys() ) {
-				if (!blackList.contains(propertyName) && !propertyName.contains(IVertex.TRUST+".") && !propertyName.contains(IVertex.DISTANCE+"."))
+				if (!blackList.contains(propertyName) && !propertyName.contains(IVertex.TRUST+"_") && !propertyName.contains(IVertex.DISTANCE+"_"))
 				{
 					Element propertyElement = xmlDoc.createElement("Property");
 					propertyElement.setAttribute("Name", propertyName);

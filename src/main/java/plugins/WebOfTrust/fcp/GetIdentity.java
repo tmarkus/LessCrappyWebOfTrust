@@ -61,7 +61,7 @@ public class GetIdentity extends FCPBase {
 
 		try
 		{
-			reply.putOverwrite("Score"+index, Integer.toString((Integer) identity.getProperty(IVertex.TRUST+"."+ownIdentity.getProperty(IVertex.ID))));	
+			reply.putOverwrite("Score"+index, Integer.toString((Integer) identity.getProperty(IVertex.TRUST+"_"+ownIdentity.getProperty(IVertex.ID))));	
 		}
 		catch(NotFoundException e) //trust not stored in db
 		{

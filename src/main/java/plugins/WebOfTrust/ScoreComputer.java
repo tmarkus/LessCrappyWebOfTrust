@@ -40,8 +40,8 @@ public class ScoreComputer {
 		{
 			System.out.println("Calculating for: " + own_identity.getProperty(IVertex.ID));
 
-			final String trustProperty = IVertex.TRUST+"."+own_identity.getProperty(IVertex.ID);
-			final String distanceProperty = IVertex.DISTANCE + "." + own_identity.getProperty(IVertex.ID);
+			final String trustProperty = IVertex.TRUST+"_"+own_identity.getProperty(IVertex.ID);
+			final String distanceProperty = IVertex.DISTANCE + "_" + own_identity.getProperty(IVertex.ID);
 
 			//assign 100 trust to local identity
 			initOwnIdentity(own_identity, trustProperty, distanceProperty, nodeIndex);
