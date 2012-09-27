@@ -80,7 +80,7 @@ public class ScoreComputer {
 							}
 						}
 
-						if (changed && 
+						if (changed || 
 								!current_node.hasProperty(trustProperty) ||
 								!current_node.getProperty(trustProperty).equals(avg_score))
 						{
@@ -150,7 +150,7 @@ public class ScoreComputer {
 				final Node current_node = path.endNode();
 				Byte current_distance = null;
 				if (current_node.hasProperty(distanceProperty)) current_distance = (Byte) current_node.getProperty(distanceProperty);
-				if (current_distance != path.length())
+				if (current_distance == null || current_distance != path.length())
 				{
 					current_node.setProperty(distanceProperty, (byte) path.length());
 				}

@@ -209,7 +209,6 @@ public class RequestScheduler extends Thread {
 			{
 				final Node node = getRandomNode(own_identity);
 
-				final String trustProperty = IVertex.TRUST + "_" + own_identity.getProperty(IVertex.ID);
 				if (node != null)
 				{
 					//add the requestURI to the backlog
