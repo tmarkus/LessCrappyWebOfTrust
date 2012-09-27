@@ -82,7 +82,12 @@ public class ScoreComputer {
 								}
 							}
 							
-							if (changed) current_node.setProperty(trustProperty, avg_score);
+							if (changed && 
+									!current_node.hasProperty(trustProperty) ||
+									!current_node.getProperty(trustProperty).equals(avg_score))
+							{
+								current_node.setProperty(trustProperty, avg_score);
+							}
 						}
 						
 						tx.success();
@@ -125,7 +130,7 @@ public class ScoreComputer {
 
 
 		System.out.println("Setting the distance for all identities");
-		Index<Node> distanceIndex;
+		Index<Node> distanceIndex = null;
 		
 		Transaction tx = db.beginTx();
 		try
@@ -135,13 +140,19 @@ public class ScoreComputer {
 			for(Path path : td.traverse(own_identity))
 			{
 				final Node current_node = path.endNode();
-				current_node.setProperty(distanceProperty, (byte) path.length());
+				Byte current_distance = null;
+				if (current_node.hasProperty(distanceProperty)) current_distance = (Byte) current_node.getProperty(distanceProperty);
+				if (current_distance != path.length())
+				{
+					current_node.setProperty(distanceProperty, (byte) path.length());
+				}
 				distanceIndex.add(current_node, distanceProperty, (byte) path.length());
 			}
 			tx.success();
 		}
 		finally
 		{
+			if (distanceIndex != null) distanceIndex.delete();
 			tx.finish();
 		}
 		System.out.println("Distance setting completed for all identities");
@@ -168,20 +179,5 @@ public class ScoreComputer {
 		{
 			tx.finish();
 		}
-	}
-
-	/**
-	 * Compute the trust value for an identity on the fly
-	 * @param identityID
-	 */
-
-	public int computerForIdentity(String identityID, String ownIdentityID)
-	{
-
-		//check whether there is direct trust for this identity and own_identity
-
-		//if not, start the full blown shit stuff
-
-		return 0;
 	}
 }

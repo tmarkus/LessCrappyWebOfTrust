@@ -210,7 +210,7 @@ public class RequestScheduler extends Thread {
 				final Node node = getRandomNode(own_identity);
 
 				final String trustProperty = IVertex.TRUST + "." + own_identity.getProperty(IVertex.ID);
-				if (node != null && node.hasProperty(trustProperty) && (Integer) node.getProperty(trustProperty) >= 0)
+				if (node != null)
 				{
 					//add the requestURI to the backlog
 					try {
@@ -231,7 +231,8 @@ public class RequestScheduler extends Thread {
 	
 	protected Node getRandomNode(Node own_identity) {
 		Node current_node = own_identity;
-
+		final String trustProperty = IVertex.TRUST + "," + own_identity.getProperty(IVertex.ID);
+		
 		for(byte distance=1; distance < 7; distance++)
 		{
 			//count relationships to choose from
@@ -244,8 +245,12 @@ public class RequestScheduler extends Thread {
 			final double value = PROBABILITY_OF_FETCHING_DIRECTLY_TRUSTED_IDENTITY/nodes;
 			for(final Relationship rel : own_identity.getRelationships(Direction.OUTGOING, Rel.TRUSTS))
 			{
-				if (Math.random() < value) return rel.getEndNode();
-				if (Math.random() < 1.0/nodes) current_node = rel.getEndNode();
+				final Node node = rel.getEndNode();
+				if (node.hasProperty(trustProperty) && (Integer) node.getProperty(trustProperty) >= 0)
+				{
+					if (Math.random() < value) return rel.getEndNode();
+					if (Math.random() < 1.0/nodes) current_node = rel.getEndNode();
+				}
 			}
 		
 			//no random node selected so, loop again expanding the newly selected node (possibly the same one)

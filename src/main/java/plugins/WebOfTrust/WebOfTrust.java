@@ -97,6 +97,9 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		//setup the web ui for neo4j
 		//TODO: include the jars required (system/lib ?)
 		
+		//manually calculate all trust values
+		ScoreComputer sc = new ScoreComputer(db);
+		
 		//setup fcp plugin handler
 		this.fpi = new FCPInterface(db);
 
