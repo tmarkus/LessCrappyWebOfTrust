@@ -16,7 +16,6 @@ import org.neo4j.graphdb.Relationship;
 import org.neo4j.graphdb.Transaction;
 import org.neo4j.graphdb.index.IndexHits;
 import org.neo4j.graphdb.index.ReadableIndex;
-import org.neo4j.tooling.GlobalGraphOperations;
 
 import plugins.WebOfTrust.datamodel.IVertex;
 import plugins.WebOfTrust.datamodel.Rel;
@@ -236,12 +235,11 @@ public class RequestScheduler extends Thread {
 		{
 			//count relationships to choose from
 			int nodes = 0;
-			for(final Relationship rel : current_node.getRelationships(Direction.OUTGOING, Rel.TRUSTS))
+			for(@SuppressWarnings("unused") final Relationship rel : current_node.getRelationships(Direction.OUTGOING, Rel.TRUSTS))
 			{
 				nodes += 1;
 			}
 			
-			Random ran = new Random();
 			final int index = ran.nextInt(nodes);
 			
 			int count = 0;
