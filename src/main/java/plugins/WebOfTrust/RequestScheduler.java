@@ -241,15 +241,28 @@ public class RequestScheduler extends Thread {
 				nodes += 1;
 			}
 			
-			final double value = PROBABILITY_OF_FETCHING_DIRECTLY_TRUSTED_IDENTITY/nodes;
+			Random ran = new Random();
+			final int index = ran.nextInt(nodes);
+			
+			int count = 0;
 			for(final Relationship rel : own_identity.getRelationships(Direction.OUTGOING, Rel.TRUSTS))
 			{
-				final Node node = rel.getEndNode();
-				if (node.hasProperty(trustProperty) && (Integer) node.getProperty(trustProperty) >= 0)
+				if (count == index)
 				{
-					if (Math.random() < value) return rel.getEndNode();
-					if (Math.random() < 1.0/nodes) current_node = rel.getEndNode();
+					final Node node = rel.getEndNode();
+					if (node.hasProperty(trustProperty) && (Integer) node.getProperty(trustProperty) >= 0)
+					{
+						if (ran.nextFloat() < PROBABILITY_OF_FETCHING_DIRECTLY_TRUSTED_IDENTITY)
+						{
+							return rel.getEndNode();	
+						}
+						else
+						{
+							current_node = rel.getEndNode();	
+						}
+					}
 				}
+				count += 1;
 			}
 		
 			//no random node selected so, loop again expanding the newly selected node (possibly the same one)
