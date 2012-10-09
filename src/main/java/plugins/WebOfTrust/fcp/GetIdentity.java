@@ -3,7 +3,6 @@ package plugins.WebOfTrust.fcp;
 import org.neo4j.graphdb.Direction;
 import org.neo4j.graphdb.GraphDatabaseService;
 import org.neo4j.graphdb.Node;
-import org.neo4j.graphdb.NotFoundException;
 import org.neo4j.graphdb.Relationship;
 
 import plugins.WebOfTrust.datamodel.IContext;
@@ -52,18 +51,18 @@ public class GetIdentity extends FCPBase {
 		reply.putOverwrite("Score"+index, "null");
 		reply.putOverwrite("Rank"+index, "null");
 
-		Node ownIdentity = null;
 		if (max_score_rel != null)
 		{
-				ownIdentity = max_score_rel.getStartNode();
 				reply.putOverwrite("Score"+index, max_score_rel.getProperty(IEdge.SCORE).toString());
-				reply.putOverwrite("Rank"+index, Byte.toString((Byte) identity.getProperty(IVertex.DISTANCE+"."+ownIdentity.getProperty(IVertex.ID))));
 		}
 		
 		if (includeTrustValues)
 		{
 			reply.putOverwrite("Trust"+index, Integer.toString((Integer) identity.getProperty(IVertex.TRUST+"."+treeOwnerID)));
 		}
+		
+		//always include the rank
+		reply.putOverwrite("Rank"+index, Byte.toString((Byte) identity.getProperty(IVertex.DISTANCE+"."+treeOwnerID)));
 		
 		if(identity.hasProperty(IVertex.CONTEXT_NAME))
 		{
