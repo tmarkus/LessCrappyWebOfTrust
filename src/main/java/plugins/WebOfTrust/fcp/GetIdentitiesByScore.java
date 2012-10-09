@@ -108,9 +108,9 @@ public class GetIdentitiesByScore extends GetIdentity {
 						}
 					}
 
-					addIdentityReplyFields(max_score_rel, identity, Integer.toString(i));
+					addIdentityReplyFields(max_score_rel, identity, Integer.toString(i), includeTrustValue, trusterID);
 					
-					if (includeTrustValue)	reply.putOverwrite("Score" + i, Integer.toString(max_score));
+					reply.putOverwrite("Score" + i, Integer.toString(max_score));
 					if (max_score_rel != null) reply.putOverwrite("ScoreOwner" + i, (String) max_score_rel.getStartNode().getProperty(IVertex.ID));
 
 					i += 1;

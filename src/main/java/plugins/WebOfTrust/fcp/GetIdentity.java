@@ -36,12 +36,12 @@ public class GetIdentity extends FCPBase {
 			if (rel.getEndNode().equals(identity)) direct_trust_rel = rel;
 		}
 		
-		addIdentityReplyFields(direct_trust_rel, identity, "");
+		addIdentityReplyFields(direct_trust_rel, identity, "", true, trusterID);
 		
 		return reply;
 	}
 
-	protected void addIdentityReplyFields(Relationship max_score_rel, Node identity, String index) 
+	protected void addIdentityReplyFields(Relationship max_score_rel, Node identity, String index, boolean includeTrustValues, String treeOwnerID) 
 	{
 		reply.putOverwrite("Identity" + index, (String) identity.getProperty(IVertex.ID));
 		reply.putOverwrite("Nickname"+index,  (String) identity.getProperty(IVertex.NAME));
@@ -49,29 +49,21 @@ public class GetIdentity extends FCPBase {
 
 		//initial values
 		reply.putOverwrite("Trust"+index, "null");
+		reply.putOverwrite("Score"+index, "null");
 		reply.putOverwrite("Rank"+index, "null");
 
 		Node ownIdentity = null;
 		if (max_score_rel != null)
 		{
 				ownIdentity = max_score_rel.getStartNode();
-				reply.putOverwrite("Trust"+index, max_score_rel.getProperty(IEdge.SCORE).toString());
-				reply.putOverwrite("Rank"+index, "666");
-		}
-
-		try
-		{
-			reply.putOverwrite("Score"+index, Integer.toString((Integer) identity.getProperty(IVertex.TRUST+"_"+ownIdentity.getProperty(IVertex.ID))));	
-		}
-		catch(NotFoundException e) //trust not stored in db
-		{
-			reply.putOverwrite("Score"+index, "null");
-		}
-		catch(NullPointerException e) //trust also not stored in db
-		{
-			reply.putOverwrite("Score"+index, "null");
+				reply.putOverwrite("Score"+index, max_score_rel.getProperty(IEdge.SCORE).toString());
+				reply.putOverwrite("Rank"+index, Byte.toString((Byte) identity.getProperty(IVertex.DISTANCE+"."+ownIdentity.getProperty(IVertex.ID))));
 		}
 		
+		if (includeTrustValues)
+		{
+			reply.putOverwrite("Trust"+index, Integer.toString((Integer) identity.getProperty(IVertex.TRUST+"."+treeOwnerID)));
+		}
 		
 		if(identity.hasProperty(IVertex.CONTEXT_NAME))
 		{
