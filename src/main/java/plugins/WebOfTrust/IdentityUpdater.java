@@ -65,17 +65,16 @@ public class IdentityUpdater implements ClientGetCallback{
 	@Override
 	public void onSuccess(FetchResult fr, ClientGetter cg, ObjectContainer oc) {
 
-		try{
-			synchronized (rs.DB_TRANSACTION_LOCK) {
-				//deregister our request
-				rs.removeInFlight(cg);
+		try
+		{
+			//deregister our request
+			rs.removeInFlight(cg);
 
-				//parse the xml
-				Document doc = Utils.getXMLDoc(fr);
+			//parse the xml
+			Document doc = Utils.getXMLDoc(fr);
 
-				//try to add additional trust relations
-				addTrustRelations(doc, cg.getURI());
-			}
+			//try to add additional trust relations
+			addTrustRelations(doc, cg.getURI());
 		}
 		catch(Exception e)
 		{
