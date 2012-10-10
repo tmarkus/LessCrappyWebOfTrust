@@ -238,8 +238,11 @@ public class RequestScheduler extends Thread {
 				nodes += 1;
 			}
 			
+			//an identity with no outgoing trust relations
+			if (nodes == 0) return current_node;
+
+			//select a random identity
 			final int index = ran.nextInt(nodes);
-			
 			int count = 0;
 			for(final Relationship rel : current_node.getRelationships(Direction.OUTGOING, Rel.TRUSTS))
 			{
