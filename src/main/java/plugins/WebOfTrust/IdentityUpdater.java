@@ -63,7 +63,7 @@ public class IdentityUpdater implements ClientGetCallback{
 	}
 
 	@Override
-	public void onSuccess(FetchResult fr, ClientGetter cg, ObjectContainer oc) {
+	public synchronized void onSuccess(FetchResult fr, ClientGetter cg, ObjectContainer oc) {
 
 		try
 		{
@@ -82,7 +82,7 @@ public class IdentityUpdater implements ClientGetCallback{
 		}
 	}
 
-	private void addTrustRelations(Document doc, FreenetURI freenetURI) throws MalformedURLException, DOMException
+	private synchronized void addTrustRelations(Document doc, FreenetURI freenetURI) throws MalformedURLException, DOMException
 	{
 		Node identityXMLNode = doc.getElementsByTagName("Identity").item(0);
 		final String identityName = identityXMLNode.getAttributes().getNamedItem("Name").getNodeValue();
