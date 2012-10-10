@@ -66,6 +66,8 @@ public class RequestScheduler extends Thread {
 		this.cc = new IdentityUpdater(this, db, hl, false);
 		this.fc = hl.getFetchContext();
 		this.fc.followRedirects = true;
+	
+		this.wot_last_updated = System.currentTimeMillis();
 	}
 
 	@Override
