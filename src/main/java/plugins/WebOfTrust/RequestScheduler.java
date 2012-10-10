@@ -30,30 +30,28 @@ import freenet.keys.FreenetURI;
 public class RequestScheduler extends Thread {
 
 	public static final int MAX_REQUESTS = 10; 
-	public String DB_TRANSACTION_LOCK = "yes";
 	
 	private static final int MAX_MAINTENANCE_REQUESTS = 1; 
 	private static final double PROBABILITY_OF_FETCHING_DIRECTLY_TRUSTED_IDENTITY = 0.7;
 
 	private static final long MAX_TIME_SINCE_LAST_INSERT = (60 * 1000) * 60; //don't insert faster than once per hour
-	private static final long MINIMAL_SLEEP_TIME = (1*1000)* 120; // 2 minutes
+	private static final long MINIMAL_SLEEP_TIME = (1*1000);//* 120; // 2 minutes
 	private static final long MINIMAL_SLEEP_TIME_WITH_BIG_BACKLOG = (1*1000); // 1 second
 	private static final long MINIMAL_SLEEP_TIME_WOT_UPDATE = (60*1000) * 60 * 1; // update WoT once every 1 hours;
 	
-	private WebOfTrust main;
+	private final WebOfTrust main;
 	private final GraphDatabaseService db;
-	private HighLevelSimpleClient hl;
+	private final HighLevelSimpleClient hl;
 
-	private List<ClientGetter> inFlight = new ArrayList<ClientGetter>();
-	private Set<String> backlog = new HashSet<String>();
+	private final List<ClientGetter> inFlight = new ArrayList<ClientGetter>();
+	private final Set<String> backlog = new HashSet<String>();
 	private final Random ran = new Random();
 
-	private IdentityUpdaterRequestClient rc;
-	private ClientGetCallback cc;
-	private FetchContext fc;
+	private final IdentityUpdaterRequestClient rc;
+	private final ClientGetCallback cc;
+	private final FetchContext fc;
 
 	private long wot_last_updated = 0;
-	
 	private final ReadableIndex<Node> nodeIndex;
 
 	
@@ -223,13 +221,13 @@ public class RequestScheduler extends Thread {
 
 	/**
 	 * Select a random node from the graph by walking through it
-	 * @param own_identity
+	 * @param identity
 	 * @return
 	 */
 	
-	protected Node getRandomNode(Node own_identity) {
-		Node current_node = own_identity;
-		final String trustProperty = IVertex.TRUST + "," + own_identity.getProperty(IVertex.ID);
+	protected Node getRandomNode(Node identity) {
+		Node current_node = identity;
+		final String trustProperty = IVertex.TRUST + "," + identity.getProperty(IVertex.ID);
 		
 		for(byte distance=1; distance < 7; distance++)
 		{
@@ -243,7 +241,7 @@ public class RequestScheduler extends Thread {
 			final int index = ran.nextInt(nodes);
 			
 			int count = 0;
-			for(final Relationship rel : own_identity.getRelationships(Direction.OUTGOING, Rel.TRUSTS))
+			for(final Relationship rel : identity.getRelationships(Direction.OUTGOING, Rel.TRUSTS))
 			{
 				if (count == index)
 				{

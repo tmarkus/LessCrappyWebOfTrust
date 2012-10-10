@@ -67,9 +67,9 @@ public class GetIdentity extends FCPBase {
 		if(identity.hasProperty(IVertex.CONTEXT_NAME))
 		{
 			int contextCounter=0;
-			for(Relationship contextRel : identity.getRelationships(Direction.OUTGOING, Rel.HAS_CONTEXT))
+			for(final Relationship contextRel : identity.getRelationships(Direction.OUTGOING, Rel.HAS_CONTEXT))
 			{
-				String context = (String) contextRel.getEndNode().getProperty(IContext.NAME);
+				final String context = (String) contextRel.getEndNode().getProperty(IContext.NAME);
 				if (index.equals(""))	reply.putOverwrite("Context" + contextCounter, context);
 				else					reply.putOverwrite("Contexts" + index + ".Context" + contextCounter++, context);
 				contextCounter += 1;
@@ -77,7 +77,7 @@ public class GetIdentity extends FCPBase {
 		}
 
 		int propertiesCounter = 0;
-		for (String propertyName : identity.getPropertyKeys()) {
+		for (final String propertyName : identity.getPropertyKeys()) {
 			if (index.equals(""))
 			{
 				reply.putOverwrite("Property"+index + propertiesCounter + ".Name", propertyName);
