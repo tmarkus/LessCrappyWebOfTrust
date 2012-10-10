@@ -58,11 +58,11 @@ public class GetIdentity extends FCPBase {
 		
 		if (includeTrustValues)
 		{
-			reply.putOverwrite("Trust"+index, Integer.toString((Integer) identity.getProperty(IVertex.TRUST+"."+treeOwnerID)));
+			reply.putOverwrite("Trust"+index, Integer.toString((Integer) identity.getProperty(IVertex.TRUST+"_"+treeOwnerID)));
 		}
 		
 		//always include the rank
-		reply.putOverwrite("Rank"+index, Byte.toString((Byte) identity.getProperty(IVertex.DISTANCE+"."+treeOwnerID)));
+		reply.putOverwrite("Rank"+index, Byte.toString((Byte) identity.getProperty(IVertex.DISTANCE+"_"+treeOwnerID)));
 		
 		if(identity.hasProperty(IVertex.CONTEXT_NAME))
 		{

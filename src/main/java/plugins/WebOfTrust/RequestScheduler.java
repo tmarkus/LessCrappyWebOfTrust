@@ -227,7 +227,7 @@ public class RequestScheduler extends Thread {
 	
 	protected Node getRandomNode(Node identity) {
 		Node current_node = identity;
-		final String trustProperty = IVertex.TRUST + "." + identity.getProperty(IVertex.ID);
+		final String trustProperty = IVertex.TRUST + "_" + identity.getProperty(IVertex.ID);
 		
 		for(byte distance=1; distance < 7; distance++)
 		{
