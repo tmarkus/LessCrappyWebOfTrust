@@ -1,7 +1,9 @@
+- don't remove-add all edges on an identity trustlist update, kinda inefficient for the database
+- lock the database when doing trust calculations OR wrap everything in 1 transaction and keep stuff in RAM
 - implement incremental trust updates
 -- on relationship change (delete or score update)
 -- on new node
-
+- when restoring an identity that doesn't publish a trustlist, add seed identities when restoring anyway (via SeekingFor - freenode IRC)
 
 
 === Until first BETA ===
