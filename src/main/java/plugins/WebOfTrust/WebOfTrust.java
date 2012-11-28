@@ -23,6 +23,7 @@ import plugins.WebOfTrust.pages.IdenticonController;
 import plugins.WebOfTrust.pages.IdentityManagement;
 import plugins.WebOfTrust.pages.OverviewController;
 import plugins.WebOfTrust.pages.ShowIdentityController;
+import plugins.WebOfTrust.pages.WebOfTrustCSS;
 import freenet.client.FetchContext;
 import freenet.client.HighLevelSimpleClient;
 import freenet.clients.http.Toadlet;
@@ -58,6 +59,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	private PluginRespirator pr;
 	private WebInterface webInterface;
 	private final List<FileReaderToadlet> toadlets = new ArrayList<FileReaderToadlet>();
+	private final List<Toadlet> newToadlets = new ArrayList<Toadlet>();
 	private HighLevelSimpleClient hl;
 	
 	private GraphDatabaseService db;
@@ -158,44 +160,39 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	private void setupWebinterface()
 	{
 		LOGGER.info("Setting up webinterface");
+		
+		// TODO: remove
 		PluginContext pluginContext = new PluginContext(pr);
 		this.webInterface = new WebInterface(pluginContext);
 
-		//setup the manage page
-//		FileReaderToadlet oc = new OverviewController(this,
-//				pr.getHLSimpleClient(),
-//				"/staticfiles/html/manage.html",
-//				basePath, db);
-		OverviewController oc = new OverviewController(this,
-				pr.getHLSimpleClient(),
-				"/staticfiles/html/manage.html",
-				basePath, db);new OverviewController(this,
-				pr.getHLSimpleClient(),
-				"/staticfiles/html/manage.html",
-				basePath, db);
-//		toadlets.add(oc);
-
 		pr.getPageMaker().addNavigationCategory(basePath + "/","WebOfTrust.menuName.name", "WebOfTrust.menuName.tooltip", this);
 		ToadletContainer tc = pr.getToadletContainer();
+		
+		// overview page
+		OverviewController oc = new OverviewController(this, pr.getHLSimpleClient(), basePath, db);		
+
+		// stylesheet
+		newToadlets.add(new WebOfTrustCSS(pr.getHLSimpleClient(), WebOfTrust.basePath + "/WebOfTrust.css"));
+		
+		// TODO: change to newToadlets
+		toadlets.add(new IdenticonController(this, pr.getHLSimpleClient(), "", basePath+"/GetIdenticon"));
+		toadlets.add(new IdentityManagement(this, pr.getHLSimpleClient(), "/staticfiles/html/restore.html", basePath+"/restore", db));		
+		toadlets.add(new ShowIdentityController(this, pr.getHLSimpleClient(), "/staticfiles/html/showIdentity.html", basePath+"/ShowIdentity", db));
+		
+		// create fproxy menu items
 		tc.register(oc, "WebOfTrust.menuName.name", basePath + "/", true, "WebOfTrust.mainPage", "WebOfTrust.mainPage.tooltip", WebOfTrust.allowFullAccessOnly, oc);
 		tc.register(oc, null, basePath + "/", true, WebOfTrust.allowFullAccessOnly);
 		
-		//Identicons
-		toadlets.add(new IdenticonController(this,
-				pr.getHLSimpleClient(),
-				"",
-				basePath+"/GetIdenticon"));
+		// register other toadlets without link in menu
+		// full access only will be checked inside the specific toadlet
+		for(Toadlet curToad : newToadlets) {
+			tc.register(curToad, null, curToad.path(), false, false);
+		}
 		
-		toadlets.add(new IdentityManagement(this,
-				pr.getHLSimpleClient(),
-				"/staticfiles/html/restore.html",
-				basePath+"/restore", db));
+		// finally add all toadlets which have been registered within the menu to our list
+		newToadlets.add(oc);
 
-		toadlets.add(new ShowIdentityController(this,
-				pr.getHLSimpleClient(),
-				"/staticfiles/html/showIdentity.html",
-				basePath+"/ShowIdentity", db));
-
+		// TODO: remove
 		for(Toadlet toadlet : toadlets)
 		{
 			webInterface.registerInvisible(toadlet);	
@@ -214,13 +211,20 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		//remove Navigation category
 		pr.getPageMaker().removeNavigationCategory("WebOfTrust.menuName.name");
 		
+		// TODO: remove
 		//deregister toadlets
 		ToadletContainer toadletContainer = pr.getToadletContainer();
 		for (FileReaderToadlet pageToadlet : toadlets) {
 				toadletContainer.unregister(pageToadlet);
 				pageToadlet.terminate();
 		}
+		
+		// remove toadlets
+		for(Toadlet curToad : newToadlets) {
+			toadletContainer.unregister(curToad);
+		}
 
+		// TODO: remove
 		if (webInterface != null) webInterface.kill();
 
 		//interrupt the request scheduler

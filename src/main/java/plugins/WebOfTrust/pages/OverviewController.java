@@ -24,7 +24,6 @@ import freenet.support.api.HTTPRequest;
 
 public class OverviewController extends Toadlet implements LinkEnabledCallback {
 	protected String path;
-	protected String filePath;
 	protected GraphDatabaseService db;
 	protected ReadableIndex<Node> nodeIndex;
 	// TODO: is this local reference really needed?
@@ -32,10 +31,9 @@ public class OverviewController extends Toadlet implements LinkEnabledCallback {
 	// if db is static in WebOfTrust also this reference is not needed
 	private WebOfTrust main;
 	
-	public OverviewController(WebOfTrust main, HighLevelSimpleClient client, String filepath, String URLPath, GraphDatabaseService db) {
+	public OverviewController(WebOfTrust main, HighLevelSimpleClient client, String URLPath, GraphDatabaseService db) {
 		super(client);
 		this.path = URLPath;
-		this.filePath = filepath;
 		this.db = db;
 		this.main = main;
 		
@@ -50,6 +48,7 @@ public class OverviewController extends Toadlet implements LinkEnabledCallback {
 		}
 		PageNode mPageNode = ctx.getPageMaker().getPageNode("LCWoT - overview", true, true, ctx);
 		mPageNode.addCustomStyleSheet(WebOfTrust.basePath + "/WebOfTrust.css");
+		mPageNode.content.addAttribute("align", "center");
 		try
 		{
 			long count_identities = 0;
@@ -67,16 +66,15 @@ public class OverviewController extends Toadlet implements LinkEnabledCallback {
 			HTMLNode contentDiv = new HTMLNode("div");
 			contentDiv.addAttribute("id", "WebOfTrust");
 			// FIXME: just for testing.
-			// remove next 3 lines and define everything for id WebOfTrust in the ^ CSS
 			// <br /> should be div margin/padding or something i guess
-			// if stylesheet is correctly set up the <b> tags can become h1 and h2 again.
-			contentDiv.addAttribute("style", "list-style-type: disc;");
-			contentDiv.addAttribute("align", "center");
+			// if ^ stylesheet is correctly set up the <b> tags can become h1 and h2 again.
 			contentDiv.addChild("br");
 
-			HTMLNode link = new HTMLNode("a", "Manage local identities");
+			HTMLNode link = new HTMLNode("a");
 			link.addAttribute("href", WebOfTrust.basePath + "/restore.html");
-			contentDiv.addChild(new HTMLNode("b").addChild(link));
+			link.addChild(new HTMLNode("b", "Manage local identities"));
+			contentDiv.addChild(link);
+			contentDiv.addChild("br");
 			contentDiv.addChild("br");
 			
 			contentDiv.addChild("b", "Here are some statistics to oogle");
@@ -128,7 +126,7 @@ public class OverviewController extends Toadlet implements LinkEnabledCallback {
 
 	@Override
 	public String path() {
-		return filePath;
+		return path;
 	}
 
 	@Override
