@@ -183,10 +183,11 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		tc.register(oc, "WebOfTrust.menuName.name", basePath + "/", true, "WebOfTrust.mainPage", "WebOfTrust.mainPage.tooltip", WebOfTrust.allowFullAccessOnly, oc);
 		tc.register(oc, null, basePath + "/", true, WebOfTrust.allowFullAccessOnly);
 		
-		// register other toadlets without link in menu
+		// register other toadlets without link in menu but as first item to check
+		// so it works also for paths which are included in the above menu links
 		// full access only will be checked inside the specific toadlet
 		for(Toadlet curToad : newToadlets) {
-			tc.register(curToad, null, curToad.path(), false, false);
+			tc.register(curToad, null, curToad.path(), true, false);
 		}
 		
 		// finally add all toadlets which have been registered within the menu to our list
