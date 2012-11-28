@@ -38,6 +38,7 @@ public class OverviewController extends Toadlet implements LinkEnabledCallback {
 		this.path = URLPath;
 		this.filePath = filepath;
 		this.db = db;
+		this.main = main;
 		
 		nodeIndex = db.index().getNodeAutoIndexer().getAutoIndex();
 	}
