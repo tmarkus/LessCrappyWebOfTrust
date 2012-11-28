@@ -48,7 +48,6 @@ public class OverviewController extends Toadlet implements LinkEnabledCallback {
 		}
 		PageNode mPageNode = ctx.getPageMaker().getPageNode("LCWoT - overview", true, true, ctx);
 		mPageNode.addCustomStyleSheet(WebOfTrust.basePath + "/WebOfTrust.css");
-		mPageNode.content.addAttribute("align", "center");
 		try
 		{
 			long count_identities = 0;

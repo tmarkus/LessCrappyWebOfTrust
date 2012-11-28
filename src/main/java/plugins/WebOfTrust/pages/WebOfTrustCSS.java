@@ -25,9 +25,16 @@ public class WebOfTrustCSS extends Toadlet implements LinkEnabledCallback {
 			writeHTMLReply(ctx, 403, "forbidden", "Your host is not allowed to access this page.");
 			return;
 		}
-		String css = "#WebOfTrust ul { list-style-type: disc; }";
+		StringBuilder css = new StringBuilder();
+		css.append("div#WebOfTrust {\n");
+		css.append("  margin: auto;\n");
+		css.append("  width: 40em;\n");
+		css.append("}\n");
+		css.append("#WebOfTrust ul {\n");
+		css.append("  list-style-type: disc;\n");
+		css.append("}");
 		try {
-			writeReply(ctx, 200, "text/css", "OK", css);
+			writeReply(ctx, 200, "text/css", "OK", css.toString());
 		} catch (IOException e) {
 			// uh? javadocs ftw :)
 		} catch (ToadletContextClosedException e) {
