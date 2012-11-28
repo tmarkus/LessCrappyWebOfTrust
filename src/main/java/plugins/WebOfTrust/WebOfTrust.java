@@ -49,7 +49,7 @@ import freenet.support.plugins.helpers1.WebInterface;
 public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginFCP, FredPluginL10n, FredPluginVersioned, FredPluginHTTP{
 
 	private static final String db_path = "LCWoT"; 
-	public static final String basePath = "/plugins/WebOfTrust";
+	public static final String basePath = "/WebOfTrust";
 	public static final int FETCH_MAX_FILE_SIZE = 2000000; 
 	public static final String namespace = "WebOfTrust";
 	public static final int COMPATIBLE_VERSION = 11;
@@ -177,7 +177,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		toadlets.add(new IdenticonController(this,
 				pr.getHLSimpleClient(),
 				"",
-				"/WebOfTrust/GetIdenticon"));
+				basePath+"/GetIdenticon"));
 		
 		toadlets.add(new IdentityManagement(this,
 				pr.getHLSimpleClient(),
