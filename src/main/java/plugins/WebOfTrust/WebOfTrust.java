@@ -162,11 +162,18 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		this.webInterface = new WebInterface(pluginContext);
 
 		//setup the manage page
-		FileReaderToadlet oc = new OverviewController(this,
+//		FileReaderToadlet oc = new OverviewController(this,
+//				pr.getHLSimpleClient(),
+//				"/staticfiles/html/manage.html",
+//				basePath, db);
+		OverviewController oc = new OverviewController(this,
+				pr.getHLSimpleClient(),
+				"/staticfiles/html/manage.html",
+				basePath, db);new OverviewController(this,
 				pr.getHLSimpleClient(),
 				"/staticfiles/html/manage.html",
 				basePath, db);
-		toadlets.add(oc);
+//		toadlets.add(oc);
 
 		pr.getPageMaker().addNavigationCategory(basePath + "/","WebOfTrust.menuName.name", "WebOfTrust.menuName.tooltip", this);
 		ToadletContainer tc = pr.getToadletContainer();

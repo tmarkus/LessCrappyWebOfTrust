@@ -18,6 +18,7 @@ import plugins.WebOfTrust.datamodel.Rel;
 
 
 import freenet.client.HighLevelSimpleClient;
+import freenet.clients.http.LinkEnabledCallback;
 import freenet.clients.http.PageNode;
 import freenet.clients.http.Toadlet;
 import freenet.clients.http.ToadletContext;
@@ -25,7 +26,7 @@ import freenet.clients.http.ToadletContextClosedException;
 import freenet.support.HTMLNode;
 import freenet.support.api.HTTPRequest;
 
-public class OverviewController extends Toadlet {
+public class OverviewController extends Toadlet implements LinkEnabledCallback {
 	protected String path;
 	protected String filePath;
 	protected GraphDatabaseService db;
@@ -133,5 +134,11 @@ public class OverviewController extends Toadlet {
 	@Override
 	public String path() {
 		return filePath;
+	}
+
+	@Override
+	public boolean isEnabled(ToadletContext ctx) {
+		// TODO Auto-generated method stub
+		return true;
 	}
 }
