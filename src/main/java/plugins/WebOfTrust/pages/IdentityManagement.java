@@ -58,6 +58,10 @@ public class IdentityManagement extends freenet.plugin.web.HTMLFileReaderToadlet
 
 	public void handleMethodGET(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException
 	{
+		if(WebOfTrust.allowFullAccessOnly && !ctx.isAllowedFullAccess()) {
+			writeHTMLReply(ctx, 403, "forbidden", "Your host is not allowed to access this page.");
+			return;
+		}
 		Document doc = Jsoup.parse(readFile());
 		Element identities_div = doc.select("#identities").first();
 		 
@@ -88,6 +92,10 @@ public class IdentityManagement extends freenet.plugin.web.HTMLFileReaderToadlet
 	
 	public void handleMethodPOST(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException, FetchException
 	{
+		if(WebOfTrust.allowFullAccessOnly && !ctx.isAllowedFullAccess()) {
+			writeHTMLReply(ctx, 403, "forbidden", "Your host is not allowed to access this page.");
+			return;
+		}
 	    String action = request.getPartAsStringFailsafe("action", 200);
 
 	    Transaction tx = db.beginTx();
