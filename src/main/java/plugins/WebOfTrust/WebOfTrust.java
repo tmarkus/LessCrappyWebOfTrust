@@ -168,10 +168,10 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 				basePath, db);
 		toadlets.add(oc);
 
-		pr.getPageMaker().addNavigationCategory(basePath,"WebOfTrust.menuName.name", "WebOfTrust.menuName.tooltip", this);
+		pr.getPageMaker().addNavigationCategory(basePath + "/","WebOfTrust.menuName.name", "WebOfTrust.menuName.tooltip", this);
 		ToadletContainer tc = pr.getToadletContainer();
-		tc.register(oc, "WebOfTrust.menuName.name", basePath, true, "WebOfTrust.mainPage", "WebOfTrust.mainPage.tooltip", WebOfTrust.allowFullAccessOnly, oc);
-		tc.register(oc, null, basePath, true, WebOfTrust.allowFullAccessOnly);
+		tc.register(oc, "WebOfTrust.menuName.name", basePath + "/", true, "WebOfTrust.mainPage", "WebOfTrust.mainPage.tooltip", WebOfTrust.allowFullAccessOnly, oc);
+		tc.register(oc, null, basePath + "/", true, WebOfTrust.allowFullAccessOnly);
 		
 		//Identicons
 		toadlets.add(new IdenticonController(this,
