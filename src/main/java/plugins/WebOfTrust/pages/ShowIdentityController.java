@@ -37,6 +37,10 @@ public class ShowIdentityController extends freenet.plugin.web.HTMLFileReaderToa
 
 	public void handleMethodGET(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException
 	{
+		if(WebOfTrust.allowFullAccessOnly && !ctx.isAllowedFullAccess()) {
+			writeHTMLReply(ctx, 403, "forbidden", "Your host is not allowed to access this page.");
+			return;
+		}
 		try
 		{
 			//existing patterns
@@ -269,6 +273,10 @@ public class ShowIdentityController extends freenet.plugin.web.HTMLFileReaderToa
 	
 	public void handleMethodPOST(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException
 	{
+		if(WebOfTrust.allowFullAccessOnly && !ctx.isAllowedFullAccess()) {
+			writeHTMLReply(ctx, 403, "forbidden", "Your host is not allowed to access this page.");
+			return;
+		}
 		final String action = request.getPartAsStringFailsafe("action", 1000);
 
 		Transaction tx = db.beginTx();
