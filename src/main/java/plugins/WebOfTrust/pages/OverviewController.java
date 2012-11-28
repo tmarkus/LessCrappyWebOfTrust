@@ -33,6 +33,10 @@ public class OverviewController extends freenet.plugin.web.HTMLFileReaderToadlet
 
 	public void handleMethodGET(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException
 	{
+		if(WebOfTrust.allowFullAccessOnly && !ctx.isAllowedFullAccess()) {
+			writeHTMLReply(ctx, 403, "forbidden", "Your host is not allowed to access this page.");
+			return;
+		}
 		try
 		{
 			Document doc = Jsoup.parse(readFile());
