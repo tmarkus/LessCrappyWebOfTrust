@@ -3,9 +3,6 @@ package plugins.WebOfTrust.pages;
 import java.io.IOException;
 import java.net.URI;
 
-//import org.jsoup.Jsoup;
-//import org.jsoup.nodes.Document;
-//import org.jsoup.nodes.Element;
 import org.neo4j.graphdb.GraphDatabaseService;
 import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.Relationship;
@@ -15,7 +12,6 @@ import org.neo4j.tooling.GlobalGraphOperations;
 import plugins.WebOfTrust.WebOfTrust;
 import plugins.WebOfTrust.datamodel.IVertex;
 import plugins.WebOfTrust.datamodel.Rel;
-
 
 import freenet.client.HighLevelSimpleClient;
 import freenet.clients.http.LinkEnabledCallback;
@@ -31,6 +27,9 @@ public class OverviewController extends Toadlet implements LinkEnabledCallback {
 	protected String filePath;
 	protected GraphDatabaseService db;
 	protected ReadableIndex<Node> nodeIndex;
+	// TODO: is this local reference really needed?
+	// static members can also be reached through WebOfTrust.x
+	// if db is static in WebOfTrust also this reference is not needed
 	private WebOfTrust main;
 	
 	public OverviewController(WebOfTrust main, HighLevelSimpleClient client, String filepath, String URLPath, GraphDatabaseService db) {
@@ -50,11 +49,9 @@ public class OverviewController extends Toadlet implements LinkEnabledCallback {
 			return;
 		}
 		PageNode mPageNode = ctx.getPageMaker().getPageNode("LCWoT - overview", true, true, ctx);
+		mPageNode.addCustomStyleSheet(WebOfTrust.basePath + "/WebOfTrust.css");
 		try
 		{
-//			Document doc = Jsoup.parse(readFile());
-//			Element stats_div = doc.select("#stats").first();
-
 			long count_identities = 0;
 			long count_trust_relations = 0;
 			
@@ -67,57 +64,59 @@ public class OverviewController extends Toadlet implements LinkEnabledCallback {
 			{
 				if (rel.isType(Rel.TRUSTS)) count_trust_relations +=1;
 			}
+			HTMLNode contentDiv = new HTMLNode("div");
+			contentDiv.addAttribute("id", "WebOfTrust");
+			// FIXME: just for testing.
+			// remove next 3 lines and define everything for id WebOfTrust in the ^ CSS
+			// <br /> should be div margin/padding or something i guess
+			// if stylesheet is correctly set up the <b> tags can become h1 and h2 again.
+			contentDiv.addAttribute("style", "list-style-type: disc;");
+			contentDiv.addAttribute("align", "center");
+			contentDiv.addChild("br");
+
+			HTMLNode link = new HTMLNode("a", "Manage local identities");
+			link.addAttribute("href", WebOfTrust.basePath + "/restore.html");
+			contentDiv.addChild(new HTMLNode("b").addChild(link));
+			contentDiv.addChild("br");
+			
+			contentDiv.addChild("b", "Here are some statistics to oogle");
+			contentDiv.addChild("br");
 			HTMLNode list = new HTMLNode("ul");
 			list.addChild("li", "Number of identities: " + count_identities);
 			list.addChild("li", "Number of trust relations: " + count_trust_relations);
 			list.addChild("li", "Number of requests in flight currently: " + main.getRequestScheduler().getInFlightSize());
 			list.addChild("li", "Backlog: " + main.getRequestScheduler().getBacklogSize());
 			list.addChild("li", "Number of active db connections: " + 666);
-//			Element list = doc.createElement("ul");
-//			
-//			list.appendChild(doc.createElement("li").text("Number of identities: " + count_identities));
-//			list.appendChild(doc.createElement("li").text("Number of trust relations: " + count_trust_relations));
-//			list.appendChild(doc.createElement("li").text("Number of requests in flight currently: " + main.getRequestScheduler().getInFlightSize()));
-//			list.appendChild(doc.createElement("li").text("Backlog: " + main.getRequestScheduler().getBacklogSize()));
-//			list.appendChild(doc.createElement("li").text("Number of active db connections: " + 666));
-			mPageNode.content.addChild(list);
-//			stats_div.appendChild(list);
-
-			mPageNode.content.addChild("h2", "Own identities in local storage");
-//			stats_div.append("<h2> Own identities in local storage </h2>");
-//			Element own_identities = doc.createElement("ul");
+			contentDiv.addChild(list);
+			contentDiv.addChild("br");
+			
+			contentDiv.addChild("b", "Own identities in local storage");
+			contentDiv.addChild("br");
 			list = new HTMLNode("ul");
 			for(Node identity : nodeIndex.get(IVertex.OWN_IDENTITY, true))
 			{
 				if (identity.hasProperty(IVertex.NAME) )
 				{
 					list.addChild("li", (String) identity.getProperty(IVertex.NAME) + "  (" + (String) identity.getProperty(IVertex.ID) + ")");
-//					own_identities.appendChild(doc.createElement("li").text((String) identity.getProperty(IVertex.NAME) + "  (" + (String) identity.getProperty(IVertex.ID) + ")"));
 				}
 			}
-
-			mPageNode.content.addChild(list);
-//			stats_div.appendChild(own_identities);
-
-			mPageNode.content.addChild("h2", "URIs currently in flight");
-//			stats_div.append("<h2>URIs currently in flight</h2>");
-//			Element inflight = doc.createElement("ol");
-			list = new HTMLNode("ol");
+			contentDiv.addChild(list);
+			contentDiv.addChild("br");
 			
+			contentDiv.addChild("b", "URIs currently in flight");
+			list = new HTMLNode("ol");
 			synchronized (main.getRequestScheduler().getInFlight()) {
 				for(String in : main.getRequestScheduler().getInFlight())
 				{
-//					inflight.appendChild(doc.createElement("li").text(in));
 					list.addChild("li", in);
 				}
 			}
+			contentDiv.addChild(list);
+			mPageNode.content.addChild(contentDiv);
 			
-			mPageNode.content.addChild(list);
-//			stats_div.appendChild(inflight);
-			
-//			writeReply(ctx, 200, "text/html", "content", doc.html());
 			writeReply(ctx, 200, "text/html", "OK", mPageNode.outer.generate());
 		}
+		// FIXME: catch only specific exceptions
 		catch(Exception ex)
 		{
 			ex.printStackTrace();
@@ -126,11 +125,6 @@ public class OverviewController extends Toadlet implements LinkEnabledCallback {
 		{
 		}
 	}
-	
-//	@Override
-//	public void terminate() {
-//		
-//	}
 
 	@Override
 	public String path() {
@@ -139,7 +133,8 @@ public class OverviewController extends Toadlet implements LinkEnabledCallback {
 
 	@Override
 	public boolean isEnabled(ToadletContext ctx) {
-		// TODO Auto-generated method stub
+		// TODO: wait for database initialization?
+		// return WebOfTrust.ReadyToRock;
 		return true;
 	}
 }
