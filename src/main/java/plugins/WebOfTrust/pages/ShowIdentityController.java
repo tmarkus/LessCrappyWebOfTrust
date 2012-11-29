@@ -256,6 +256,7 @@ public class ShowIdentityController extends Toadlet implements LinkEnabledCallba
 				}
 				
 				String peerID = (String) peer_identity.getProperty(IVertex.ID);
+				tr = new HTMLNode("tr");
 				link = new HTMLNode("a", peerName+" ("+peerID+")");
 				link.addAttribute("href", WebOfTrust.basePath+"/ShowIdentity?id="+peerID);
 				tr.addChild("td", Integer.toString(i));
