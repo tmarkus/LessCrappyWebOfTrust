@@ -133,7 +133,8 @@ public class ShowIdentityController extends Toadlet implements LinkEnabledCallba
 			for(Relationship rel : identity.getRelationships(Direction.OUTGOING, Rel.HAS_CONTEXT)) {
 				list.addChild("li", (String) rel.getEndNode().getProperty(IContext.NAME));
 			}
-			contentDiv.addChild(contextDiv.addChild(list));
+			contextDiv.addChild(list);
+			contentDiv.addChild(contextDiv);
 			
 			// allow specifying an updated trust value
 			contentDiv.addChild("br");
