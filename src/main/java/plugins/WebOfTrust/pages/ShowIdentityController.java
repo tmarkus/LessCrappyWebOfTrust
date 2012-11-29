@@ -187,6 +187,7 @@ public class ShowIdentityController extends Toadlet implements LinkEnabledCallba
 			
 			int i = 1;
 			HTMLNode link;
+			HTMLNode td;
 			for(Relationship edge : identity.getRelationships(Direction.OUTGOING, Rel.TRUSTS)) {
 				if (edge.hasProperty(IEdge.SCORE) && edge.hasProperty(IEdge.COMMENT)) {
 					byte trustValue = (Byte) edge.getProperty(IEdge.SCORE);
@@ -206,7 +207,9 @@ public class ShowIdentityController extends Toadlet implements LinkEnabledCallba
 					link.addAttribute("name", Integer.toString(i));
 					tr = new HTMLNode("tr");
 					tr.addChild("td", Integer.toString(i));
-					tr.addChild(new HTMLNode("td").addChild(link));
+					td = new HTMLNode("td");
+					td.addChild(link);
+					tr.addChild(td);
 					tr.addChild("td", Integer.toString(trustValue));
 					tr.addChild("td", trustComment);
 					
@@ -218,7 +221,9 @@ public class ShowIdentityController extends Toadlet implements LinkEnabledCallba
 						form.addChild(getInput("submit", "", "Remove"));
 						form.addChild(getInput("hidden", "action", "remove_edge"));
 						form.addChild(getInput("hidden", "edge_id", Long.toString(edge.getId())));
-						tr.addChild(new HTMLNode("td").addChild(form));
+						td = new HTMLNode("td");
+						td.addChild(form);
+						tr.addChild(td);
 					} else {
 						tr.addChild("td");
 					}
@@ -260,7 +265,9 @@ public class ShowIdentityController extends Toadlet implements LinkEnabledCallba
 				link = new HTMLNode("a", peerName+" ("+peerID+")");
 				link.addAttribute("href", WebOfTrust.basePath+"/ShowIdentity?id="+peerID);
 				tr.addChild("td", Integer.toString(i));
-				tr.addChild(new HTMLNode("td").addChild(link));
+				td = new HTMLNode("td");
+				td.addChild(link);
+				tr.addChild(td);
 				tr.addChild("td", Byte.toString(trustValue));
 				tr.addChild("td", trustComment);
 				table.addChild(tr);
@@ -283,31 +290,21 @@ public class ShowIdentityController extends Toadlet implements LinkEnabledCallba
 
 	private HTMLNode getKeyPairRow(String key, String value, int property_index) {
 		HTMLNode tr = new HTMLNode("tr");
+		HTMLNode td;
 		// user modifiable key
-		HTMLNode input = new HTMLNode("input");
-		input.addAttribute("type", "text");
-		input.addAttribute("name", "propertyName"+property_index);
-		input.addAttribute("value", key);
-		tr.addChild(new HTMLNode("td").addChild(input));
+		td = new HTMLNode("td");
+		td.addChild(getInput("text", "propertyName"+property_index, key));
+		tr.addChild(td);
 		// user modifiable value
-		input = new HTMLNode("input");
-		input.addAttribute("type", "text");
-		input.addAttribute("name", "propertyValue"+property_index);
-		input.addAttribute("value", value);
+		HTMLNode input = getInput("text", "propertyValue"+property_index, value);
 		input.addAttribute("size", "100");
-		tr.addChild(new HTMLNode("td").addChild(input));
+		td = new HTMLNode("td");
+		td.addChild(input);
+		tr.addChild(td);
 		// invisible old key
-		input = new HTMLNode("input");
-		input.addAttribute("type", "hidden");
-		input.addAttribute("name", "oldPropertyName"+property_index);
-		input.addAttribute("value", key);
-		tr.addChild(input);
+		tr.addChild(getInput("hidden", "oldPropertyName"+property_index, key));
 		// invisible old value
-		input = new HTMLNode("input");
-		input.addAttribute("type", "hidden");
-		input.addAttribute("name", "oldPropertyValue"+property_index);
-		input.addAttribute("value", value);
-		tr.addChild(input);
+		tr.addChild(getInput("hidden", "oldPropertyValue"+property_index, value));
 		return tr;
 	}
 	
