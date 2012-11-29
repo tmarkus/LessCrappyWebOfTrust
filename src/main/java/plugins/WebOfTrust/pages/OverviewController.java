@@ -51,7 +51,12 @@ public class OverviewController extends Toadlet implements LinkEnabledCallback {
 		PageNode mPageNode = ctx.getPageMaker().getPageNode("LCWoT - overview", true, true, ctx);
 		mPageNode.addCustomStyleSheet(WebOfTrust.basePath + "/WebOfTrust.css");
 		HTMLNode contentDiv = new HTMLNode("div");
-		contentDiv.addAttribute("id", "WebOfTrust");
+		contentDiv.addAttribute("id", "WebOfTrust_overview");
+		// FIXME: just for testing.
+		// <br /> should be div margin/padding or something i guess
+		// if ^ stylesheet is correctly set up the <b> tags can become h1 and h2 again.
+		contentDiv.addChild("br");
+		
 		try
 		{
 			long count_identities = 0;
@@ -66,10 +71,6 @@ public class OverviewController extends Toadlet implements LinkEnabledCallback {
 			{
 				if (rel.isType(Rel.TRUSTS)) count_trust_relations +=1;
 			}
-			// FIXME: just for testing.
-			// <br /> should be div margin/padding or something i guess
-			// if ^ stylesheet is correctly set up the <b> tags can become h1 and h2 again.
-			contentDiv.addChild("br");
 
 			HTMLNode link = new HTMLNode("a");
 			link.addAttribute("href", WebOfTrust.basePath + "/restore.html");
@@ -86,7 +87,7 @@ public class OverviewController extends Toadlet implements LinkEnabledCallback {
 			list.addChild("li", "Number of trust relations: " + count_trust_relations);
 			list.addChild("li", "Number of requests in flight currently: " + main.getRequestScheduler().getInFlightSize());
 			list.addChild("li", "Backlog: " + main.getRequestScheduler().getBacklogSize());
-			list.addChild("li", "Number of active db connections: orangejuice"); // + 65537);
+			list.addChild("li", "Number of active db connections: orangejuice!"); // + 65537);
 			contentDiv.addChild(list);
 			contentDiv.addChild("br");
 			

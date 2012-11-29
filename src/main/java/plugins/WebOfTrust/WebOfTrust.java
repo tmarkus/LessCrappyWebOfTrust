@@ -5,11 +5,9 @@ import java.util.List;
 import java.util.logging.Logger;
 
 import org.neo4j.graphdb.GraphDatabaseService;
-import org.neo4j.graphdb.config.Setting;
 import org.neo4j.graphdb.factory.GraphDatabaseFactory;
 import org.neo4j.graphdb.factory.GraphDatabaseSetting;
 import org.neo4j.graphdb.factory.GraphDatabaseSettings;
-import org.neo4j.graphdb.factory.GraphDatabaseSetting.BaseOptionsSetting;
 import org.neo4j.graphdb.index.IndexProvider;
 import org.neo4j.index.lucene.LuceneIndexProvider;
 import org.neo4j.kernel.ListIndexIterable;
@@ -17,7 +15,6 @@ import org.neo4j.kernel.impl.cache.CacheProvider;
 import org.neo4j.kernel.impl.cache.SoftCacheProvider;
 
 import plugins.WebOfTrust.datamodel.IContext;
-import plugins.WebOfTrust.datamodel.IEdge;
 import plugins.WebOfTrust.datamodel.IVertex;
 import plugins.WebOfTrust.pages.IdenticonController;
 import plugins.WebOfTrust.pages.IdentityManagement;
@@ -58,7 +55,6 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	
 	private PluginRespirator pr;
 	private WebInterface webInterface;
-	private final List<FileReaderToadlet> toadlets = new ArrayList<FileReaderToadlet>();
 	private final List<Toadlet> newToadlets = new ArrayList<Toadlet>();
 	private HighLevelSimpleClient hl;
 	
@@ -70,27 +66,26 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	private FCPInterface fpi; 
 	private final static Logger LOGGER = Logger.getLogger(WebOfTrust.class.getName());
 
-	public GraphDatabaseService getDB()
-	{
+	public GraphDatabaseService getDB()	{
 		return this.db;
 	}
 	
-	public HighLevelSimpleClient getHL()
-	{
+	public HighLevelSimpleClient getHL() {
 		return this.hl;
 	}
 
-	public PluginRespirator getPR()
-	{
+	public PluginRespirator getPR()	{
 		return this.pr;
 	}
 
 	@Override
 	public void runPlugin(PluginRespirator pr) {
-
 		this.pr = pr;
 		this.hl = pr.getNode().clientCore.makeClient(RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS, false, true);
 		
+		// FIXME: this has no influence.
+		// ^ getFetchContext returns a new instance and thus
+		// ^ modifications are not mirrored back to the client
 		FetchContext fc = hl.getFetchContext();
 		fc.followRedirects = true;
 
@@ -134,9 +129,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		gdbf.setIndexProviders( providers );
 		gdbf.setCacheProviders( cacheList );
 		
-		
 		//db = gdbf.newEmbeddedDatabase(db_path);
-		
 		
 		db = gdbf.newEmbeddedDatabaseBuilder( db_path )
 		.setConfig( GraphDatabaseSettings.node_keys_indexable, IVertex.ID+","+IVertex.OWN_IDENTITY+","+IContext.NAME )
@@ -145,8 +138,6 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	    .setConfig( GraphDatabaseSettings.relationship_auto_indexing, GraphDatabaseSetting.TRUE )
 	    .newGraphDatabase();
 		
-		
-
 		/*
 		srv = new WrappingNeoServerBootstrapper( (InternalAbstractGraphDatabase) db );
 		srv.start();
@@ -168,16 +159,12 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		pr.getPageMaker().addNavigationCategory(basePath + "/","WebOfTrust.menuName.name", "WebOfTrust.menuName.tooltip", this);
 		ToadletContainer tc = pr.getToadletContainer();
 		
-		// overview page
+		// pages
 		OverviewController oc = new OverviewController(this, pr.getHLSimpleClient(), basePath, db);
-		// stylesheet
 		newToadlets.add(new WebOfTrustCSS(pr.getHLSimpleClient(), WebOfTrust.basePath + "/WebOfTrust.css"));
-		// identity overview
 		newToadlets.add(new ShowIdentityController(pr.getHLSimpleClient(), basePath + "/ShowIdentity", db));
-		
-		// TODO: change to newToadlets
-		toadlets.add(new IdenticonController(this, pr.getHLSimpleClient(), "", basePath+"/GetIdenticon"));
-		toadlets.add(new IdentityManagement(this, pr.getHLSimpleClient(), "/staticfiles/html/restore.html", basePath+"/restore", db));		
+		newToadlets.add(new IdentityManagement(this, pr.getHLSimpleClient(), basePath+"/restore", db));
+		newToadlets.add(new IdenticonController(pr.getHLSimpleClient(), basePath+"/GetIdenticon"));
 		
 		// create fproxy menu items
 		tc.register(oc, "WebOfTrust.menuName.name", basePath + "/", true, "WebOfTrust.mainPage", "WebOfTrust.mainPage.tooltip", WebOfTrust.allowFullAccessOnly, oc);
@@ -190,13 +177,8 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 			tc.register(curToad, null, curToad.path(), true, false);
 		}
 		
-		// finally add all toadlets which have been registered within the menu to our list
+		// finally add toadlets which have been registered within the menu to our list
 		newToadlets.add(oc);
-
-		// TODO: remove
-		for(Toadlet toadlet : toadlets) {
-			webInterface.registerInvisible(toadlet);	
-		}
 	}
 
 
@@ -204,22 +186,14 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	public void terminate() {
 		LOGGER.info("Terminating plugin");
 
-		//tell everybody else that we are no longer running
+		// tell everybody else that we are no longer running
 		isRunning = false;
 		
-		
-		//remove Navigation category
+		// remove Navigation category
 		pr.getPageMaker().removeNavigationCategory("WebOfTrust.menuName.name");
 		
-		// TODO: remove
-		//deregister toadlets
-		ToadletContainer toadletContainer = pr.getToadletContainer();
-		for (FileReaderToadlet pageToadlet : toadlets) {
-				toadletContainer.unregister(pageToadlet);
-				pageToadlet.terminate();
-		}
-		
 		// remove toadlets
+		ToadletContainer toadletContainer = pr.getToadletContainer();
 		for(Toadlet curToad : newToadlets) {
 			toadletContainer.unregister(curToad);
 		}
@@ -227,24 +201,21 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		// TODO: remove
 		if (webInterface != null) webInterface.kill();
 
-		//interrupt the request scheduler
+		// interrupt the request scheduler
 		rs.interrupt();
 		
 		if( db != null ) {
 			System.out.println("Killing the graph database");
-			
 			//srv.stop();
 			
-			//shutdown the graph database
+			// shutdown the graph database
 			db.shutdown();
-
 			System.out.println("done");
 		}
 	}
 
 
-	public RequestScheduler getRequestScheduler()
-	{
+	public RequestScheduler getRequestScheduler() {
 		return this.rs;
 	}
 
@@ -286,8 +257,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	public void handle(PluginReplySender prs, SimpleFieldSet sfs, Bucket bucket, int accessType) {
 		try {
 			fpi.handle(prs, sfs, bucket, accessType);
-		}
-		catch (PluginNotFoundException e) {
+		} catch (PluginNotFoundException e) {
 			e.printStackTrace();
 		}
 	}

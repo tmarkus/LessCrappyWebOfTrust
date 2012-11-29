@@ -14,6 +14,7 @@ import plugins.WebOfTrust.OneBytePerReadInputStream;
 
 import freenet.client.FetchResult;
 import freenet.keys.FreenetURI;
+import freenet.support.HTMLNode;
 
 public class Utils {
 
@@ -46,9 +47,22 @@ public class Utils {
 	 * @return return the ASCII representation of the routing key part
 	 */
 	
-	public static String getIDFromKey(FreenetURI key)
-	{
+	public static String getIDFromKey(FreenetURI key) {
 		return key.toASCIIString().split("@|/")[1].split(",")[0];
 	}
 	
+	/**
+	 * Generate an HTMLNode of type input with specified attributes.
+	 * @param type - input type attribute
+	 * @param name - input name attribute
+	 * @param value - input value attribute
+	 * @return a new instance of HTMLNode
+	 */
+	public static HTMLNode getInput(String type, String name, String value) {
+		HTMLNode input = new HTMLNode("input");
+		input.addAttribute("type", type);
+		input.addAttribute("name", name);
+		input.addAttribute("value", value);
+		return input;
+	}
 }

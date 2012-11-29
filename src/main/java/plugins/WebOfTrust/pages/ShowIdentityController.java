@@ -18,6 +18,7 @@ import plugins.WebOfTrust.datamodel.IEdge;
 import plugins.WebOfTrust.datamodel.IVertex;
 import plugins.WebOfTrust.datamodel.Rel;
 import plugins.WebOfTrust.fcp.SetTrust;
+import plugins.WebOfTrust.util.Utils;
 
 import freenet.client.HighLevelSimpleClient;
 import freenet.clients.http.LinkEnabledCallback;
@@ -32,7 +33,7 @@ public class ShowIdentityController extends Toadlet implements LinkEnabledCallba
 	private final String path;
 	private final GraphDatabaseService db;
 	// TODO: reference for ReadableIndex also not
-	// changeable during the whole lifetime? 
+	// changeable during the whole lifetime?
 	private ReadableIndex<Node> nodeIndex;
 	
 	public ShowIdentityController(HighLevelSimpleClient client, String URLPath, GraphDatabaseService db) {
@@ -51,7 +52,12 @@ public class ShowIdentityController extends Toadlet implements LinkEnabledCallba
 		PageNode mPageNode = ctx.getPageMaker().getPageNode("LCWoT - Identity details", true, true, ctx);
 		mPageNode.addCustomStyleSheet(WebOfTrust.basePath + "/WebOfTrust.css");
 		HTMLNode contentDiv = new HTMLNode("div");
-		contentDiv.addAttribute("id", "WebOfTrust");
+		contentDiv.addAttribute("id", "WebOfTrust_identityDetails");
+		// FIXME: just for testing.
+		// <br /> should be div margin/padding or something i guess
+		// if ^ stylesheet is correctly set up the <b> tags can become h1 and h2 again.
+		contentDiv.addChild("br");
+		
 		try {
 			//get the query param
 			// FIXME: maybe better to use
@@ -63,11 +69,6 @@ public class ShowIdentityController extends Toadlet implements LinkEnabledCallba
 			final boolean is_own_identity = identity.hasProperty(IVertex.OWN_IDENTITY);
 			final SortedSet<String> sortedKeys = new TreeSet<String>();
 			for(String key : identity.getPropertyKeys()) sortedKeys.add(key);
-
-			// FIXME: just for testing.
-			// <br /> should be div margin/padding or something i guess
-			// if ^ stylesheet is correctly set up the <b> tags can become h1 and h2 again.
-			contentDiv.addChild("br");
 			
 			contentDiv.addChild("b", "Here are the details of the identity");
 			contentDiv.addChild("br");
@@ -76,16 +77,8 @@ public class ShowIdentityController extends Toadlet implements LinkEnabledCallba
 			HTMLNode form = new HTMLNode("form");
 			form.addAttribute("action", "#");
 			form.addAttribute("method", "post");
-			HTMLNode input = new HTMLNode("input");
-			input.addAttribute("type", "hidden");
-			input.addAttribute("name", "action");
-			input.addAttribute("value", "modify_properties");
-			form.addChild(input);
-			input = new HTMLNode("input");
-			input.addAttribute("type", "hidden");
-			input.addAttribute("name", "identity");
-			input.addAttribute("value", id);
-			form.addChild(input);
+			form.addChild(Utils.getInput("hidden", "action", "modify_properties"));
+			form.addChild(Utils.getInput("hidden", "identity", id));
 
 			HTMLNode table = new HTMLNode("table");
 			HTMLNode tr = new HTMLNode("tr");
@@ -114,10 +107,7 @@ public class ShowIdentityController extends Toadlet implements LinkEnabledCallba
 				table.addChild(getKeyPairRow("", "", property_index));
 				form.addChild(table);
 				// submit button
-				input = new HTMLNode("input");
-				input.addAttribute("type", "submit");
-				input.addAttribute("value", "Modify properties");
-				form.addChild(input);
+				form.addChild(Utils.getInput("submit", "", "Modify properties"));
 			} else {
 				form.addChild(table);
 			}
@@ -159,14 +149,14 @@ public class ShowIdentityController extends Toadlet implements LinkEnabledCallba
 				form.addAttribute("method", "post");
 				HTMLNode fieldset = new HTMLNode("fieldset");
 				fieldset.addChild("legend", (String) own_vertex.getProperty(IVertex.NAME));
-				fieldset.addChild(getInput("hidden", "action", "set_trust"));
-				fieldset.addChild(getInput("hidden", "identity_id", id));
-				fieldset.addChild(getInput("hidden", "own_identity_id", (String) own_vertex.getProperty(IVertex.ID)));
+				fieldset.addChild(Utils.getInput("hidden", "action", "set_trust"));
+				fieldset.addChild(Utils.getInput("hidden", "identity_id", id));
+				fieldset.addChild(Utils.getInput("hidden", "own_identity_id", (String) own_vertex.getProperty(IVertex.ID)));
 				fieldset.addChild("span", "Trust: ");
-				fieldset.addChild(getInput("number", "trust_value", Byte.toString(current_trust_value)));
+				fieldset.addChild(Utils.getInput("number", "trust_value", Byte.toString(current_trust_value)));
 				fieldset.addChild("span", "Comment: ");
-				fieldset.addChild(getInput("text", "trust_comment", current_comment));
-				fieldset.addChild(getInput("submit", "", "Update"));
+				fieldset.addChild(Utils.getInput("text", "trust_comment", current_comment));
+				fieldset.addChild(Utils.getInput("submit", "", "Update"));
 				form.addChild(fieldset);
 				contentDiv.addChild(form);
 			}
@@ -219,9 +209,9 @@ public class ShowIdentityController extends Toadlet implements LinkEnabledCallba
 						form = new HTMLNode("form");
 						form.addAttribute("action", WebOfTrust.basePath+"/ShowIdentity?id="+id + "#"+(i-1));
 						form.addAttribute("method", "post");
-						form.addChild(getInput("submit", "", "Remove"));
-						form.addChild(getInput("hidden", "action", "remove_edge"));
-						form.addChild(getInput("hidden", "edge_id", Long.toString(edge.getId())));
+						form.addChild(Utils.getInput("submit", "", "Remove"));
+						form.addChild(Utils.getInput("hidden", "action", "remove_edge"));
+						form.addChild(Utils.getInput("hidden", "edge_id", Long.toString(edge.getId())));
 						td = new HTMLNode("td");
 						td.addChild(form);
 						tr.addChild(td);
@@ -294,27 +284,19 @@ public class ShowIdentityController extends Toadlet implements LinkEnabledCallba
 		HTMLNode td;
 		// user modifiable key
 		td = new HTMLNode("td");
-		td.addChild(getInput("text", "propertyName"+property_index, key));
+		td.addChild(Utils.getInput("text", "propertyName"+property_index, key));
 		tr.addChild(td);
 		// user modifiable value
-		HTMLNode input = getInput("text", "propertyValue"+property_index, value);
+		HTMLNode input = Utils.getInput("text", "propertyValue"+property_index, value);
 		input.addAttribute("size", "100");
 		td = new HTMLNode("td");
 		td.addChild(input);
 		tr.addChild(td);
 		// invisible old key
-		tr.addChild(getInput("hidden", "oldPropertyName"+property_index, key));
+		tr.addChild(Utils.getInput("hidden", "oldPropertyName"+property_index, key));
 		// invisible old value
-		tr.addChild(getInput("hidden", "oldPropertyValue"+property_index, value));
+		tr.addChild(Utils.getInput("hidden", "oldPropertyValue"+property_index, value));
 		return tr;
-	}
-	
-	private HTMLNode getInput(String type, String name, String value) {
-		HTMLNode input = new HTMLNode("input");
-		input.addAttribute("type", type);
-		input.addAttribute("name", name);
-		input.addAttribute("value", value);
-		return input;
 	}
 	
 	public void handleMethodPOST(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {

@@ -26,12 +26,15 @@ public class WebOfTrustCSS extends Toadlet implements LinkEnabledCallback {
 			return;
 		}
 		StringBuilder css = new StringBuilder();
-		css.append("div#WebOfTrust {\n");
+		css.append("div#content {\n");
 		css.append("  margin: auto;\n");
 		css.append("  width: 70em;\n");
 		css.append("}\n");
-		css.append("#WebOfTrust ul {\n");
+		css.append("#content ul {\n");
 		css.append("  list-style-type: disc;\n");
+		css.append("}");
+		css.append("#content td {\n");
+		css.append("  padding: 0;\n");
 		css.append("}");
 		try {
 			writeReply(ctx, 200, "text/css", "OK", css.toString());
