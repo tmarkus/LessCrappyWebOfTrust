@@ -251,6 +251,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 
 	@Override
 	public String getString(String key) {
+		// FIXME: either return key; or implement translation engine.
 		return "WoT";
 	}
 
@@ -269,6 +270,8 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 
 	@Override
 	public String handleHTTPGet(HTTPRequest request) throws PluginHTTPException {
+		// TODO: where is this triggered?
+		// TODO: if nowhere remove handleHTTP* + extends FredPluginHTTP
 		return "<html><body><head><title>Forward page...</title></head>" +
 				"<a href=\""+basePath+"/\">Click here to visit the overview page.</a>" +
 				"</body></html>";

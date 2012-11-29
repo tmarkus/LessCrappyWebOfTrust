@@ -23,9 +23,11 @@ import freenet.support.HTMLNode;
 import freenet.support.api.HTTPRequest;
 
 public class OverviewController extends Toadlet implements LinkEnabledCallback {
-	protected String path;
-	protected GraphDatabaseService db;
-	protected ReadableIndex<Node> nodeIndex;
+	private final String path;
+	private final GraphDatabaseService db;
+	// TODO: reference for ReadableIndex also not
+	// changeable during the whole lifetime? 
+	private ReadableIndex<Node> nodeIndex;
 	// TODO: is this local reference really needed?
 	// static members can also be reached through WebOfTrust.x
 	// if db is static in WebOfTrust also this reference is not needed
@@ -36,18 +38,20 @@ public class OverviewController extends Toadlet implements LinkEnabledCallback {
 		this.path = URLPath;
 		this.db = db;
 		this.main = main;
-		
+		// TODO: can the nodeIndex be referenced like WebOfTrust.nodeIndex?
 		nodeIndex = db.index().getNodeAutoIndexer().getAutoIndex();
 	}
 
 	public void handleMethodGET(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException
 	{
 		if(WebOfTrust.allowFullAccessOnly && !ctx.isAllowedFullAccess()) {
-			writeHTMLReply(ctx, 403, "forbidden", "Your host is not allowed to access this page.");
+			writeReply(ctx, 403, "text/plain", "forbidden", "Your host is not allowed to access this page.");
 			return;
 		}
 		PageNode mPageNode = ctx.getPageMaker().getPageNode("LCWoT - overview", true, true, ctx);
 		mPageNode.addCustomStyleSheet(WebOfTrust.basePath + "/WebOfTrust.css");
+		HTMLNode contentDiv = new HTMLNode("div");
+		contentDiv.addAttribute("id", "WebOfTrust");
 		try
 		{
 			long count_identities = 0;
@@ -62,8 +66,6 @@ public class OverviewController extends Toadlet implements LinkEnabledCallback {
 			{
 				if (rel.isType(Rel.TRUSTS)) count_trust_relations +=1;
 			}
-			HTMLNode contentDiv = new HTMLNode("div");
-			contentDiv.addAttribute("id", "WebOfTrust");
 			// FIXME: just for testing.
 			// <br /> should be div margin/padding or something i guess
 			// if ^ stylesheet is correctly set up the <b> tags can become h1 and h2 again.
@@ -78,12 +80,13 @@ public class OverviewController extends Toadlet implements LinkEnabledCallback {
 			
 			contentDiv.addChild("b", "Here are some statistics to oogle");
 			contentDiv.addChild("br");
+			contentDiv.addChild("br");
 			HTMLNode list = new HTMLNode("ul");
 			list.addChild("li", "Number of identities: " + count_identities);
 			list.addChild("li", "Number of trust relations: " + count_trust_relations);
 			list.addChild("li", "Number of requests in flight currently: " + main.getRequestScheduler().getInFlightSize());
 			list.addChild("li", "Backlog: " + main.getRequestScheduler().getBacklogSize());
-			list.addChild("li", "Number of active db connections: " + 666);
+			list.addChild("li", "Number of active db connections: orangejuice"); // + 65537);
 			contentDiv.addChild(list);
 			contentDiv.addChild("br");
 			
