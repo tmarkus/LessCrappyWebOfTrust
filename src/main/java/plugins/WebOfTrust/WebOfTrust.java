@@ -169,22 +169,22 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		ToadletContainer tc = pr.getToadletContainer();
 		
 		// overview page
-		OverviewController oc = new OverviewController(this, pr.getHLSimpleClient(), basePath, db);		
-
+		OverviewController oc = new OverviewController(this, pr.getHLSimpleClient(), basePath, db);
 		// stylesheet
 		newToadlets.add(new WebOfTrustCSS(pr.getHLSimpleClient(), WebOfTrust.basePath + "/WebOfTrust.css"));
+		// identity overview
+		newToadlets.add(new ShowIdentityController(pr.getHLSimpleClient(), basePath + "/ShowIdentity", db));
 		
 		// TODO: change to newToadlets
 		toadlets.add(new IdenticonController(this, pr.getHLSimpleClient(), "", basePath+"/GetIdenticon"));
 		toadlets.add(new IdentityManagement(this, pr.getHLSimpleClient(), "/staticfiles/html/restore.html", basePath+"/restore", db));		
-		toadlets.add(new ShowIdentityController(this, pr.getHLSimpleClient(), "/staticfiles/html/showIdentity.html", basePath+"/ShowIdentity", db));
 		
 		// create fproxy menu items
 		tc.register(oc, "WebOfTrust.menuName.name", basePath + "/", true, "WebOfTrust.mainPage", "WebOfTrust.mainPage.tooltip", WebOfTrust.allowFullAccessOnly, oc);
 		tc.register(oc, null, basePath + "/", true, WebOfTrust.allowFullAccessOnly);
 		
 		// register other toadlets without link in menu but as first item to check
-		// so it works also for paths which are included in the above menu links
+		// so it also works for paths which are included in the above menu links.
 		// full access only will be checked inside the specific toadlet
 		for(Toadlet curToad : newToadlets) {
 			tc.register(curToad, null, curToad.path(), true, false);
@@ -194,8 +194,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		newToadlets.add(oc);
 
 		// TODO: remove
-		for(Toadlet toadlet : toadlets)
-		{
+		for(Toadlet toadlet : toadlets) {
 			webInterface.registerInvisible(toadlet);	
 		}
 	}
