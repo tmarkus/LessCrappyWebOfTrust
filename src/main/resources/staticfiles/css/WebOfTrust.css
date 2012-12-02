@@ -1,0 +1,12 @@
+div#content {
+  margin: auto;
+  width: 70em;
+}
+
+#content ul {
+  list-style-type: disc;
+}
+
+#content td {
+	padding: 0;
+}

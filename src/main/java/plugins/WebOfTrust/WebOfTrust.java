@@ -20,13 +20,13 @@ import plugins.WebOfTrust.pages.IdenticonController;
 import plugins.WebOfTrust.pages.IdentityManagement;
 import plugins.WebOfTrust.pages.OverviewController;
 import plugins.WebOfTrust.pages.ShowIdentityController;
-import plugins.WebOfTrust.pages.WebOfTrustCSS;
 import freenet.client.FetchContext;
 import freenet.client.HighLevelSimpleClient;
 import freenet.clients.http.Toadlet;
 import freenet.clients.http.ToadletContainer;
 import freenet.l10n.BaseL10n.LANGUAGE;
 import freenet.node.RequestStarter;
+import freenet.plugin.web.CSSFileReaderToadlet;
 import freenet.plugin.web.FileReaderToadlet;
 import freenet.pluginmanager.FredPlugin;
 import freenet.pluginmanager.FredPluginFCP;
@@ -161,7 +161,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		
 		// pages
 		OverviewController oc = new OverviewController(this, pr.getHLSimpleClient(), basePath, db);
-		newToadlets.add(new WebOfTrustCSS(pr.getHLSimpleClient(), WebOfTrust.basePath + "/WebOfTrust.css"));
+		newToadlets.add(new CSSFileReaderToadlet(pr.getHLSimpleClient(), db, "/staticfiles/css/WebOfTrust.css", basePath + "/WebOfTrust.css"));
 		newToadlets.add(new ShowIdentityController(pr.getHLSimpleClient(), basePath + "/ShowIdentity", db));
 		newToadlets.add(new IdentityManagement(this, pr.getHLSimpleClient(), basePath+"/restore", db));
 		newToadlets.add(new IdenticonController(pr.getHLSimpleClient(), basePath+"/GetIdenticon"));

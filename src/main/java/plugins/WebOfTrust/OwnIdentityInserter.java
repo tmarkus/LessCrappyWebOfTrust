@@ -58,10 +58,10 @@ import freenet.support.io.Closer;
 
 public class OwnIdentityInserter implements Runnable, ClientPutCallback  {
 
-	private GraphDatabaseService db;
-	private String ownID;
+	private final GraphDatabaseService db;
+	private final String ownID;
 	private HighLevelSimpleClient hl;
-	private WebOfTrust wot;
+	private final WebOfTrust wot;
 	
 	public OwnIdentityInserter(GraphDatabaseService db, String ownID, HighLevelSimpleClient hl, WebOfTrust wot)
 	{
@@ -172,8 +172,6 @@ public class OwnIdentityInserter implements Runnable, ClientPutCallback  {
 			own_vertex.setProperty(IVertex.EDITION, cp.getURI().getEdition());
 			own_vertex.setProperty(IVertex.REQUEST_URI, newRequestURI.toASCIIString());
 		
-			//TODO: update the insert URI? 
-			
 			//update the hash value after these updates (otherwise infinite insert
 			own_vertex.setProperty(IVertex.HASH, calculateIdentityHash(own_vertex));
 		
