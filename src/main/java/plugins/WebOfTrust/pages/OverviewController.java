@@ -81,7 +81,6 @@ public class OverviewController extends Toadlet implements LinkEnabledCallback {
 			list.addChild("li", "Number of trust relations: " + count_trust_relations);
 			list.addChild("li", "Number of requests in flight currently: " + main.getRequestScheduler().getInFlightSize());
 			list.addChild("li", "Backlog: " + main.getRequestScheduler().getBacklogSize());
-			list.addChild("li", "Number of active db connections: orangejuice!"); // + 65537);
 			contentDiv.addChild(list);
 			contentDiv.addChild("br");
 			
