@@ -5,14 +5,12 @@ import java.net.URI;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
 import org.neo4j.graphdb.Direction;
 import org.neo4j.graphdb.GraphDatabaseService;
 import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.Relationship;
 import org.neo4j.graphdb.Transaction;
+import org.neo4j.graphdb.index.ReadableIndex;
 
 import plugins.WebOfTrust.WebOfTrust;
 import plugins.WebOfTrust.datamodel.IContext;
@@ -20,305 +18,327 @@ import plugins.WebOfTrust.datamodel.IEdge;
 import plugins.WebOfTrust.datamodel.IVertex;
 import plugins.WebOfTrust.datamodel.Rel;
 import plugins.WebOfTrust.fcp.SetTrust;
+import plugins.WebOfTrust.util.Utils;
 
 import freenet.client.HighLevelSimpleClient;
+import freenet.clients.http.LinkEnabledCallback;
+import freenet.clients.http.PageNode;
+import freenet.clients.http.Toadlet;
 import freenet.clients.http.ToadletContext;
 import freenet.clients.http.ToadletContextClosedException;
+import freenet.support.HTMLNode;
 import freenet.support.api.HTTPRequest;
 
-public class ShowIdentityController extends freenet.plugin.web.HTMLFileReaderToadlet {
-
-	private GraphDatabaseService db;
+public class ShowIdentityController extends Toadlet implements LinkEnabledCallback {
+	private final String path;
+	private final GraphDatabaseService db;
+	// TODO: reference for ReadableIndex also not
+	// changeable during the whole lifetime?
+	private ReadableIndex<Node> nodeIndex;
 	
-	public ShowIdentityController(WebOfTrust main, HighLevelSimpleClient client, String filepath, String URLPath, GraphDatabaseService db) {
-		super(client, main.getDB(), filepath, URLPath);
+	public ShowIdentityController(HighLevelSimpleClient client, String URLPath, GraphDatabaseService db) {
+		super(client);
 		this.db = db;
+		this.path = URLPath;
+		// TODO: can the nodeIndex be referenced like WebOfTrust.nodeIndex?
+		nodeIndex = db.index().getNodeAutoIndexer().getAutoIndex();
 	}
 
-	public void handleMethodGET(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException
-	{
+	public void handleMethodGET(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
 		if(WebOfTrust.allowFullAccessOnly && !ctx.isAllowedFullAccess()) {
-			writeHTMLReply(ctx, 403, "forbidden", "Your host is not allowed to access this page.");
+			writeReply(ctx, 403, "text/plain", "forbidden", "Your host is not allowed to access this page.");
 			return;
 		}
-		try
-		{
-			//existing patterns
-		    Document doc = Jsoup.parse(readFile());
-			
-			//new patterns
-			Element info_div = doc.select("#info").first();
-
+		PageNode mPageNode = ctx.getPageMaker().getPageNode("LCWoT - Identity details", true, true, ctx);
+		mPageNode.addCustomStyleSheet(WebOfTrust.basePath + "/WebOfTrust.css");
+		HTMLNode contentDiv = new HTMLNode("div");
+		contentDiv.addAttribute("id", "WebOfTrust_identityDetails");
+		// FIXME: just for testing.
+		// <br /> should be div margin/padding or something i guess
+		// if ^ stylesheet is correctly set up the <b> tags can become h1 and h2 again.
+		contentDiv.addChild("br");
+		
+		try {
 			//get the query param
+			// FIXME: maybe better to use
+			// ^ request.getPartAsStringFailsafe(name, maxlength)
 			final String id = request.getParam("id");
 			
-			//get the identity vertex & properties
+			// get the identity vertex & properties
 			final Node identity = nodeIndex.get(IVertex.ID, id).getSingle();
 			final boolean is_own_identity = identity.hasProperty(IVertex.OWN_IDENTITY);
-			
-			info_div.append("<h1>Identity properties</h1>");
 			final SortedSet<String> sortedKeys = new TreeSet<String>();
 			for(String key : identity.getPropertyKeys()) sortedKeys.add(key);
 			
-			final Element propertiesForm = doc.createElement("form").attr("action", "#").attr("method", "post");
-			propertiesForm.appendChild(doc.createElement("input").attr("type", "hidden").attr("name", "action").val("modify_properties"));
-			propertiesForm.appendChild(doc.createElement("input").attr("type", "hidden").attr("name", "identity").val(id));
+			contentDiv.addChild("b", "Here are the details of the identity");
+			contentDiv.addChild("br");
+			contentDiv.addChild("br");
+					
+			HTMLNode form = new HTMLNode("form");
+			form.addAttribute("action", "#");
+			form.addAttribute("method", "post");
+			form.addChild(Utils.getInput("hidden", "action", "modify_properties"));
+			form.addChild(Utils.getInput("hidden", "identity", id));
 
-			final Element table = doc.createElement("table");
-			propertiesForm.appendChild(table);
-			table.appendChild(
-								doc.createElement("tr").appendChild(
-										doc.createElement("th").text("Name")).appendChild(
-										doc.createElement("th").text("Value")));
+			HTMLNode table = new HTMLNode("table");
+			HTMLNode tr = new HTMLNode("tr");
+			tr.addChild("th", "Name");
+			tr.addChild("th", "Value");
+			table.addChild(tr);
 			
-			//generic properties associated with this identity in the graph store
+			// generic properties associated with this identity in the graph store
 			int property_index = 0;
-			for(String key : sortedKeys)
-			{
+			for(String key : sortedKeys) {
 				Object value = identity.getProperty(key);
-				if (is_own_identity)
-				{
-					Element propertyName = doc.createElement("input").attr("type", "text").attr("name", "propertyName"+property_index).val(key);
-					Element propertyValue = doc.createElement("input").attr("type", "text") .attr("name", "propertyValue"+property_index).val(value.toString()).attr("size", "100");
-					Element oldPropertyName = doc.createElement("input").attr("type", "hidden") .attr("name", "oldPropertyName"+property_index).val(key);
-					Element oldPropertyValue = doc.createElement("input").attr("type", "hidden") .attr("name", "oldPropertyValue"+property_index).val(value.toString());
-					
-					Element tr = doc.createElement("tr");
-					table.appendChild(tr);
-					tr.appendChild(doc.createElement("td").appendChild(propertyName));
-					tr.appendChild(doc.createElement("td").appendChild(propertyValue));
-					
-					tr.appendChild(oldPropertyName);
-					tr.appendChild(oldPropertyValue);
+				if (is_own_identity) {
+					table.addChild(getKeyPairRow(key, value.toString(), property_index));
 				}
-				else
-				{
-					table.appendChild(doc.createElement("tr").appendChild(doc.createElement("td").text(key)).appendChild(doc.createElement("td").text(value.toString())));	
+				else {
+					tr = new HTMLNode("tr");
+					tr.addChild("td", key);
+					tr.addChild("td", value.toString());
+					table.addChild(tr);	
 				}
-			
 				property_index += 1;
 			}
 
-			//extra empty property value pair
-			if (is_own_identity)
-			{
-				Element tr = doc.createElement("tr");
-				tr.appendChild(doc.createElement("td").appendChild(doc.createElement("input").attr("type", "text").attr("name", "propertyName"+property_index))).appendChild(
-					doc.createElement("td").appendChild(doc.createElement("input").attr("type", "text") .attr("name", "propertyValue"+property_index).attr("size", "100"))).appendChild(
-					doc.createElement("input").attr("type", "hidden") .attr("name", "oldPropertyName"+property_index)).appendChild(
-					doc.createElement("input").attr("type", "hidden") .attr("name", "oldPropertyValue"+property_index));
-				
-				table.appendChild(tr);
+			if (is_own_identity) {
+				// extra empty property value pair
+				table.addChild(getKeyPairRow("", "", property_index));
+				form.addChild(table);
+				// submit button
+				form.addChild(Utils.getInput("submit", "", "Modify properties"));
+			} else {
+				form.addChild(table);
 			}
-
-			//submit button
-			if (is_own_identity)
-			{
-				Element modifySubmit = doc.createElement("input").attr("type", "submit").val("Modify properties");
-				propertiesForm.appendChild(modifySubmit);
-			}
-			info_div.appendChild(propertiesForm);
-
-
-			//display available contexts
-			Element contexts = doc.createElement("div");
-			contexts.append("<h2>Contexts</h2>");
-			Element contexts_list = doc.createElement("ul");
-			for(Relationship rel : identity.getRelationships(Direction.OUTGOING, Rel.HAS_CONTEXT))
-			{
-				Element li = doc.createElement("li");
-				li.text((String) rel.getEndNode().getProperty(IContext.NAME));
-				contexts_list.appendChild(li);
-			}
-			info_div.appendChild(contexts.appendChild(contexts_list));
-
+			contentDiv.addChild(form);
 			
-			//allow specifying an updated trust value
-			info_div.append("<h1>Local trust assignments to this identity:</h1>");
+			// display available contexts
+			HTMLNode contextDiv = new HTMLNode("div");
+			contextDiv.addChild("br");
+			contextDiv.addChild("b", "Contexts");
+			contextDiv.addChild("br");
+			contextDiv.addChild("br");
+			HTMLNode list = new HTMLNode("ul");
+			for(Relationship rel : identity.getRelationships(Direction.OUTGOING, Rel.HAS_CONTEXT)) {
+				list.addChild("li", (String) rel.getEndNode().getProperty(IContext.NAME));
+			}
+			contextDiv.addChild(list);
+			contentDiv.addChild(contextDiv);
+			
+			// allow specifying an updated trust value
+			contentDiv.addChild("br");
+			contentDiv.addChild("b", "Local trust assignments to this identity:");
+			contentDiv.addChild("br");
+			contentDiv.addChild("br");
 
-			for(Node own_vertex : nodeIndex.get(IVertex.OWN_IDENTITY, true))
-			{
+			for(Node own_vertex : nodeIndex.get(IVertex.OWN_IDENTITY, true)) {
 				byte current_trust_value = 0;
 				String current_comment = "";
-				
-				for(Relationship edge : own_vertex.getRelationships(Direction.OUTGOING, Rel.TRUSTS))
-				{
-						if (edge.getEndNode().equals(identity))
-						{
-							current_trust_value = (Byte) edge.getProperty(IEdge.SCORE);
-							current_comment = (String) edge.getProperty(IEdge.COMMENT);
-						}
+				for(Relationship edge : own_vertex.getRelationships(Direction.OUTGOING, Rel.TRUSTS)) {
+					if (edge.getEndNode().equals(identity)) {
+						current_trust_value = (Byte) edge.getProperty(IEdge.SCORE);
+						current_comment = (String) edge.getProperty(IEdge.COMMENT);
+						// TODO: add a break; here? not exactly sure what the goal of this is.
+					}
 				}
-			
-				Element form = doc.createElement("form").attr("method", "post").attr("action", WebOfTrust.basePath+"/ShowIdentity?id="+id);
-				Element fieldset = doc.createElement("fieldset");
-				fieldset.appendChild(doc.createElement("legend").text( (String) own_vertex.getProperty(IVertex.NAME)));
-				form.appendChild(fieldset);
-				fieldset.appendChild(doc.createElement("input").attr("type", "hidden").attr("name", "action").attr("value", "set_trust"));
-				fieldset.appendChild(doc.createElement("input").attr("type", "hidden").attr("name", "identity_id").attr("value", id));
-				fieldset.appendChild(doc.createElement("input").attr("type", "hidden").attr("name", "own_identity_id").attr("value", (String) own_vertex.getProperty(IVertex.ID)));
-				fieldset.appendText("Trust: ");
-				fieldset.appendChild(doc.createElement("input").attr("type", "number").attr("name", "trust_value").attr("value", Byte.toString(current_trust_value)));
-				fieldset.appendText("Comment: ");
-				fieldset.appendChild(doc.createElement("input").attr("type", "text").attr("name", "trust_comment").attr("value", current_comment));
-				fieldset.appendChild(doc.createElement("input").attr("type", "submit").attr("value", "Update"));
-				
-				info_div.appendChild(form);
+				form = new HTMLNode("form");
+				form.addAttribute("method", "post");
+				// TODO: why not use # here like above?
+				form.addAttribute("action", WebOfTrust.basePath+"/ShowIdentity?id="+id);
+				form.addAttribute("method", "post");
+				HTMLNode fieldset = new HTMLNode("fieldset");
+				fieldset.addChild("legend", (String) own_vertex.getProperty(IVertex.NAME));
+				fieldset.addChild(Utils.getInput("hidden", "action", "set_trust"));
+				fieldset.addChild(Utils.getInput("hidden", "identity_id", id));
+				fieldset.addChild(Utils.getInput("hidden", "own_identity_id", (String) own_vertex.getProperty(IVertex.ID)));
+				fieldset.addChild("span", "Trust: ");
+				fieldset.addChild(Utils.getInput("number", "trust_value", Byte.toString(current_trust_value)));
+				fieldset.addChild("span", "Comment: ");
+				fieldset.addChild(Utils.getInput("text", "trust_comment", current_comment));
+				fieldset.addChild(Utils.getInput("submit", "", "Update"));
+				form.addChild(fieldset);
+				contentDiv.addChild(form);
 			}
 			
+			// explicit trust relations assigned by this identity
+			contentDiv.addChild("br");
+			contentDiv.addChild("b", "Explicit trust relations exposed by this identity:");
+			contentDiv.addChild("br");
+			contentDiv.addChild("br");
 			
-			//explicit trust relations assigned by this identity
-			info_div.append("<h1>Explicit trust relations exposed by this identity:</h1>");
-			
-			
-			Element tableTrust = doc.createElement("table");
-			tableTrust.appendChild(doc.createElement("tr")
-									.appendChild(doc.createElement("th").text("nr."))
-									.appendChild(doc.createElement("th").text("identity"))
-									.appendChild(doc.createElement("th").text("Trust"))
-									.appendChild(doc.createElement("th").text("Comment"))
-									.appendChild(doc.createElement("th").text("action"))
-									);
+			table = new HTMLNode("table");
+			tr = new HTMLNode("tr");
+			tr.addChild("th", "nr.");
+			tr.addChild("th", "identity");
+			tr.addChild("th", "Trust");
+			tr.addChild("th", "Comment");
+			tr.addChild("th", "action");
+			table.addChild(tr);
 			
 			int i = 1;
-			for(Relationship edge : identity.getRelationships(Direction.OUTGOING, Rel.TRUSTS))
-			{
-				
-				if (edge.hasProperty(IEdge.SCORE) && edge.hasProperty(IEdge.COMMENT))
-				{
+			HTMLNode link;
+			HTMLNode td;
+			for(Relationship edge : identity.getRelationships(Direction.OUTGOING, Rel.TRUSTS)) {
+				if (edge.hasProperty(IEdge.SCORE) && edge.hasProperty(IEdge.COMMENT)) {
 					byte trustValue = (Byte) edge.getProperty(IEdge.SCORE);
 					String trustComment = (String) edge.getProperty(IEdge.COMMENT);
 					
 					String peerName;
 					Node peer_identity = edge.getEndNode();
-					if (peer_identity.hasProperty(IVertex.NAME))	peerName = (String) peer_identity.getProperty(IVertex.NAME);
-					else												peerName = "(Not yet downloaded)";
-					
+					if (peer_identity.hasProperty(IVertex.NAME)) {
+						peerName = (String) peer_identity.getProperty(IVertex.NAME);
+					} else {
+						peerName = "(Not yet downloaded)";
+					}
 					String peerID = (String) peer_identity.getProperty(IVertex.ID);
 
-					Element a = doc.createElement("a").attr("href", WebOfTrust.basePath+"/ShowIdentity?id="+peerID).text(peerName+" ("+peerID+")").attr("name", Integer.toString(i));
-					Element tr = doc.createElement("tr")
-							.appendChild(doc.createElement("td").text(Integer.toString(i)))
-							.appendChild(doc.createElement("td").appendChild(a))
-							.appendChild(doc.createElement("td").text(Integer.toString(trustValue)))
-							.appendChild(doc.createElement("td").text(trustComment));
-					tableTrust.appendChild(tr);
+					link = new HTMLNode("a", peerName+" ("+peerID+")");
+					link.addAttribute("href", WebOfTrust.basePath+"/ShowIdentity?id="+peerID);
+					link.addAttribute("name", Integer.toString(i));
+					tr = new HTMLNode("tr");
+					tr.addChild("td", Integer.toString(i));
+					td = new HTMLNode("td");
+					td.addChild(link);
+					tr.addChild(td);
+					tr.addChild("td", Integer.toString(trustValue));
+					tr.addChild("td", trustComment);
 					
-					//identity we are displaying is a local one, thus display additional options!
-					if (identity.hasProperty(IVertex.OWN_IDENTITY))
-					{
-						Element delete_edge_form = doc.createElement("form");
-						delete_edge_form.attr("action", WebOfTrust.basePath+"/ShowIdentity?id="+id + "#"+(i-1));
-						delete_edge_form.attr("method", "post");
-						delete_edge_form.appendChild(doc.createElement("input").attr("type", "submit").attr("value", "Remove"));
-						delete_edge_form.appendChild(doc.createElement("input").attr("type", "hidden").attr("value", "remove_edge").attr("name", "action"));
-						delete_edge_form.appendChild(doc.createElement("input").attr("type", "hidden").attr("value", Long.toString(edge.getId())).attr("name", "edge_id"));
-						tr.appendChild(doc.createElement("td").appendChild(delete_edge_form));
+					if (identity.hasProperty(IVertex.OWN_IDENTITY)) {
+						// identity we are displaying is a local one, thus display additional options!
+						form = new HTMLNode("form");
+						form.addAttribute("action", WebOfTrust.basePath+"/ShowIdentity?id="+id + "#"+(i-1));
+						form.addAttribute("method", "post");
+						form.addChild(Utils.getInput("submit", "", "Remove"));
+						form.addChild(Utils.getInput("hidden", "action", "remove_edge"));
+						form.addChild(Utils.getInput("hidden", "edge_id", Long.toString(edge.getId())));
+						td = new HTMLNode("td");
+						td.addChild(form);
+						tr.addChild(td);
+					} else {
+						tr.addChild("td");
 					}
-					
+					table.addChild(tr);
 					i += 1;
 				}
 			}
-			info_div.appendChild(tableTrust);
+			contentDiv.addChild(table);
 			
-			//explicit trust relations given by others
-			info_div.append("<h1>Explicit trust relations given by others to this identity:</h1>");
+			// explicit trust relations given by others
+			contentDiv.addChild("br");
+			contentDiv.addChild("b", "Explicit trust relations given by others to this identity:");
+			contentDiv.addChild("br");
+			contentDiv.addChild("br");
+			
+			table = new HTMLNode("table");
+			tr = new HTMLNode("tr");
+			tr.addChild("th", "nr.");
+			tr.addChild("th", "identity");
+			tr.addChild("th", "Trust");
+			tr.addChild("th", "Comment");
+			table.addChild(tr);
 
-			
-			Element tableTrusters = doc.createElement("table");
-			tableTrusters.appendChild(doc.createElement("tr")
-									.appendChild(doc.createElement("th").text("nr."))
-									.appendChild(doc.createElement("th").text("identity"))
-									.appendChild(doc.createElement("th").text("Trust"))
-									.appendChild(doc.createElement("th").text("Comment"))
-									);
 			i = 1;
-			for(Relationship edge : identity.getRelationships(Direction.INCOMING, Rel.TRUSTS))
-			{
+			for(Relationship edge : identity.getRelationships(Direction.INCOMING, Rel.TRUSTS)) {
 				Node peer_identity = edge.getStartNode();
 				byte trustValue = (Byte) edge.getProperty(IEdge.SCORE);
 				String trustComment = (String) edge.getProperty(IEdge.COMMENT);
 				
 				String peerName;
-				try	{ peerName = (String) peer_identity.getProperty(IVertex.NAME);	}
-				catch(org.neo4j.graphdb.NotFoundException e)	{ peerName = "... not retrieved yet ..."; }
+				try	{
+					peerName = (String) peer_identity.getProperty(IVertex.NAME);
+				} catch(org.neo4j.graphdb.NotFoundException e) {
+					peerName = "... not retrieved yet ...";
+				}
 				
 				String peerID = (String) peer_identity.getProperty(IVertex.ID);
-				
-				Element a = doc.createElement("a").attr("href", WebOfTrust.basePath+"/ShowIdentity?id="+peerID).text(peerName+" ("+peerID+")");
-				tableTrusters.appendChild(doc.createElement("tr")
-						.appendChild(doc.createElement("td").text(Integer.toString(i)))
-						.appendChild(doc.createElement("td").appendChild(a))
-						.appendChild(doc.createElement("td").text(Byte.toString(trustValue)))
-						.appendChild(doc.createElement("td").text(trustComment))
-						);
+				tr = new HTMLNode("tr");
+				link = new HTMLNode("a", peerName+" ("+peerID+")");
+				link.addAttribute("href", WebOfTrust.basePath+"/ShowIdentity?id="+peerID);
+				tr.addChild("td", Integer.toString(i));
+				td = new HTMLNode("td");
+				td.addChild(link);
+				tr.addChild(td);
+				tr.addChild("td", Byte.toString(trustValue));
+				tr.addChild("td", trustComment);
+				table.addChild(tr);
 
 				i += 1;
 			}
-			info_div.appendChild(tableTrusters);
-			
-			
-			writeReply(ctx, 200, "text/html", "content", doc.html());
+			contentDiv.addChild(table);
+			mPageNode.content.addChild(contentDiv);
+			// finally send the request
+			writeReply(ctx, 200, "text/html", "OK", mPageNode.outer.generate());
 		}
-		catch(Exception ex)
-		{
+		catch(Exception ex) {
+			// FIXME: catch only specific exceptions
 			ex.printStackTrace();
 			writeReply(ctx, 200, "text/plain", "error retrieve identity", "Cannot display identity, maybe it hasn't been retrieved from Freenet yet.");
-		}
-		finally
-		{
+		} finally {
+			// uh? why do we need this?
 		}
 	}
 
+	private HTMLNode getKeyPairRow(String key, String value, int property_index) {
+		HTMLNode tr = new HTMLNode("tr");
+		HTMLNode td;
+		// user modifiable key
+		td = new HTMLNode("td");
+		td.addChild(Utils.getInput("text", "propertyName"+property_index, key));
+		tr.addChild(td);
+		// user modifiable value
+		HTMLNode input = Utils.getInput("text", "propertyValue"+property_index, value);
+		input.addAttribute("size", "100");
+		td = new HTMLNode("td");
+		td.addChild(input);
+		tr.addChild(td);
+		// invisible old key
+		tr.addChild(Utils.getInput("hidden", "oldPropertyName"+property_index, key));
+		// invisible old value
+		tr.addChild(Utils.getInput("hidden", "oldPropertyValue"+property_index, value));
+		return tr;
+	}
 	
-	public void handleMethodPOST(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException
-	{
+	public void handleMethodPOST(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
 		if(WebOfTrust.allowFullAccessOnly && !ctx.isAllowedFullAccess()) {
-			writeHTMLReply(ctx, 403, "forbidden", "Your host is not allowed to access this page.");
+			writeReply(ctx, 403, "text/plain", "forbidden", "Your host is not allowed to access this page.");
 			return;
 		}
 		final String action = request.getPartAsStringFailsafe("action", 1000);
-
+		
 		Transaction tx = db.beginTx();
-		try
-		{
-			if (action.equals("remove_edge"))
-			{
+		try {
+			if (action.equals("remove_edge")) {
 				final long edge_id = Long.parseLong(request.getPartAsStringFailsafe("edge_id", 1000));
 				db.getRelationshipById(edge_id).delete();
+			} else if (action.equals("set_trust")) {
+				setTrust(request);
+			} else if (action.equals("modify_properties")) {
+				modifyProperties(request);
 			}
-			else if (action.equals("set_trust"))	setTrust(request);
-			else if (action.equals("modify_properties")) modifyProperties(request);
-		
 			tx.success();
-		}
-		finally
-		{
+		} finally {
 			tx.finish();
 		}
-
+		// finally treat the request like any GET request
 		handleMethodGET(uri, request, ctx);
 	}
 
-	private void modifyProperties(HTTPRequest request) 
-	{
+	private void modifyProperties(HTTPRequest request) {
 		final String id = request.getPartAsStringFailsafe("identity", 1000);
 		final Node id_vertex = nodeIndex.get(IVertex.ID, id).getSingle();
 		
 		int i = 0;
-		while(request.isPartSet("oldPropertyName"+i))
-		{
+		while(request.isPartSet("oldPropertyName"+i)) {
 			String oldPropertyName = request.getPartAsStringFailsafe("oldPropertyName"+i, 10000);
 			String oldPropertyValue = request.getPartAsStringFailsafe("oldPropertyValue"+i, 10000);
 			String propertyName = request.getPartAsStringFailsafe("propertyName"+i, 10000);
 			String propertyValue = request.getPartAsStringFailsafe("propertyValue"+i, 10000);
 
 			id_vertex.removeProperty(oldPropertyName);
-			if (!propertyName.trim().equals(""))
-			{
+			if (!propertyName.trim().equals("")) {
 				id_vertex.setProperty(propertyName, propertyValue);
 			}
-		
 			i += 1;
 		}
 	}
@@ -331,8 +351,16 @@ public class ShowIdentityController extends freenet.plugin.web.HTMLFileReaderToa
 
 		SetTrust.setTrust(db, nodeIndex, own_identity, identity, trustValue, trustComment);
 	}
-	
+
 	@Override
-	public void terminate() {
+	public boolean isEnabled(ToadletContext ctx) {
+		// TODO: wait for database initialization?
+		// return WebOfTrust.ReadyToRock;
+		return true;
+	}
+
+	@Override
+	public String path() {
+		return path;
 	}
 }

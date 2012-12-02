@@ -3,45 +3,62 @@ package plugins.WebOfTrust.pages;
 import java.io.IOException;
 import java.net.URI;
 
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
 import org.neo4j.graphdb.GraphDatabaseService;
 import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.Relationship;
+import org.neo4j.graphdb.index.ReadableIndex;
 import org.neo4j.tooling.GlobalGraphOperations;
 
 import plugins.WebOfTrust.WebOfTrust;
 import plugins.WebOfTrust.datamodel.IVertex;
 import plugins.WebOfTrust.datamodel.Rel;
 
-
 import freenet.client.HighLevelSimpleClient;
+import freenet.clients.http.LinkEnabledCallback;
+import freenet.clients.http.PageNode;
+import freenet.clients.http.Toadlet;
 import freenet.clients.http.ToadletContext;
 import freenet.clients.http.ToadletContextClosedException;
+import freenet.support.HTMLNode;
 import freenet.support.api.HTTPRequest;
 
-public class OverviewController extends freenet.plugin.web.HTMLFileReaderToadlet {
-
+public class OverviewController extends Toadlet implements LinkEnabledCallback {
+	private final String path;
+	private final GraphDatabaseService db;
+	// TODO: reference for ReadableIndex also not
+	// changeable during the whole lifetime? 
+	private ReadableIndex<Node> nodeIndex;
+	// TODO: is this local reference really needed?
+	// static members can also be reached through WebOfTrust.x
+	// if db is static in WebOfTrust also this reference is not needed
 	private WebOfTrust main;
 	
-	public OverviewController(WebOfTrust main, HighLevelSimpleClient client, String filepath, String URLPath, GraphDatabaseService db) {
-		super(client, main.getDB(), filepath, URLPath);
-		this.main = main;
+	public OverviewController(WebOfTrust main, HighLevelSimpleClient client, String URLPath, GraphDatabaseService db) {
+		super(client);
+		this.path = URLPath;
 		this.db = db;
+		this.main = main;
+		// TODO: can the nodeIndex be referenced like WebOfTrust.nodeIndex?
+		nodeIndex = db.index().getNodeAutoIndexer().getAutoIndex();
 	}
 
 	public void handleMethodGET(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException
 	{
 		if(WebOfTrust.allowFullAccessOnly && !ctx.isAllowedFullAccess()) {
-			writeHTMLReply(ctx, 403, "forbidden", "Your host is not allowed to access this page.");
+			writeReply(ctx, 403, "text/plain", "forbidden", "Your host is not allowed to access this page.");
 			return;
 		}
+		PageNode mPageNode = ctx.getPageMaker().getPageNode("LCWoT - overview", true, true, ctx);
+		mPageNode.addCustomStyleSheet(WebOfTrust.basePath + "/WebOfTrust.css");
+		HTMLNode contentDiv = new HTMLNode("div");
+		contentDiv.addAttribute("id", "WebOfTrust_overview");
+		// FIXME: just for testing.
+		// <br /> should be div margin/padding or something i guess
+		// if ^ stylesheet is correctly set up the <b> tags can become h1 and h2 again.
+		contentDiv.addChild("br");
+		
 		try
 		{
-			Document doc = Jsoup.parse(readFile());
-			Element stats_div = doc.select("#stats").first();
-
 			long count_identities = 0;
 			long count_trust_relations = 0;
 			
@@ -54,45 +71,53 @@ public class OverviewController extends freenet.plugin.web.HTMLFileReaderToadlet
 			{
 				if (rel.isType(Rel.TRUSTS)) count_trust_relations +=1;
 			}
-			
-			Element list = doc.createElement("ul");
-			
-			list.appendChild(doc.createElement("li").text("Number of identities: " + count_identities));
-			list.appendChild(doc.createElement("li").text("Number of trust relations: " + count_trust_relations));
-			list.appendChild(doc.createElement("li").text("Number of requests in flight currently: " + main.getRequestScheduler().getInFlightSize()));
-			list.appendChild(doc.createElement("li").text("Backlog: " + main.getRequestScheduler().getBacklogSize()));
-			list.appendChild(doc.createElement("li").text("Number of active db connections: " + 666));
-			
-			stats_div.appendChild(list);
 
-			stats_div.append("<h2> Own identities in local storage </h2>");
-			Element own_identities = doc.createElement("ul");
+			HTMLNode link = new HTMLNode("a");
+			link.addAttribute("href", WebOfTrust.basePath + "/restore.html");
+			link.addChild(new HTMLNode("b", "Manage local identities"));
+			contentDiv.addChild(link);
+			contentDiv.addChild("br");
+			contentDiv.addChild("br");
 			
+			contentDiv.addChild("b", "Here are some statistics to oogle");
+			contentDiv.addChild("br");
+			contentDiv.addChild("br");
+			HTMLNode list = new HTMLNode("ul");
+			list.addChild("li", "Number of identities: " + count_identities);
+			list.addChild("li", "Number of trust relations: " + count_trust_relations);
+			list.addChild("li", "Number of requests in flight currently: " + main.getRequestScheduler().getInFlightSize());
+			list.addChild("li", "Backlog: " + main.getRequestScheduler().getBacklogSize());
+			list.addChild("li", "Number of active db connections: orangejuice!"); // + 65537);
+			contentDiv.addChild(list);
+			contentDiv.addChild("br");
+			
+			contentDiv.addChild("b", "Own identities in local storage");
+			contentDiv.addChild("br");
+			list = new HTMLNode("ul");
 			for(Node identity : nodeIndex.get(IVertex.OWN_IDENTITY, true))
 			{
 				if (identity.hasProperty(IVertex.NAME) )
 				{
-					own_identities.appendChild(doc.createElement("li").text((String) identity.getProperty(IVertex.NAME) + "  (" + (String) identity.getProperty(IVertex.ID) + ")"));
+					list.addChild("li", (String) identity.getProperty(IVertex.NAME) + "  (" + (String) identity.getProperty(IVertex.ID) + ")");
 				}
 			}
-
-			stats_div.appendChild(own_identities);
-
+			contentDiv.addChild(list);
+			contentDiv.addChild("br");
 			
-			stats_div.append("<h2>URIs currently in flight</h2>");
-			Element inflight = doc.createElement("ol");
-			
+			contentDiv.addChild("b", "URIs currently in flight");
+			list = new HTMLNode("ol");
 			synchronized (main.getRequestScheduler().getInFlight()) {
 				for(String in : main.getRequestScheduler().getInFlight())
 				{
-					inflight.appendChild(doc.createElement("li").text(in));
+					list.addChild("li", in);
 				}
 			}
+			contentDiv.addChild(list);
+			mPageNode.content.addChild(contentDiv);
 			
-			stats_div.appendChild(inflight);
-			
-			writeReply(ctx, 200, "text/html", "content", doc.html());
+			writeReply(ctx, 200, "text/html", "OK", mPageNode.outer.generate());
 		}
+		// FIXME: catch only specific exceptions
 		catch(Exception ex)
 		{
 			ex.printStackTrace();
@@ -101,9 +126,16 @@ public class OverviewController extends freenet.plugin.web.HTMLFileReaderToadlet
 		{
 		}
 	}
-	
+
 	@Override
-	public void terminate() {
-		
+	public String path() {
+		return path;
+	}
+
+	@Override
+	public boolean isEnabled(ToadletContext ctx) {
+		// TODO: wait for database initialization?
+		// return WebOfTrust.ReadyToRock;
+		return true;
 	}
 }

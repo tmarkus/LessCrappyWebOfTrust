@@ -5,11 +5,9 @@ import java.util.List;
 import java.util.logging.Logger;
 
 import org.neo4j.graphdb.GraphDatabaseService;
-import org.neo4j.graphdb.config.Setting;
 import org.neo4j.graphdb.factory.GraphDatabaseFactory;
 import org.neo4j.graphdb.factory.GraphDatabaseSetting;
 import org.neo4j.graphdb.factory.GraphDatabaseSettings;
-import org.neo4j.graphdb.factory.GraphDatabaseSetting.BaseOptionsSetting;
 import org.neo4j.graphdb.index.IndexProvider;
 import org.neo4j.index.lucene.LuceneIndexProvider;
 import org.neo4j.kernel.ListIndexIterable;
@@ -17,12 +15,12 @@ import org.neo4j.kernel.impl.cache.CacheProvider;
 import org.neo4j.kernel.impl.cache.SoftCacheProvider;
 
 import plugins.WebOfTrust.datamodel.IContext;
-import plugins.WebOfTrust.datamodel.IEdge;
 import plugins.WebOfTrust.datamodel.IVertex;
 import plugins.WebOfTrust.pages.IdenticonController;
 import plugins.WebOfTrust.pages.IdentityManagement;
 import plugins.WebOfTrust.pages.OverviewController;
 import plugins.WebOfTrust.pages.ShowIdentityController;
+import plugins.WebOfTrust.pages.WebOfTrustCSS;
 import freenet.client.FetchContext;
 import freenet.client.HighLevelSimpleClient;
 import freenet.clients.http.Toadlet;
@@ -57,7 +55,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	
 	private PluginRespirator pr;
 	private WebInterface webInterface;
-	private final List<FileReaderToadlet> toadlets = new ArrayList<FileReaderToadlet>();
+	private final List<Toadlet> newToadlets = new ArrayList<Toadlet>();
 	private HighLevelSimpleClient hl;
 	
 	private GraphDatabaseService db;
@@ -68,27 +66,26 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	private FCPInterface fpi; 
 	private final static Logger LOGGER = Logger.getLogger(WebOfTrust.class.getName());
 
-	public GraphDatabaseService getDB()
-	{
+	public GraphDatabaseService getDB()	{
 		return this.db;
 	}
 	
-	public HighLevelSimpleClient getHL()
-	{
+	public HighLevelSimpleClient getHL() {
 		return this.hl;
 	}
 
-	public PluginRespirator getPR()
-	{
+	public PluginRespirator getPR()	{
 		return this.pr;
 	}
 
 	@Override
 	public void runPlugin(PluginRespirator pr) {
-
 		this.pr = pr;
 		this.hl = pr.getNode().clientCore.makeClient(RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS, false, true);
 		
+		// FIXME: this has no influence.
+		// ^ getFetchContext returns a new instance and thus
+		// ^ modifications are not mirrored back to the client
 		FetchContext fc = hl.getFetchContext();
 		fc.followRedirects = true;
 
@@ -132,9 +129,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		gdbf.setIndexProviders( providers );
 		gdbf.setCacheProviders( cacheList );
 		
-		
 		//db = gdbf.newEmbeddedDatabase(db_path);
-		
 		
 		db = gdbf.newEmbeddedDatabaseBuilder( db_path )
 		.setConfig( GraphDatabaseSettings.node_keys_indexable, IVertex.ID+","+IVertex.OWN_IDENTITY+","+IContext.NAME )
@@ -143,8 +138,6 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	    .setConfig( GraphDatabaseSettings.relationship_auto_indexing, GraphDatabaseSetting.TRUE )
 	    .newGraphDatabase();
 		
-		
-
 		/*
 		srv = new WrappingNeoServerBootstrapper( (InternalAbstractGraphDatabase) db );
 		srv.start();
@@ -158,41 +151,34 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	private void setupWebinterface()
 	{
 		LOGGER.info("Setting up webinterface");
+		
+		// TODO: remove
 		PluginContext pluginContext = new PluginContext(pr);
 		this.webInterface = new WebInterface(pluginContext);
 
-		//setup the manage page
-		FileReaderToadlet oc = new OverviewController(this,
-				pr.getHLSimpleClient(),
-				"/staticfiles/html/manage.html",
-				basePath, db);
-		toadlets.add(oc);
-
 		pr.getPageMaker().addNavigationCategory(basePath + "/","WebOfTrust.menuName.name", "WebOfTrust.menuName.tooltip", this);
 		ToadletContainer tc = pr.getToadletContainer();
+		
+		// pages
+		OverviewController oc = new OverviewController(this, pr.getHLSimpleClient(), basePath, db);
+		newToadlets.add(new WebOfTrustCSS(pr.getHLSimpleClient(), WebOfTrust.basePath + "/WebOfTrust.css"));
+		newToadlets.add(new ShowIdentityController(pr.getHLSimpleClient(), basePath + "/ShowIdentity", db));
+		newToadlets.add(new IdentityManagement(this, pr.getHLSimpleClient(), basePath+"/restore", db));
+		newToadlets.add(new IdenticonController(pr.getHLSimpleClient(), basePath+"/GetIdenticon"));
+		
+		// create fproxy menu items
 		tc.register(oc, "WebOfTrust.menuName.name", basePath + "/", true, "WebOfTrust.mainPage", "WebOfTrust.mainPage.tooltip", WebOfTrust.allowFullAccessOnly, oc);
 		tc.register(oc, null, basePath + "/", true, WebOfTrust.allowFullAccessOnly);
 		
-		//Identicons
-		toadlets.add(new IdenticonController(this,
-				pr.getHLSimpleClient(),
-				"",
-				basePath+"/GetIdenticon"));
-		
-		toadlets.add(new IdentityManagement(this,
-				pr.getHLSimpleClient(),
-				"/staticfiles/html/restore.html",
-				basePath+"/restore", db));
-
-		toadlets.add(new ShowIdentityController(this,
-				pr.getHLSimpleClient(),
-				"/staticfiles/html/showIdentity.html",
-				basePath+"/ShowIdentity", db));
-
-		for(Toadlet toadlet : toadlets)
-		{
-			webInterface.registerInvisible(toadlet);	
+		// register other toadlets without link in menu but as first item to check
+		// so it also works for paths which are included in the above menu links.
+		// full access only will be checked inside the specific toadlet
+		for(Toadlet curToad : newToadlets) {
+			tc.register(curToad, null, curToad.path(), true, false);
 		}
+		
+		// finally add toadlets which have been registered within the menu to our list
+		newToadlets.add(oc);
 	}
 
 
@@ -200,45 +186,42 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	public void terminate() {
 		LOGGER.info("Terminating plugin");
 
-		//tell everybody else that we are no longer running
+		// tell everybody else that we are no longer running
 		isRunning = false;
 		
-		
-		//remove Navigation category
+		// remove Navigation category
 		pr.getPageMaker().removeNavigationCategory("WebOfTrust.menuName.name");
 		
-		//deregister toadlets
+		// remove toadlets
 		ToadletContainer toadletContainer = pr.getToadletContainer();
-		for (FileReaderToadlet pageToadlet : toadlets) {
-				toadletContainer.unregister(pageToadlet);
-				pageToadlet.terminate();
+		for(Toadlet curToad : newToadlets) {
+			toadletContainer.unregister(curToad);
 		}
 
+		// TODO: remove
 		if (webInterface != null) webInterface.kill();
 
-		//interrupt the request scheduler
+		// interrupt the request scheduler
 		rs.interrupt();
 		
 		if( db != null ) {
 			System.out.println("Killing the graph database");
-			
 			//srv.stop();
 			
-			//shutdown the graph database
+			// shutdown the graph database
 			db.shutdown();
-
 			System.out.println("done");
 		}
 	}
 
 
-	public RequestScheduler getRequestScheduler()
-	{
+	public RequestScheduler getRequestScheduler() {
 		return this.rs;
 	}
 
 	@Override
 	public String getString(String key) {
+		// FIXME: either return key; or implement translation engine.
 		return "WoT";
 	}
 
@@ -257,6 +240,8 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 
 	@Override
 	public String handleHTTPGet(HTTPRequest request) throws PluginHTTPException {
+		// TODO: where is this triggered?
+		// TODO: if nowhere remove handleHTTP* + extends FredPluginHTTP
 		return "<html><body><head><title>Forward page...</title></head>" +
 				"<a href=\""+basePath+"/\">Click here to visit the overview page.</a>" +
 				"</body></html>";
@@ -272,8 +257,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 	public void handle(PluginReplySender prs, SimpleFieldSet sfs, Bucket bucket, int accessType) {
 		try {
 			fpi.handle(prs, sfs, bucket, accessType);
-		}
-		catch (PluginNotFoundException e) {
+		} catch (PluginNotFoundException e) {
 			e.printStackTrace();
 		}
 	}
