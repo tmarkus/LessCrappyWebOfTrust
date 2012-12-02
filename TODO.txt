@@ -1,3 +1,4 @@
+- disable property updates, because it's currently broken
 - don't remove-add all edges on an identity trustlist update, kinda inefficient for the database
 - lock the database when doing trust calculations OR wrap everything in 1 transaction and keep stuff in RAM
 - implement incremental trust updates
