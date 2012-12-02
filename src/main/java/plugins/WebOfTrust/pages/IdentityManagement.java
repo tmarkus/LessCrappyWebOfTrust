@@ -8,6 +8,7 @@ import org.neo4j.graphdb.GraphDatabaseService;
 import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.Relationship;
 import org.neo4j.graphdb.Transaction;
+import org.neo4j.graphdb.index.IndexHits;
 import org.neo4j.graphdb.index.ReadableIndex;
 
 import plugins.WebOfTrust.IdentityUpdater;
@@ -36,12 +37,7 @@ public class IdentityManagement extends Toadlet implements LinkEnabledCallback {
 
 	private final String path;
 	private final GraphDatabaseService db;
-	// TODO: reference for ReadableIndex also not
-	// changeable during the whole lifetime?
-	private ReadableIndex<Node> nodeIndex;
-	// TODO: is this local reference really needed?
-	// static members can also be reached through WebOfTrust.x
-	// if db is static in WebOfTrust also this reference is not needed
+	private final ReadableIndex<Node> nodeIndex;
 	private final WebOfTrust main;
 	
 	
@@ -64,7 +60,6 @@ public class IdentityManagement extends Toadlet implements LinkEnabledCallback {
 		this.main = main;
 		this.db = db;
 		this.path = URLPath;
-		// TODO: can the nodeIndex be referenced like WebOfTrust.nodeIndex?
 		nodeIndex = db.index().getNodeAutoIndexer().getAutoIndex();
 	}
 
@@ -85,28 +80,23 @@ public class IdentityManagement extends Toadlet implements LinkEnabledCallback {
 		contentDiv.addChild("br");
 		contentDiv.addChild("br");
 		HTMLNode form;
-		try {
-			HTMLNode p;
-			HTMLNode link;
-			for(Node own_vertex : nodeIndex.get(IVertex.OWN_IDENTITY, true)) {
-				// TODO: create a table to show the delete button behind the identity link
-				p = new HTMLNode("p");
-				link = new HTMLNode("a", (String) own_vertex.getProperty(IVertex.NAME));
-				link.addAttribute("href", "ShowIdentity?id="+(String) own_vertex.getProperty(IVertex.ID));
-				p.addChild(link);
-				form = new HTMLNode("form");
-				form.addAttribute("action", "restore.html");
-				form.addAttribute("method", "post");
-				form.addChild(Utils.getInput("hidden", "action", "delete"));
-				form.addChild(Utils.getInput("hidden", "id", (String) own_vertex.getProperty(IVertex.ID)));
-				form.addChild(Utils.getInput("submit", "", "delete"));
-				p.addChild(form);
-				contentDiv.addChild(p);
-			}
-		}
-		finally {
-			// uh? do we need this one?
-			// FIXME: no catch block at all?
+
+		HTMLNode p;
+		HTMLNode link;
+		for(Node own_vertex : nodeIndex.get(IVertex.OWN_IDENTITY, true)) {
+			// TODO: create a table to show the delete button behind the identity link
+			p = new HTMLNode("p");
+			link = new HTMLNode("a", (String) own_vertex.getProperty(IVertex.NAME));
+			link.addAttribute("href", "ShowIdentity?id="+(String) own_vertex.getProperty(IVertex.ID));
+			p.addChild(link);
+			form = new HTMLNode("form");
+			form.addAttribute("action", "restore.html");
+			form.addAttribute("method", "post");
+			form.addChild(Utils.getInput("hidden", "action", "delete"));
+			form.addChild(Utils.getInput("hidden", "id", (String) own_vertex.getProperty(IVertex.ID)));
+			form.addChild(Utils.getInput("submit", "", "delete"));
+			p.addChild(form);
+			contentDiv.addChild(p);
 		}
 		
 		// restore form
@@ -168,7 +158,6 @@ public class IdentityManagement extends Toadlet implements LinkEnabledCallback {
 			}
 		    tx.success();
 		} finally {
-			// FIXME: no catch block at all?
 			tx.finish();
 		}
 		
@@ -184,14 +173,15 @@ public class IdentityManagement extends Toadlet implements LinkEnabledCallback {
 		
 		Transaction tx = db.beginTx();
 		try {
-			Node node = nodeIndex.get(IVertex.ID, id).getSingle();
-			for(Relationship rel : node.getRelationships()) {
-				rel.delete();
+			for(Node node : nodeIndex.get(IVertex.ID, id))
+			{
+				for(Relationship rel : node.getRelationships()) {
+					rel.delete();
+				}
+				node.delete();
 			}
-			node.delete();
 			tx.success();
 		} finally {
-			// FIXME: no catch block at all?
 			tx.finish();
 		}
 	}
@@ -215,16 +205,21 @@ public class IdentityManagement extends Toadlet implements LinkEnabledCallback {
 					.setDocName(WebOfTrust.namespace)
 					.setSuggestedEdition(insertURI.getEdition())
 					.setMetaString(null);
-			Node own_vertex = addOwnIdentity(requestURI, insertURI);
-
-			Transaction tx = db.beginTx();
-			try {
-				own_vertex.setProperty(IVertex.DONT_INSERT, true);
-				tx.success();
-			} finally {
-				tx.finish();
-			}
 			
+			
+			 if ( nodeIndex.get(IVertex.ID, Utils.getIDFromKey(requestURI)).size() == 0 ) 
+			 {
+				Node own_vertex = addOwnIdentity(requestURI, insertURI);
+	
+				Transaction tx = db.beginTx();
+				try {
+					own_vertex.setProperty(IVertex.DONT_INSERT, true);
+					tx.success();
+				} finally {
+					tx.finish();
+				}
+			 }
+				
 			// Fetch the identity from freenet
 			System.out.println("Starting to fetch your own identity");
 			
@@ -300,7 +295,6 @@ public class IdentityManagement extends Toadlet implements LinkEnabledCallback {
 			
 			return vertex;
 		} finally {
-			// FIXME: no catch block at all?
 			tx.finish();
 		}
 	}
