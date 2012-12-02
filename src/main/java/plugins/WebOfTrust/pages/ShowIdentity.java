@@ -29,12 +29,12 @@ import freenet.clients.http.ToadletContextClosedException;
 import freenet.support.HTMLNode;
 import freenet.support.api.HTTPRequest;
 
-public class ShowIdentityController extends Toadlet implements LinkEnabledCallback {
+public class ShowIdentity extends Toadlet implements LinkEnabledCallback {
 	private final String path;
 	private final GraphDatabaseService db;
 	private final ReadableIndex<Node> nodeIndex;
 	
-	public ShowIdentityController(HighLevelSimpleClient client, String URLPath, GraphDatabaseService db) {
+	public ShowIdentity(HighLevelSimpleClient client, String URLPath, GraphDatabaseService db) {
 		super(client);
 		this.db = db;
 		this.path = URLPath;

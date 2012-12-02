@@ -22,13 +22,13 @@ import freenet.clients.http.ToadletContextClosedException;
 import freenet.support.HTMLNode;
 import freenet.support.api.HTTPRequest;
 
-public class OverviewController extends Toadlet implements LinkEnabledCallback {
+public class Overview extends Toadlet implements LinkEnabledCallback {
 	private final String path;
 	private final GraphDatabaseService db;
 	private final ReadableIndex<Node> nodeIndex;
 	private final WebOfTrust main;
 	
-	public OverviewController(WebOfTrust main, HighLevelSimpleClient client, String URLPath, GraphDatabaseService db) {
+	public Overview(WebOfTrust main, HighLevelSimpleClient client, String URLPath, GraphDatabaseService db) {
 		super(client);
 		this.path = URLPath;
 		this.db = db;

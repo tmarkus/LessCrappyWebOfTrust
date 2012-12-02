@@ -19,10 +19,10 @@ import freenet.support.IllegalBase64Exception;
 import freenet.support.api.HTTPRequest;
 import freenet.support.io.Closer;
 
-public class IdenticonController extends Toadlet implements LinkEnabledCallback {
+public class IdenticonGenerator extends Toadlet implements LinkEnabledCallback {
 	private final String path;
 	
-	public IdenticonController(HighLevelSimpleClient client, String URLPath) {
+	public IdenticonGenerator(HighLevelSimpleClient client, String URLPath) {
 		super(client);
 		this.path = URLPath;
 	}

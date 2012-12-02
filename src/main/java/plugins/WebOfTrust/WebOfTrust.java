@@ -16,10 +16,10 @@ import org.neo4j.kernel.impl.cache.SoftCacheProvider;
 
 import plugins.WebOfTrust.datamodel.IContext;
 import plugins.WebOfTrust.datamodel.IVertex;
-import plugins.WebOfTrust.pages.IdenticonController;
+import plugins.WebOfTrust.pages.IdenticonGenerator;
 import plugins.WebOfTrust.pages.IdentityManagement;
-import plugins.WebOfTrust.pages.OverviewController;
-import plugins.WebOfTrust.pages.ShowIdentityController;
+import plugins.WebOfTrust.pages.Overview;
+import plugins.WebOfTrust.pages.ShowIdentity;
 import freenet.client.FetchContext;
 import freenet.client.HighLevelSimpleClient;
 import freenet.clients.http.Toadlet;
@@ -160,11 +160,11 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		ToadletContainer tc = pr.getToadletContainer();
 		
 		// pages
-		OverviewController oc = new OverviewController(this, pr.getHLSimpleClient(), basePath, db);
+		Overview oc = new Overview(this, pr.getHLSimpleClient(), basePath, db);
 		newToadlets.add(new CSSFileReaderToadlet(pr.getHLSimpleClient(), db, "/staticfiles/css/WebOfTrust.css", basePath + "/WebOfTrust.css"));
-		newToadlets.add(new ShowIdentityController(pr.getHLSimpleClient(), basePath + "/ShowIdentity", db));
+		newToadlets.add(new ShowIdentity(pr.getHLSimpleClient(), basePath + "/ShowIdentity", db));
 		newToadlets.add(new IdentityManagement(this, pr.getHLSimpleClient(), basePath+"/restore", db));
-		newToadlets.add(new IdenticonController(pr.getHLSimpleClient(), basePath+"/GetIdenticon"));
+		newToadlets.add(new IdenticonGenerator(pr.getHLSimpleClient(), basePath+"/GetIdenticon"));
 		
 		// create fproxy menu items
 		tc.register(oc, "WebOfTrust.menuName.name", basePath + "/", true, "WebOfTrust.mainPage", "WebOfTrust.mainPage.tooltip", WebOfTrust.allowFullAccessOnly, oc);
