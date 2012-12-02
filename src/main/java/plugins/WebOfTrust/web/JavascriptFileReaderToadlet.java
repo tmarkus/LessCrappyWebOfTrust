@@ -1,4 +1,4 @@
-package freenet.plugin.web;
+package plugins.WebOfTrust.web;
 
 import java.io.IOException;
 import java.net.URI;

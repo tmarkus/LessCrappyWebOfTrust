@@ -1,4 +1,4 @@
-package freenet.plugin.web;
+package plugins.WebOfTrust.web;
 
 
 import java.io.BufferedReader;
