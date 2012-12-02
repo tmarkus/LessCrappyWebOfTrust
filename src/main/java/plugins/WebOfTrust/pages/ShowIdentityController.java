@@ -32,15 +32,12 @@ import freenet.support.api.HTTPRequest;
 public class ShowIdentityController extends Toadlet implements LinkEnabledCallback {
 	private final String path;
 	private final GraphDatabaseService db;
-	// TODO: reference for ReadableIndex also not
-	// changeable during the whole lifetime?
-	private ReadableIndex<Node> nodeIndex;
+	private final ReadableIndex<Node> nodeIndex;
 	
 	public ShowIdentityController(HighLevelSimpleClient client, String URLPath, GraphDatabaseService db) {
 		super(client);
 		this.db = db;
 		this.path = URLPath;
-		// TODO: can the nodeIndex be referenced like WebOfTrust.nodeIndex?
 		nodeIndex = db.index().getNodeAutoIndexer().getAutoIndex();
 	}
 

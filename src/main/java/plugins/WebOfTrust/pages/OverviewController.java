@@ -25,20 +25,14 @@ import freenet.support.api.HTTPRequest;
 public class OverviewController extends Toadlet implements LinkEnabledCallback {
 	private final String path;
 	private final GraphDatabaseService db;
-	// TODO: reference for ReadableIndex also not
-	// changeable during the whole lifetime? 
-	private ReadableIndex<Node> nodeIndex;
-	// TODO: is this local reference really needed?
-	// static members can also be reached through WebOfTrust.x
-	// if db is static in WebOfTrust also this reference is not needed
-	private WebOfTrust main;
+	private final ReadableIndex<Node> nodeIndex;
+	private final WebOfTrust main;
 	
 	public OverviewController(WebOfTrust main, HighLevelSimpleClient client, String URLPath, GraphDatabaseService db) {
 		super(client);
 		this.path = URLPath;
 		this.db = db;
 		this.main = main;
-		// TODO: can the nodeIndex be referenced like WebOfTrust.nodeIndex?
 		nodeIndex = db.index().getNodeAutoIndexer().getAutoIndex();
 	}
 
