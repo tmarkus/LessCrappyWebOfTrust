@@ -30,6 +30,7 @@ import freenet.keys.FreenetURI;
 public class RequestScheduler extends Thread {
 
 	public static final int MAX_REQUESTS = 10; 
+	public static final int QUICKLY_CLEAR_BIG_BACKLOG_THRESHOLD = 5;
 	
 	private static final int MAX_MAINTENANCE_REQUESTS = 1; 
 	private static final double PROBABILITY_OF_FETCHING_DIRECTLY_TRUSTED_IDENTITY = 0.7;
@@ -94,7 +95,7 @@ public class RequestScheduler extends Thread {
 				
 				//chill out a bit
 				try {
-					if (getBacklogSize() > 10)
+					if (getBacklogSize() > QUICKLY_CLEAR_BIG_BACKLOG_THRESHOLD)
 					{
 						Thread.sleep(MINIMAL_SLEEP_TIME_WITH_BIG_BACKLOG);						
 					}
