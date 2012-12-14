@@ -12,6 +12,7 @@ import org.neo4j.graphdb.GraphDatabaseService;
 import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.Relationship;
 
+import plugins.WebOfTrust.WebOfTrust;
 import plugins.WebOfTrust.datamodel.IContext;
 import plugins.WebOfTrust.datamodel.IEdge;
 import plugins.WebOfTrust.datamodel.IVertex;
@@ -118,7 +119,7 @@ public class GetIdentitiesByScore extends GetIdentity {
 			}
 		}
 		
-		System.out.println("GetIdentitiesByScore returned " + i + " identities for the context: " + context);
+		if (WebOfTrust.DEBUG) System.out.println("GetIdentitiesByScore returned " + i + " identities for the context: " + context);
 		
 		return reply;
 	}

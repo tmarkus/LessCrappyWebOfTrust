@@ -46,6 +46,8 @@ import freenet.support.plugins.helpers1.WebInterface;
 
 public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginFCP, FredPluginL10n, FredPluginVersioned, FredPluginHTTP{
 
+	public static final boolean DEBUG = false;
+	
 	private static final String db_path = "LCWoT"; 
 	public static final String basePath = "/WebOfTrust";
 	public static final int FETCH_MAX_FILE_SIZE = 2000000; 

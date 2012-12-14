@@ -36,8 +36,7 @@ public class FCPInterface {
 			//call its handle method with the input data
 			final SimpleFieldSet reply = handler.handle(sfs);
 
-			System.out.println(sfs.get("Message") + " took: " + (System.currentTimeMillis()-start)  + "ms");
-
+			if (WebOfTrust.DEBUG) System.out.println(sfs.get("Message") + " took: " + (System.currentTimeMillis()-start)  + "ms");
 			
 			//send the reply
 			prs.send(reply);
