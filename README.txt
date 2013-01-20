@@ -5,8 +5,7 @@ You may need to install the freenet dependencies manually. See https://github.co
 
 ## Requirements
 
-* jsoup
-* neo4j
+* maven2
 
 ## Building
 
