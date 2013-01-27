@@ -67,6 +67,9 @@ public class IdentityUpdater implements ClientGetCallback{
 
 		try
 		{
+			//register that we're updating an identity
+			rs.updating = true;
+			
 			//deregister our request
 			rs.removeInFlight(cg);
 
@@ -75,10 +78,17 @@ public class IdentityUpdater implements ClientGetCallback{
 
 			//try to add additional trust relations
 			addTrustRelations(doc, cg.getURI());
+			
+			//we've finished updating the identity
+			rs.updating = false;
 		}
 		catch(Exception e)
 		{
 			e.printStackTrace();	
+		}
+		finally
+		{
+			rs.updating = false; //always mark the requestscheduler as being finished with updating
 		}
 	}
 

@@ -205,12 +205,16 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 
 		// interrupt the request scheduler and give it 10 seconds to clean up
 		rs.interrupt();
-		try {
-			Thread.sleep(10000);
-		} catch (InterruptedException e) {
-			e.printStackTrace();
+		while(rs.updating)
+		{
+			System.err.println("LCWoT - delaying shutdown, because still processing requests...");
+			try {
+				Thread.sleep(1000);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
 		}
-		
+			
 		if( db != null ) {
 			System.out.println("Killing the graph database");
 			//srv.stop();

@@ -55,6 +55,7 @@ public class RequestScheduler extends Thread {
 	private long wot_last_updated = 0;
 	private final ReadableIndex<Node> nodeIndex;
 
+	public volatile boolean updating = false;
 	
 	public RequestScheduler(WebOfTrust main, GraphDatabaseService db, HighLevelSimpleClient hl)
 	{
