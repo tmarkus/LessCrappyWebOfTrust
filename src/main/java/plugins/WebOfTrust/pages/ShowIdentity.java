@@ -118,11 +118,31 @@ public class ShowIdentity extends Toadlet implements LinkEnabledCallback {
 			contextDiv.addChild("b", "Contexts");
 			contextDiv.addChild("br");
 			contextDiv.addChild("br");
-			HTMLNode list = new HTMLNode("ul");
+			HTMLNode context_list = new HTMLNode("table");
 			for(Relationship rel : identity.getRelationships(Direction.OUTGOING, Rel.HAS_CONTEXT)) {
-				list.addChild("li", (String) rel.getEndNode().getProperty(IContext.NAME));
+				tr = new HTMLNode("tr");
+				
+				final String context = (String) rel.getEndNode().getProperty(IContext.NAME);
+				HTMLNode td = new HTMLNode("td", context);
+				tr.addChild(td);
+				
+				if ((Boolean) identity.getProperty(IVertex.OWN_IDENTITY) == true)
+				{
+					// identity we are displaying is a local one, thus display additional options!
+					HTMLNode td_form = new HTMLNode("td");
+					form = new HTMLNode("form");
+					form.addAttribute("action", WebOfTrust.basePath+"/ShowIdentity?id="+id);
+					form.addAttribute("method", "post");
+					form.addChild(Utils.getInput("submit", "", "Remove"));
+					form.addChild(Utils.getInput("hidden", "action", "remove_context"));
+					form.addChild(Utils.getInput("hidden", "context", context));
+					form.addChild(Utils.getInput("hidden", "own_identity_id", id));
+					td_form.addChild(form);
+					tr.addChild(td_form);
+				}
 			}
-			contextDiv.addChild(list);
+
+			contextDiv.addChild(context_list);
 			contentDiv.addChild(contextDiv);
 			
 			// allow specifying an updated trust value
@@ -316,6 +336,10 @@ public class ShowIdentity extends Toadlet implements LinkEnabledCallback {
 			} else if (action.equals("modify_properties")) {
 				modifyProperties(request);
 			}
+			else if (action.equals("remove_context"))
+			{
+				removeContext(request);
+			}
 			tx.success();
 		} finally {
 			tx.finish();
@@ -323,6 +347,38 @@ public class ShowIdentity extends Toadlet implements LinkEnabledCallback {
 		// finally treat the request like any GET request
 		handleMethodGET(uri, request, ctx);
 	}
+
+	/**
+	 * Remove a context from a local identity
+	 * @param request
+	 */
+	
+	private void removeContext(HTTPRequest request) {
+		final String context_to_remove = request.getParam("context");
+		final String id = request.getParam("own_identity_id");
+	
+		Transaction tx = db.beginTx();
+		try
+		{
+			for(Node node : nodeIndex.get(IVertex.ID, id))
+			{
+				for(Relationship rel : node.getRelationships(Rel.HAS_CONTEXT, Direction.OUTGOING))
+				{
+					final String storedContext = (String) rel.getEndNode().getProperty(IContext.NAME);
+					if (storedContext.equals(context_to_remove))
+					{
+						rel.delete();
+					}
+				}
+			}
+			tx.success();
+		}
+		finally
+		{
+			tx.finish();
+		}
+	}
+	
 
 	private void modifyProperties(HTTPRequest request) throws InstantiationException, IllegalAccessException, ClassNotFoundException {
 		final String id = request.getPartAsStringFailsafe("identity", 1000);
