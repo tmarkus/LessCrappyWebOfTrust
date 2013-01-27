@@ -166,12 +166,16 @@ public class OwnIdentityInserter implements Runnable, ClientPutCallback  {
 		Transaction tx = db.beginTx();
 		try {
 			FreenetURI newRequestURI = new FreenetURI( (String) own_vertex.getProperty(IVertex.REQUEST_URI));
+			FreenetURI newInsertURI = new FreenetURI( (String) own_vertex.getProperty(IVertex.INSERT_URI));
+			
 			long new_edition = cp.getURI().getEdition();
 			newRequestURI = newRequestURI.setSuggestedEdition(new_edition);
+			newInsertURI = newInsertURI.setSuggestedEdition(new_edition);
 			
 			own_vertex.setProperty(IVertex.EDITION, cp.getURI().getEdition());
 			own_vertex.setProperty(IVertex.REQUEST_URI, newRequestURI.toASCIIString());
-		
+			own_vertex.setProperty(IVertex.INSERT_URI, newInsertURI.toASCIIString());
+			
 			//update the hash value after these updates (otherwise infinite insert
 			own_vertex.setProperty(IVertex.HASH, calculateIdentityHash(own_vertex));
 		
