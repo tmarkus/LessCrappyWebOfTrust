@@ -12,11 +12,9 @@
 - use priority queue for fetches to make sure that own identities are fetched before all others on the queue
 -- required for quickly restoring multiple identities
 - make priority levels and such configurable
-- Beautify HTML pages for various actions (CSS)
 
 === After first BETA ===
 
-- specify the identity restore key format
 - create page where you can search for an identity and go to its identity info page (listing all identities is CRAZY)
 - add random delay to identity insertion? -> after a restart of freenet local identities may be inserted at similar times.
 -- Correlating USK updates times could lead to identity compromise.
