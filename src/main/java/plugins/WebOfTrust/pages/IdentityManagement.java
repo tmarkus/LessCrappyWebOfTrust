@@ -201,8 +201,11 @@ public class IdentityManagement extends Toadlet implements LinkEnabledCallback {
 		ClientGetCallback cc = new IdentityUpdater(rs, db, hl, true);  
 
 		try {
+			//check whether the insert URI is indeed OK or not
+			insertURI.checkInsertURI();
+
+			//create a request/insert keypair
 			InsertableClientSSK key = null;
-			
 			if (insertURI.isSSK())
 			{
 				key = InsertableClientSSK.create(insertURI);
@@ -215,10 +218,6 @@ public class IdentityManagement extends Toadlet implements LinkEnabledCallback {
 			{
 				throw new KeyDecodeException("Specified restore key not allowed here.");
 			}
-			
-			//check whether the insert URI is indeed OK or not
-			FreenetURI.checkInsertURI(key.getInsertURI());
-			
 			
 			FreenetURI requestURI = key.getURI().setKeyType("USK")
 					.setDocName(WebOfTrust.namespace)
