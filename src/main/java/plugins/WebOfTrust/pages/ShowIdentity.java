@@ -130,16 +130,16 @@ public class ShowIdentity extends Toadlet implements LinkEnabledCallback {
 				{
 					// identity we are displaying is a local one, thus display additional options!
 					HTMLNode td_form = new HTMLNode("td");
-					form = new HTMLNode("form");
-					form.addAttribute("action", WebOfTrust.basePath+"/ShowIdentity?id="+id);
-					form.addAttribute("method", "post");
-					form.addChild(Utils.getInput("submit", "", "Remove"));
-					form.addChild(Utils.getInput("hidden", "action", "remove_context"));
-					form.addChild(Utils.getInput("hidden", "context", context));
-					form.addChild(Utils.getInput("hidden", "own_identity_id", id));
-					td_form.addChild(form);
+					HTMLNode context_form = new HTMLNode("form");
+					context_form.addAttribute("action", WebOfTrust.basePath+"/ShowIdentity?id="+id);
+					context_form.addAttribute("method", "post");
+					context_form.addChild(Utils.getInput("submit", "", "Remove"));
+					context_form.addChild(Utils.getInput("hidden", "action", "remove_context"));
+					context_form.addChild(Utils.getInput("hidden", "context", context));
+					context_form.addChild(Utils.getInput("hidden", "own_identity_id", id));
+					td_form.addChild(context_form);
 					tr.addChild(td_form);
-					table.addChild(tr);
+					context_table.addChild(tr);
 				}
 			}
 			
@@ -355,8 +355,8 @@ public class ShowIdentity extends Toadlet implements LinkEnabledCallback {
 	 */
 	
 	private void removeContext(HTTPRequest request) {
-		final String context_to_remove = request.getParam("context");
-		final String id = request.getParam("own_identity_id");
+		final String context_to_remove = request.getPartAsStringFailsafe("context", 1000);
+		final String id = request.getPartAsStringFailsafe("own_identity_id", 1000);
 	
 		Transaction tx = db.beginTx();
 		try
