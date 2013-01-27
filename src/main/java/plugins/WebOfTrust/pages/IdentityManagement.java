@@ -227,7 +227,7 @@ public class IdentityManagement extends Toadlet implements LinkEnabledCallback {
 			
 			 if ( nodeIndex.get(IVertex.ID, Utils.getIDFromKey(requestURI)).size() == 0 ) 
 			 {
-				Node own_vertex = addOwnIdentity(requestURI, insertURI);
+				Node own_vertex = addOwnIdentity(requestURI, key.getInsertURI());
 	
 				Transaction tx = db.beginTx();
 				try {
