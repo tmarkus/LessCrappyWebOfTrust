@@ -1,6 +1,8 @@
 package plugins.WebOfTrust.pages;
 
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.net.URI;
 import java.util.SortedSet;
 import java.util.TreeSet;
@@ -88,7 +90,7 @@ public class ShowIdentity extends Toadlet implements LinkEnabledCallback {
 			for(String key : sortedKeys) {
 				Object value = identity.getProperty(key);
 				if (is_own_identity) {
-					table.addChild(getKeyPairRow(key, value.toString(), property_index));
+					table.addChild(getKeyPairRow(key, value, property_index));
 				}
 				else {
 					tr = new HTMLNode("tr");
@@ -276,7 +278,7 @@ public class ShowIdentity extends Toadlet implements LinkEnabledCallback {
 		}
 	}
 
-	private HTMLNode getKeyPairRow(String key, String value, int property_index) {
+	private HTMLNode getKeyPairRow(String key, Object value, int property_index) {
 		HTMLNode tr = new HTMLNode("tr");
 		HTMLNode td;
 		// user modifiable key
@@ -284,19 +286,20 @@ public class ShowIdentity extends Toadlet implements LinkEnabledCallback {
 		td.addChild(Utils.getInput("text", "propertyName"+property_index, key));
 		tr.addChild(td);
 		// user modifiable value
-		HTMLNode input = Utils.getInput("text", "propertyValue"+property_index, value);
+		HTMLNode input = Utils.getInput("text", "propertyValue"+property_index, value.toString());
 		input.addAttribute("size", "100");
 		td = new HTMLNode("td");
 		td.addChild(input);
 		tr.addChild(td);
 		// invisible old key
+		tr.addChild(Utils.getInput("hidden", "propertyType"+property_index, value.getClass().getName().toString()));
 		tr.addChild(Utils.getInput("hidden", "oldPropertyName"+property_index, key));
 		// invisible old value
-		tr.addChild(Utils.getInput("hidden", "oldPropertyValue"+property_index, value));
+		tr.addChild(Utils.getInput("hidden", "oldPropertyValue"+property_index, value.toString()));
 		return tr;
 	}
 	
-	public void handleMethodPOST(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
+	public void handleMethodPOST(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException, InstantiationException, IllegalAccessException, ClassNotFoundException {
 		if(WebOfTrust.allowFullAccessOnly && !ctx.isAllowedFullAccess()) {
 			writeReply(ctx, 403, "text/plain", "forbidden", "Your host is not allowed to access this page.");
 			return;
@@ -321,7 +324,7 @@ public class ShowIdentity extends Toadlet implements LinkEnabledCallback {
 		handleMethodGET(uri, request, ctx);
 	}
 
-	private void modifyProperties(HTTPRequest request) {
+	private void modifyProperties(HTTPRequest request) throws InstantiationException, IllegalAccessException, ClassNotFoundException {
 		final String id = request.getPartAsStringFailsafe("identity", 1000);
 		final Node id_vertex = nodeIndex.get(IVertex.ID, id).getSingle();
 		
@@ -331,11 +334,29 @@ public class ShowIdentity extends Toadlet implements LinkEnabledCallback {
 			String oldPropertyValue = request.getPartAsStringFailsafe("oldPropertyValue"+i, 10000);
 			String propertyName = request.getPartAsStringFailsafe("propertyName"+i, 10000);
 			String propertyValue = request.getPartAsStringFailsafe("propertyValue"+i, 10000);
+			String propertyType = request.getPartAsStringFailsafe("propertyType"+i, 10000);
 
+			try {
+
+			//build the right object type using the string representation
+			Object realPropertyValue = Class.forName(propertyType).getDeclaredConstructor(String.class).newInstance(propertyValue);
+			
+			//update the property in the graph database
 			id_vertex.removeProperty(oldPropertyName);
-			if (!propertyName.trim().equals("")) {
-				id_vertex.setProperty(propertyName, propertyValue);
+			if (!propertyName.trim().equals("")) { //only re-add when it is an actual value!
+				id_vertex.setProperty(propertyName, realPropertyValue);
 			}
+			
+			} catch (NoSuchMethodException e) {
+				e.printStackTrace();
+			} catch (SecurityException e) {
+				e.printStackTrace();
+			} catch (IllegalArgumentException e) {
+				e.printStackTrace();
+			} catch (InvocationTargetException e) {
+				e.printStackTrace();
+			}
+			
 			i += 1;
 		}
 	}
