@@ -29,6 +29,7 @@ import freenet.clients.http.ToadletContext;
 import freenet.clients.http.ToadletContextClosedException;
 import freenet.keys.FreenetURI;
 import freenet.keys.InsertableClientSSK;
+import freenet.keys.KeyDecodeException;
 import freenet.node.RequestStarter;
 import freenet.support.HTMLNode;
 import freenet.support.api.HTTPRequest;
@@ -108,7 +109,7 @@ public class IdentityManagement extends Toadlet implements LinkEnabledCallback {
 		HTMLNode fieldset = new HTMLNode("fieldSet");
 		fieldset.addChild("legend", "Restore an identity");
 		fieldset.addChild(Utils.getInput("hidden", "action", "restore"));
-		fieldset.addChild("span", "Insert URI: ");
+		fieldset.addChild("span", "Insert USK key: ");
 		fieldset.addChild(Utils.getInput("text", "insertURI", ""));
 		fieldset.addChild("br");
 		fieldset.addChild(Utils.getInput("submit", "", "restore"));
@@ -200,7 +201,25 @@ public class IdentityManagement extends Toadlet implements LinkEnabledCallback {
 		ClientGetCallback cc = new IdentityUpdater(rs, db, hl, true);  
 
 		try {
-			InsertableClientSSK key = InsertableClientSSK.create(insertURI.sskForUSK());
+			InsertableClientSSK key = null;
+			
+			if (insertURI.isSSK())
+			{
+				key = InsertableClientSSK.create(insertURI);
+			}
+			else if (insertURI.isUSK())
+			{
+				key = InsertableClientSSK.create(insertURI.sskForUSK());	
+			}
+			else
+			{
+				throw new KeyDecodeException("Specified restore key not allowed here.");
+			}
+			
+			//check whether the insert URI is indeed OK or not
+			FreenetURI.checkInsertURI(key.getInsertURI());
+			
+			
 			FreenetURI requestURI = key.getURI().setKeyType("USK")
 					.setDocName(WebOfTrust.namespace)
 					.setSuggestedEdition(insertURI.getEdition())
