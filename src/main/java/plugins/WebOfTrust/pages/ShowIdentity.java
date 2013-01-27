@@ -125,7 +125,7 @@ public class ShowIdentity extends Toadlet implements LinkEnabledCallback {
 				HTMLNode td = new HTMLNode("td", context);
 				tr.addChild(td);
 				
-				if ((Boolean) identity.getProperty(IVertex.OWN_IDENTITY) == true)
+				if (identity.hasProperty(IVertex.OWN_IDENTITY))
 				{
 					// identity we are displaying is a local one, thus display additional options!
 					HTMLNode td_form = new HTMLNode("td");
