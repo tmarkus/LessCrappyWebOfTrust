@@ -203,8 +203,13 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		// TODO: remove
 		if (webInterface != null) webInterface.kill();
 
-		// interrupt the request scheduler
+		// interrupt the request scheduler and give it 10 seconds to clean up
 		rs.interrupt();
+		try {
+			Thread.sleep(10000);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
 		
 		if( db != null ) {
 			System.out.println("Killing the graph database");

@@ -111,12 +111,6 @@ public class RequestScheduler extends Thread {
 			{
 				System.out.println("An exception was thrown in the requestScheduler. Please report with sufficient details!");
 				e.printStackTrace();
-				
-				try {
-					Thread.sleep(5000);
-				} catch (InterruptedException e1) {
-					e1.printStackTrace();
-				}
 			}
 		}
 		

@@ -36,7 +36,7 @@ public class IdentityUpdater implements ClientGetCallback{
 	private final boolean isOwnIdentity;
 	private RequestScheduler rs;
 	private ReadableIndex<org.neo4j.graphdb.Node> nodeIndex;
-
+	
 	public IdentityUpdater(RequestScheduler rs, GraphDatabaseService db, HighLevelSimpleClient hl, boolean isOwnIdentity)
 	{
 		this.db = db;
