@@ -118,7 +118,7 @@ public class ShowIdentity extends Toadlet implements LinkEnabledCallback {
 			contextDiv.addChild("b", "Contexts");
 			contextDiv.addChild("br");
 			contextDiv.addChild("br");
-			HTMLNode context_list = new HTMLNode("table");
+			HTMLNode context_table = new HTMLNode("table");
 			for(Relationship rel : identity.getRelationships(Direction.OUTGOING, Rel.HAS_CONTEXT)) {
 				tr = new HTMLNode("tr");
 				
@@ -141,8 +141,8 @@ public class ShowIdentity extends Toadlet implements LinkEnabledCallback {
 					tr.addChild(td_form);
 				}
 			}
-
-			contextDiv.addChild(context_list);
+			
+			contextDiv.addChild(context_table);
 			contentDiv.addChild(contextDiv);
 			
 			// allow specifying an updated trust value
