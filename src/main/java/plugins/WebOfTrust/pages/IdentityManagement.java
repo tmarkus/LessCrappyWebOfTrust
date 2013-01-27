@@ -21,6 +21,7 @@ import plugins.WebOfTrust.util.Utils;
 
 import freenet.client.FetchException;
 import freenet.client.HighLevelSimpleClient;
+import freenet.client.InsertException;
 import freenet.client.async.ClientGetCallback;
 import freenet.clients.http.LinkEnabledCallback;
 import freenet.clients.http.PageNode;
@@ -138,12 +139,13 @@ public class IdentityManagement extends Toadlet implements LinkEnabledCallback {
 	    writeReply(ctx, 200, "text/html", "OK", mPageNode.outer.generate());
 	}
 	
-	public void handleMethodPOST(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException, FetchException {
+	public void handleMethodPOST(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException, FetchException, KeyDecodeException, InsertException {
 		if(WebOfTrust.allowFullAccessOnly && !ctx.isAllowedFullAccess()) {
 			writeReply(ctx, 403, "text/plain", "forbidden", "Your host is not allowed to access this page.");
 			return;
 		}
-	    String action = request.getPartAsStringFailsafe("action", 200);
+	    
+		String action = request.getPartAsStringFailsafe("action", 200);
 
 	    Transaction tx = db.beginTx();
 		try {
@@ -158,11 +160,17 @@ public class IdentityManagement extends Toadlet implements LinkEnabledCallback {
 				removeIdentity(id);
 			}
 		    tx.success();
-		} finally {
+		    handleMethodGET(uri, request, ctx);
+		}
+	    catch(Exception e)
+	    {
+	    	writeReply(ctx, 500, "text/plain", "error", e.getMessage());
+	    }
+
+		finally {
 			tx.finish();
 		}
 		
-	    handleMethodGET(uri, request, ctx);
 	}
 
 	/**
@@ -192,18 +200,19 @@ public class IdentityManagement extends Toadlet implements LinkEnabledCallback {
 	 * @param insertURI
 	 * @throws FetchException
 	 * @throws MalformedURLException
+	 * @throws KeyDecodeException 
+	 * @throws InsertException 
 	 */
 	
-	private void restoreIdentity(FreenetURI insertURI) throws FetchException, MalformedURLException {
+	private void restoreIdentity(FreenetURI insertURI) throws FetchException, MalformedURLException, KeyDecodeException, InsertException {
 		IdentityUpdaterRequestClient rc = new IdentityUpdaterRequestClient();
 		HighLevelSimpleClient hl = main.getHL();
 		RequestScheduler rs = main.getRequestScheduler();
 		ClientGetCallback cc = new IdentityUpdater(rs, db, hl, true);  
-
-		try {
+		
 			//check whether the insert URI is indeed OK or not
 			insertURI.checkInsertURI();
-
+		
 			//create a request/insert keypair
 			InsertableClientSSK key = null;
 			if (insertURI.isSSK())
@@ -228,7 +237,7 @@ public class IdentityManagement extends Toadlet implements LinkEnabledCallback {
 			 if ( nodeIndex.get(IVertex.ID, Utils.getIDFromKey(requestURI)).size() == 0 ) 
 			 {
 				Node own_vertex = addOwnIdentity(requestURI, key.getInsertURI());
-	
+		
 				Transaction tx = db.beginTx();
 				try {
 					own_vertex.setProperty(IVertex.DONT_INSERT, true);
@@ -243,10 +252,6 @@ public class IdentityManagement extends Toadlet implements LinkEnabledCallback {
 			
 			HighLevelSimpleClient hl_high_prio = main.getPR().getNode().clientCore.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS, false, true);
 			rs.addInFlight(hl_high_prio.fetch(requestURI, 200000, rc, cc, hl_high_prio.getFetchContext()));
-		} catch(Exception e) {
-			// FIXME: catch specific exception only
-			e.printStackTrace();
-		}
 	}
 
 	private void createIdentity(String name) throws MalformedURLException {
