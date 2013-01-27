@@ -283,7 +283,6 @@ public class IdentityManagement extends Toadlet implements LinkEnabledCallback {
 				IdentityUpdater.getPeerIdentity(db, seedKey); //try to get from the db it and add it otherwise	
 				tx.success();
 			} finally {
-				// FIXME: no catch block at all?
 				tx.finish();
 			}
 			
