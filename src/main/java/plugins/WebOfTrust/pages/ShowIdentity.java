@@ -124,6 +124,7 @@ public class ShowIdentity extends Toadlet implements LinkEnabledCallback {
 				final String context = (String) rel.getEndNode().getProperty(IContext.NAME);
 				HTMLNode td = new HTMLNode("td", context);
 				tr.addChild(td);
+				context_table.addChild(tr);
 				
 				if (identity.hasProperty(IVertex.OWN_IDENTITY))
 				{
@@ -138,7 +139,6 @@ public class ShowIdentity extends Toadlet implements LinkEnabledCallback {
 					context_form.addChild(Utils.getInput("hidden", "own_identity_id", id));
 					td_form.addChild(context_form);
 					tr.addChild(td_form);
-					context_table.addChild(tr);
 				}
 			}
 			
