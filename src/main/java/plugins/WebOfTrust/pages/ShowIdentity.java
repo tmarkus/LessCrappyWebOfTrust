@@ -139,6 +139,7 @@ public class ShowIdentity extends Toadlet implements LinkEnabledCallback {
 					form.addChild(Utils.getInput("hidden", "own_identity_id", id));
 					td_form.addChild(form);
 					tr.addChild(td_form);
+					table.addChild(tr);
 				}
 			}
 			
