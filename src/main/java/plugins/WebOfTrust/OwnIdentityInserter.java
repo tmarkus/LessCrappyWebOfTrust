@@ -112,7 +112,7 @@ public class OwnIdentityInserter implements Runnable, ClientPutCallback  {
 					}
 
 					//insert the damn thing
-					System.out.println("INSERTING OWN IDENTITY");
+					System.out.println("INSERTING OWN IDENTITY: " + ownID);
 					ClientPutter pu = hl.insert(ib, false, null, false, ictx, this, RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS);
 					
 					//update the time when we stored it in the database (as to disallow inserting it every second)
