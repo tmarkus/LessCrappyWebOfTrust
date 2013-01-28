@@ -178,6 +178,7 @@ public class RequestScheduler extends Thread {
 			try {
 				addInFlight(hl.fetch(next, WebOfTrust.FETCH_MAX_FILE_SIZE, rc, cc, fc));
 			} catch (FetchException e) {
+				System.out.println("Failed to retrieve: " + next.toASCIIString());
 				e.printStackTrace();
 			}
 		}
