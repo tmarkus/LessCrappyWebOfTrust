@@ -279,6 +279,11 @@ public class IdentityManagement extends Toadlet implements LinkEnabledCallback {
 	 */
 	
 	private Node addOwnIdentity(FreenetURI requestURI, FreenetURI insertURI) {
+			
+		Transaction tx = db.beginTx();
+		
+		try
+		{
 			Node vertex = db.createNode();
 			vertex.setProperty(IVertex.ID, Utils.getIDFromKey(requestURI));
 			vertex.setProperty(IVertex.NAME, "... still fetching ...");
@@ -288,7 +293,14 @@ public class IdentityManagement extends Toadlet implements LinkEnabledCallback {
 			vertex.setProperty(IVertex.REQUEST_URI, requestURI.toASCIIString());
 			vertex.setProperty(IVertex.EDITION, -1l);
 			
+			tx.success();
+		
 			return vertex;
+		}
+		finally
+		{
+			tx.finish();
+		}
 	}
 
 	@Override
