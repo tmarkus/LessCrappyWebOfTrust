@@ -226,10 +226,39 @@ public class IdentityManagement extends Toadlet implements LinkEnabledCallback {
 			
 			 if ( nodeIndex.get(IVertex.ID, Utils.getIDFromKey(requestURI)).size() == 0 ) 
 			 {
-				Node own_vertex = addOwnIdentity(requestURI, insertURI);
-				own_vertex.setProperty(IVertex.DONT_INSERT, true);
+				 System.out.println("Identity not yet in the database, adding...");
+				 
+				 Transaction tx = db.beginTx();
+				 try
+				 {
+					 Node own_vertex = addOwnIdentity(requestURI, insertURI);
+					 own_vertex.setProperty(IVertex.DONT_INSERT, true);
+					 tx.success();
+				 }
+				 finally
+				 {
+					 tx.finish();
+				 }
 			 }
-				
+			 else
+			 {
+				 System.out.println("Upgrading an existing identity to a locally owned identity");
+				 Node vertex = 	nodeIndex.get(IVertex.ID, Utils.getIDFromKey(requestURI)).getSingle();
+				 Transaction tx = db.beginTx();
+				 try
+				 {
+						vertex.setProperty(IVertex.OWN_IDENTITY, true);
+						vertex.setProperty(IVertex.PUBLISHES_TRUSTLIST, true);
+						vertex.setProperty(IVertex.INSERT_URI, insertURI.toASCIIString());
+						tx.success();
+				 }
+				 finally
+				 {
+					tx.finish();
+				 }
+			 }
+			
+			 
 			// Fetch the identity from freenet
 			System.out.println("Starting to fetch your own identity");
 			
