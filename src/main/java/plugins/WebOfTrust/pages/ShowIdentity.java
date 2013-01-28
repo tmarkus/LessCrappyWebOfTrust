@@ -292,9 +292,7 @@ public class ShowIdentity extends Toadlet implements LinkEnabledCallback {
 		catch(Exception ex) {
 			// FIXME: catch only specific exceptions
 			ex.printStackTrace();
-			writeReply(ctx, 200, "text/plain", "error retrieve identity", "Cannot display identity, maybe it hasn't been retrieved from Freenet yet.");
-		} finally {
-			// uh? why do we need this?
+			writeReply(ctx, 200, "text/plain", "error, could not retrieve identity", "Cannot display identity, maybe it hasn't been retrieved from Freenet yet.");
 		}
 	}
 

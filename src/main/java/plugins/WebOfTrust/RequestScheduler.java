@@ -106,6 +106,7 @@ public class RequestScheduler extends Thread {
 					}
 					
 				} catch (InterruptedException e) {
+					System.out.println("Someone woke up the requestscheduler while sleeping, there must be something important...");
 				}
 			}
 			catch(Exception e)

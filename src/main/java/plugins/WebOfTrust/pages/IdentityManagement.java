@@ -160,17 +160,20 @@ public class IdentityManagement extends Toadlet implements LinkEnabledCallback {
 				removeIdentity(id);
 			}
 		    tx.success();
-		    handleMethodGET(uri, request, ctx);
 		}
 	    catch(Exception e)
 	    {
+	    	tx.failure();
+	    	e.printStackTrace();
 	    	writeReply(ctx, 500, "text/plain", "error", e.getMessage());
 	    }
 
 		finally {
 			tx.finish();
 		}
-		
+
+		//actions were processed, so display the page in the end
+	    handleMethodGET(uri, request, ctx);
 	}
 
 	/**
@@ -179,20 +182,11 @@ public class IdentityManagement extends Toadlet implements LinkEnabledCallback {
 	 */
 	
 	private void removeIdentity(String id) {
-		
-		Transaction tx = db.beginTx();
-		try {
-			for(Node node : nodeIndex.get(IVertex.ID, id))
-			{
-				for(Relationship rel : node.getRelationships()) {
-					rel.delete();
-				}
-				node.delete();
-			}
-			tx.success();
-		} finally {
-			tx.finish();
+		Node node = nodeIndex.get(IVertex.ID, id).getSingle();
+		for(Relationship rel : node.getRelationships()) {
+			rel.delete();
 		}
+		node.delete();
 	}
 
 	/**
@@ -215,11 +209,7 @@ public class IdentityManagement extends Toadlet implements LinkEnabledCallback {
 		
 			//create a request/insert keypair
 			InsertableClientSSK key = null;
-			if (insertURI.isSSK())
-			{
-				key = InsertableClientSSK.create(insertURI);
-			}
-			else if (insertURI.isUSK())
+			if (insertURI.isUSK())
 			{
 				key = InsertableClientSSK.create(insertURI.sskForUSK());	
 			}
@@ -236,15 +226,8 @@ public class IdentityManagement extends Toadlet implements LinkEnabledCallback {
 			
 			 if ( nodeIndex.get(IVertex.ID, Utils.getIDFromKey(requestURI)).size() == 0 ) 
 			 {
-				Node own_vertex = addOwnIdentity(requestURI, key.getInsertURI());
-		
-				Transaction tx = db.beginTx();
-				try {
-					own_vertex.setProperty(IVertex.DONT_INSERT, true);
-					tx.success();
-				} finally {
-					tx.finish();
-				}
+				Node own_vertex = addOwnIdentity(requestURI, insertURI);
+				own_vertex.setProperty(IVertex.DONT_INSERT, true);
 			 }
 				
 			// Fetch the identity from freenet
@@ -252,6 +235,9 @@ public class IdentityManagement extends Toadlet implements LinkEnabledCallback {
 			
 			HighLevelSimpleClient hl_high_prio = main.getPR().getNode().clientCore.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS, false, true);
 			rs.addInFlight(hl_high_prio.fetch(requestURI, 200000, rc, cc, hl_high_prio.getFetchContext()));
+	
+			//wake up the request scheduler
+			rs.interrupt();
 	}
 
 	private void createIdentity(String name) throws MalformedURLException {
@@ -270,13 +256,7 @@ public class IdentityManagement extends Toadlet implements LinkEnabledCallback {
 		Node own_identity_vertex = addOwnIdentity(newRequestURI, newInsertURI);
 		
 		// set the name of this identity
-		Transaction tx = db.beginTx();
-		try {
-			own_identity_vertex.setProperty(IVertex.NAME, name);
-			tx.success();
-		} finally {
-			tx.finish();
-		}
+		own_identity_vertex.setProperty(IVertex.NAME, name);
 
 		// add trust relations to seed identities
 		for(String key : SEED_IDENTITIES) {
@@ -284,15 +264,12 @@ public class IdentityManagement extends Toadlet implements LinkEnabledCallback {
 			String seedID = Utils.getIDFromKey(seedKey);
 			String id = Utils.getIDFromKey(newRequestURI);
 			
-			try {
-				IdentityUpdater.getPeerIdentity(db, seedKey); //try to get from the db it and add it otherwise	
-				tx.success();
-			} finally {
-				tx.finish();
-			}
-			
+			IdentityUpdater.getPeerIdentity(db, seedKey); //try to get from the db it and add it otherwise	
 			SetTrust.setTrust(db, nodeIndex, id, seedID, "100", "Initial seed identity");
 		}
+	
+		//wake up the request scheduler
+	  	main.getRequestScheduler().interrupt();
 	}
 
 	/**
@@ -302,8 +279,6 @@ public class IdentityManagement extends Toadlet implements LinkEnabledCallback {
 	 */
 	
 	private Node addOwnIdentity(FreenetURI requestURI, FreenetURI insertURI) {
-		Transaction tx = db.beginTx();
-		try {
 			Node vertex = db.createNode();
 			vertex.setProperty(IVertex.ID, Utils.getIDFromKey(requestURI));
 			vertex.setProperty(IVertex.NAME, "... still fetching ...");
@@ -313,12 +288,7 @@ public class IdentityManagement extends Toadlet implements LinkEnabledCallback {
 			vertex.setProperty(IVertex.REQUEST_URI, requestURI.toASCIIString());
 			vertex.setProperty(IVertex.EDITION, -1l);
 			
-			tx.success();
-			
 			return vertex;
-		} finally {
-			tx.finish();
-		}
 	}
 
 	@Override
