@@ -47,7 +47,8 @@ public class FCPInterface {
 			System.out.println("Failed to match message: " + sfs.get("Message") + " with reply");
 			e.printStackTrace();
 			reply.putSingle("Message", "Error");
-			reply.putSingle("Description", "Could not match message with reply");
+	        reply.putSingle("OriginalMessage", sfs.get("Message"));
+			reply.putSingle("Description", "Could not match message with reply because of an exception: " + e.getMessage());
 			prs.send(reply);
 		}
 	}
