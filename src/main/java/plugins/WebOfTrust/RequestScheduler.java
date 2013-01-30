@@ -38,7 +38,7 @@ public class RequestScheduler extends Thread {
 	private static final long MAX_TIME_SINCE_LAST_INSERT = (60 * 1000) * 60; //don't insert faster than once per hour
 	private static final long MINIMAL_SLEEP_TIME = (1*1000) * 30; // 30 seconds
 	private static final long MINIMAL_SLEEP_TIME_WITH_BIG_BACKLOG = (1*1000); // 1 second
-	private static final long MINIMAL_SLEEP_TIME_WOT_UPDATE = (60*1000) * 60 * 1; // update WoT once every 3 hours;
+	private static final long MINIMAL_SLEEP_TIME_WOT_UPDATE = (60*1000) * 60 * 1; // update WoT once every 1 hours;
 	
 	private final WebOfTrust main;
 	private final GraphDatabaseService db;
