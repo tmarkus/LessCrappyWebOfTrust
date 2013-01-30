@@ -10,7 +10,7 @@ import freenet.support.SimpleFieldSet;
 public abstract class FCPBase {
 
 	protected SimpleFieldSet reply = new SimpleFieldSet(true);
-	public abstract SimpleFieldSet handle(SimpleFieldSet input);
+	public abstract SimpleFieldSet handle(SimpleFieldSet input) throws Exception;
 
 	protected GraphDatabaseService db;
 	protected ReadableIndex<Node> nodeIndex;

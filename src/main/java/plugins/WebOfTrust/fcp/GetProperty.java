@@ -15,14 +15,15 @@ public class GetProperty extends FCPBase {
 	}
 
 	@Override
-	public SimpleFieldSet handle(SimpleFieldSet input) {
+	public SimpleFieldSet handle(SimpleFieldSet input) throws Exception {
 
 		final String identityID = input.get("Identity");
 		final String propertyName = input.get("Property");
 
-		Node vertex = nodeIndex.get(IVertex.ID, identityID).getSingle();
-		
 		reply.putSingle("Message", "PropertyValue");
+
+		Node vertex = nodeIndex.get(IVertex.ID, identityID).getSingle();
+		if (vertex == null) throw new Exception("The supplied identity to GetProperty is unknown.");
 		if (vertex.hasProperty(propertyName)) reply.putSingle("Property", vertex.getProperty(propertyName).toString());
 
 		return reply;
