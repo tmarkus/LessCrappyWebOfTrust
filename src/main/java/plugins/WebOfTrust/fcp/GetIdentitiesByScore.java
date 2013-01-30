@@ -77,44 +77,47 @@ public class GetIdentitiesByScore extends GetIdentity {
 		int i = 0;
 
 		//get all identities with a specific context
-		for (final Relationship hasContextRel : nodeIndex.get(IContext.NAME, context).getSingle().getRelationships(Direction.INCOMING, Rel.HAS_CONTEXT))
+		if (nodeIndex.get(IContext.NAME, context).hasNext()) //the context exists in the graph
 		{
-			final Node identity = hasContextRel.getStartNode();
-			//check whether the identity has a name (and we thus have retrieved it at least once)
-			if (identity.hasProperty(IVertex.NAME))
+			for (final Relationship hasContextRel : nodeIndex.get(IContext.NAME, context).getSingle().getRelationships(Direction.INCOMING, Rel.HAS_CONTEXT))
 			{
-				//determine whether we have a calculated trust value for this identity larger than 0
-				boolean goodTrust = false;
-				for(String prop : treeOwnerProperties)
+				final Node identity = hasContextRel.getStartNode();
+				//check whether the identity has a name (and we thus have retrieved it at least once)
+				if (identity.hasProperty(IVertex.NAME))
 				{
-					if (identity.hasProperty(prop) && (Integer) identity.getProperty(prop) >= 0) goodTrust = true; 
-				}
-				
-				if (goodTrust)
-				{
-					Integer max_score = Integer.MIN_VALUE;
-					Relationship max_score_rel = null; //identity which has the maximum trust directly assigned (possibly none)
-					
-					for(final Node own_identity : treeOwnerList	)
+					//determine whether we have a calculated trust value for this identity larger than 0
+					boolean goodTrust = false;
+					for(String prop : treeOwnerProperties)
 					{
-						Relationship rel = directTrustCache.get(own_identity).get(identity);
-						if (rel != null)
+						if (identity.hasProperty(prop) && (Integer) identity.getProperty(prop) >= 0) goodTrust = true; 
+					}
+					
+					if (goodTrust)
+					{
+						Integer max_score = Integer.MIN_VALUE;
+						Relationship max_score_rel = null; //identity which has the maximum trust directly assigned (possibly none)
+						
+						for(final Node own_identity : treeOwnerList	)
 						{
-							final int score = (Byte) rel.getProperty(IEdge.SCORE);
-							if (score > max_score) 
+							Relationship rel = directTrustCache.get(own_identity).get(identity);
+							if (rel != null)
 							{
-								max_score = score;
-								max_score_rel = rel;
+								final int score = (Byte) rel.getProperty(IEdge.SCORE);
+								if (score > max_score) 
+								{
+									max_score = score;
+									max_score_rel = rel;
+								}
 							}
 						}
+
+						addIdentityReplyFields(max_score_rel, identity, Integer.toString(i), includeTrustValue, trusterID);
+						
+						reply.putOverwrite("Score" + i, Integer.toString(max_score));
+						if (max_score_rel != null) reply.putOverwrite("ScoreOwner" + i, (String) max_score_rel.getStartNode().getProperty(IVertex.ID));
+
+						i += 1;
 					}
-
-					addIdentityReplyFields(max_score_rel, identity, Integer.toString(i), includeTrustValue, trusterID);
-					
-					reply.putOverwrite("Score" + i, Integer.toString(max_score));
-					if (max_score_rel != null) reply.putOverwrite("ScoreOwner" + i, (String) max_score_rel.getStartNode().getProperty(IVertex.ID));
-
-					i += 1;
 				}
 			}
 		}
