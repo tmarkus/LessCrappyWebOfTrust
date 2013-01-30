@@ -182,11 +182,18 @@ public class IdentityManagement extends Toadlet implements LinkEnabledCallback {
 	 */
 	
 	private void removeIdentity(String id) {
-		Node node = nodeIndex.get(IVertex.ID, id).getSingle();
-		for(Relationship rel : node.getRelationships()) {
-			rel.delete();
+		final IndexHits<Node> nodes = nodeIndex.get(IVertex.ID, id);
+		if (nodes.size() > 1) System.err.println("Multiple identities stored in the database with the same ID, this should not happen!");
+		
+		//delete all nodes with a specific identity (should be just one!)
+		for(Node node : nodeIndex.get(IVertex.ID, id))
+		{
+			for(Relationship rel : node.getRelationships()) {
+				rel.delete();
+			}
+			node.delete();
+			System.err.println("Deleted local identity.");
 		}
-		node.delete();
 	}
 
 	/**
