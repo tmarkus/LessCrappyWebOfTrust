@@ -28,7 +28,7 @@ public class IdenticonGenerator extends Toadlet implements LinkEnabledCallback {
 	}
 
 	public void handleMethodGET(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
-		// FIXME: use failsafe get with max length of routig key
+		// FIXME: use failsafe get with max length of routing key
         String identityId = request.getParam("identity");
         int width = 128;
         int height = 128;
