@@ -167,7 +167,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		newToadlets.add(new ShowIdentity(pr.getHLSimpleClient(), basePath + "/ShowIdentity", db));
 		newToadlets.add(new IdentityManagement(this, pr.getHLSimpleClient(), basePath+"/restore", db));
 		newToadlets.add(new IdenticonGenerator(pr.getHLSimpleClient(), basePath+"/GetIdenticon"));
-		newToadlets.add(new CypherQuery(pr.getHLSimpleClient(), basePath+"/GetIdenticon", this));
+		newToadlets.add(new CypherQuery(pr.getHLSimpleClient(), basePath+"/query", this));
 		
 		// create fproxy menu items
 		tc.register(oc, "WebOfTrust.menuName.name", basePath + "/", true, "WebOfTrust.mainPage", "WebOfTrust.mainPage.tooltip", WebOfTrust.allowFullAccessOnly, oc);

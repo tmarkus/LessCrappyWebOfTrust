@@ -14,6 +14,7 @@ import freenet.clients.http.LinkEnabledCallback;
 import freenet.clients.http.Toadlet;
 import freenet.clients.http.ToadletContext;
 import freenet.clients.http.ToadletContextClosedException;
+import freenet.support.MultiValueTable;
 import freenet.support.api.HTTPRequest;
 
 public class CypherQuery extends Toadlet implements LinkEnabledCallback {
@@ -29,28 +30,23 @@ public class CypherQuery extends Toadlet implements LinkEnabledCallback {
 
 	public void handleMethodGET(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException
 	{
-		if(WebOfTrust.allowFullAccessOnly && !ctx.isAllowedFullAccess()) {
-			writeReply(ctx, 403, "text/plain", "forbidden", "Your host is not allowed to access this page.");
-			return;
-		}
-
 		String query = request.getParam("query");
-		writeReply(ctx, 200, "text/plain", "cypher results", generateCyptherResult(query));
+		generateCyptherResult(ctx, query);
 	}
 
 	public void handleMethodPOST(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException 
 	{
+		String query = request.getPartAsStringFailsafe("query", 100000);
+		generateCyptherResult(ctx, query);
+	}
+
+	private void generateCyptherResult(ToadletContext ctx, String query) throws ToadletContextClosedException, IOException
+	{
 		if(WebOfTrust.allowFullAccessOnly && !ctx.isAllowedFullAccess()) {
 			writeReply(ctx, 403, "text/plain", "forbidden", "Your host is not allowed to access this page.");
 			return;
 		}
-
-		String query = request.getParam("query");
-		writeReply(ctx, 200, "text/plain", "cypher results", generateCyptherResult(query));
-	}
-
-	private String generateCyptherResult(String query)
-	{
+		
 		// let's execute a query now
 		ExecutionEngine engine = new ExecutionEngine( wot.getDB() );
 		ExecutionResult result = engine.execute(query);
@@ -73,7 +69,8 @@ public class CypherQuery extends Toadlet implements LinkEnabledCallback {
 		    output += "\n";
 		}
 	
-		return output;
+		writeReply(ctx, 200, "text/plain; charset=utf-8", "cypher results", output);
+		return;
 	}
 
 	@Override
