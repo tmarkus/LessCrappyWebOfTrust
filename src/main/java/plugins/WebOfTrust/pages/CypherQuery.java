@@ -9,11 +9,15 @@ import org.neo4j.cypher.javacompat.ExecutionEngine;
 import org.neo4j.cypher.javacompat.ExecutionResult;
 
 import plugins.WebOfTrust.WebOfTrust;
+import plugins.WebOfTrust.datamodel.IVertex;
+import plugins.WebOfTrust.util.Utils;
 import freenet.client.HighLevelSimpleClient;
 import freenet.clients.http.LinkEnabledCallback;
+import freenet.clients.http.PageNode;
 import freenet.clients.http.Toadlet;
 import freenet.clients.http.ToadletContext;
 import freenet.clients.http.ToadletContextClosedException;
+import freenet.support.HTMLNode;
 import freenet.support.MultiValueTable;
 import freenet.support.api.HTTPRequest;
 
@@ -31,7 +35,36 @@ public class CypherQuery extends Toadlet implements LinkEnabledCallback {
 	public void handleMethodGET(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException
 	{
 		String query = request.getParam("query");
-		generateCyptherResult(ctx, query);
+		
+		if (query.isEmpty())
+		{
+			PageNode mPageNode = ctx.getPageMaker().getPageNode("LCWoT - cypher queries", true, true, ctx);
+			mPageNode.addCustomStyleSheet(WebOfTrust.basePath + "/WebOfTrust.css");
+			HTMLNode contentDiv = new HTMLNode("div");
+			contentDiv.addAttribute("id", "WebOfTrust_query");
+
+			HTMLNode form = new HTMLNode("form");
+			form.addAttribute("action", "");
+			form.addAttribute("method", "post");
+			
+			HTMLNode textarea = new HTMLNode("textarea");
+			textarea.addAttribute("name", "query");
+			textarea.addAttribute("cols", "60");
+			textarea.addAttribute("rows", "20");
+			textarea.setContent("Please enter a valid neo4j cypher query.");
+			
+			form.addChild(textarea);
+			form.addChild(Utils.getInput("submit", "", "submit"));
+			contentDiv.addChild(form);
+			mPageNode.content.addChild(contentDiv);
+
+			writeReply(ctx, 200, "text/html", "OK", mPageNode.outer.generate());
+		}
+		else
+		{
+			generateCyptherResult(ctx, query);	
+		}
+		
 	}
 
 	public void handleMethodPOST(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException 
