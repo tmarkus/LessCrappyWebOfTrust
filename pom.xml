@@ -8,6 +8,10 @@
 	<name>lcwot</name>
 	<url>http://github.com/tmarkus/LessCrappyWoT/</url>
 
+	<properties>
+	<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+	</properties>
+
 	<build>
 		<plugins>
 			<plugin>
