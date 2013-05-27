@@ -89,7 +89,11 @@ public class GetIdentitiesByScore extends GetIdentity {
 					boolean goodTrust = false;
 					for(String prop : treeOwnerProperties)
 					{
-						if (identity.hasProperty(prop) && (Integer) identity.getProperty(prop) >= 0) goodTrust = true; 
+						if (identity.hasProperty(prop) && (Integer) identity.getProperty(prop) >= 0) 
+						{
+							goodTrust = true; 
+							break; //stop iterating, because you only need to find one
+						}
 					}
 					
 					if (goodTrust)
