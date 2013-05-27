@@ -138,6 +138,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 //	    .setConfig( GraphDatabaseSettings.relationship_keys_indexable, IEdge.SCORE )
 	    .setConfig( GraphDatabaseSettings.node_auto_indexing, GraphDatabaseSetting.TRUE )
 	    .setConfig( GraphDatabaseSettings.relationship_auto_indexing, GraphDatabaseSetting.TRUE )
+	    .setConfig( GraphDatabaseSettings.keep_logical_logs, "2 days") 
 	    .newGraphDatabase();
 		
 		/*
