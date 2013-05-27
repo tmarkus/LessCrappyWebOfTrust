@@ -119,14 +119,11 @@ public class GetIdentitiesByScore extends GetIdentity {
 						
 						if (WebOfTrust.DEBUG) System.out.println(max_score + " for identity " + identity.getProperty(IVertex.NAME) +  " is " + max_score);
 						
-						if (max_score > Integer.MIN_VALUE){
+						if (max_score_rel != null)
+						{
 							reply.putOverwrite("Score" + i, Integer.toString(max_score));
-							if (max_score_rel != null) 
-							{
-								reply.putOverwrite("ScoreOwner" + i, (String) max_score_rel.getStartNode().getProperty(IVertex.ID));
-							}
+							reply.putOverwrite("ScoreOwner" + i, (String) max_score_rel.getStartNode().getProperty(IVertex.ID));
 						}
-						
 
 						i += 1;
 					}
