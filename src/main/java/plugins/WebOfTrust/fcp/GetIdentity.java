@@ -40,7 +40,7 @@ public class GetIdentity extends FCPBase {
 		return reply;
 	}
 
-	protected void addIdentityReplyFields(Relationship max_score_rel, Node identity, String index, boolean includeTrustValues, String treeOwnerID) 
+	protected void addIdentityReplyFields(Relationship score_rel, Node identity, String index, boolean includeTrustValues, String treeOwnerID) 
 	{
 		reply.putOverwrite("Identity" + index, (String) identity.getProperty(IVertex.ID));
 		reply.putOverwrite("Nickname"+index,  (String) identity.getProperty(IVertex.NAME));
@@ -51,9 +51,9 @@ public class GetIdentity extends FCPBase {
 		reply.putOverwrite("Score"+index, "null");
 		reply.putOverwrite("Rank"+index, "null");
 
-		if (max_score_rel != null)
+		if (score_rel != null)
 		{
-				reply.putOverwrite("Score"+index, max_score_rel.getProperty(IEdge.SCORE).toString());
+				reply.putOverwrite("Score"+index, score_rel.getProperty(IEdge.SCORE).toString());
 		}
 		
 		if (includeTrustValues)
