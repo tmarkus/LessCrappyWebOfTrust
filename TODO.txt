@@ -1,4 +1,3 @@
-- Reported by TheSeeker as fix for disk usage of LCWoT over time: http://stackoverflow.com/questions/13087054/neo4j-log-level-in-embedded-mode
 - BUG: 10:38 < nKf> digger3, lcwot sometimes(?) inserts the id while it is still fetching. the nick is "still fetiching" then :-)
 - don't remove-add all edges on an identity trustlist update, kinda inefficient for the database
 - lock the database when doing trust calculations OR wrap everything in 1 transaction and keep stuff in RAM
