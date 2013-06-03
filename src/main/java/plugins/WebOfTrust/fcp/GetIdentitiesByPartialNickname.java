@@ -29,7 +29,7 @@ public class GetIdentitiesByPartialNickname extends GetIdentity {
 		final String context = input.get("Context");
 		int maxIdentities = 0; 
 		try {
-			maxIdentities = input.getInt("maxIdentities");
+			maxIdentities = input.getInt("MaxIdentities");
 		} catch (FSParseException e) {
 			throw new IllegalArgumentException("maxIdentities has an incorrect value");
 		}
