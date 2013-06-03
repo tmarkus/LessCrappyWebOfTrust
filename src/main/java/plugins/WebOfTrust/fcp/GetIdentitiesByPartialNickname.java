@@ -31,7 +31,7 @@ public class GetIdentitiesByPartialNickname extends GetIdentity {
 		try {
 			maxIdentities = input.getInt("MaxIdentities");
 		} catch (FSParseException e) {
-			throw new IllegalArgumentException("maxIdentities has an incorrect value");
+			throw new IllegalArgumentException("MaxIdentities has an incorrect value");
 		}
 		
 		//find all identities for given context
