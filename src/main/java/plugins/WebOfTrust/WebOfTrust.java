@@ -134,7 +134,7 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		//db = gdbf.newEmbeddedDatabase(db_path);
 		
 		db = gdbf.newEmbeddedDatabaseBuilder( db_path )
-		.setConfig( GraphDatabaseSettings.node_keys_indexable, IVertex.ID+","+IVertex.OWN_IDENTITY+","+IContext.NAME )
+		.setConfig( GraphDatabaseSettings.node_keys_indexable, IVertex.ID+","+IVertex.OWN_IDENTITY+","+IContext.NAME+","+IVertex.NAME)
 //	    .setConfig( GraphDatabaseSettings.relationship_keys_indexable, IEdge.SCORE )
 	    .setConfig( GraphDatabaseSettings.node_auto_indexing, GraphDatabaseSetting.TRUE )
 	    .setConfig( GraphDatabaseSettings.relationship_auto_indexing, GraphDatabaseSetting.TRUE )
