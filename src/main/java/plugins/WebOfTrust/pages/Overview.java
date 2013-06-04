@@ -84,7 +84,7 @@ public class Overview extends Toadlet implements LinkEnabledCallback {
 			contentDiv.addChild(list);
 			contentDiv.addChild("br");
 			
-			contentDiv.addChild("b", "Own identities in local storage");
+			contentDiv.addChild("b", "Local identities in the graph database");
 			contentDiv.addChild("br");
 			list = new HTMLNode("ul");
 			for(Node identity : nodeIndex.get(IVertex.OWN_IDENTITY, true))
