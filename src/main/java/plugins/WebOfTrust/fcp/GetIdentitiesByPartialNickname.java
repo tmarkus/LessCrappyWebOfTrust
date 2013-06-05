@@ -77,10 +77,13 @@ public class GetIdentitiesByPartialNickname extends GetIdentity {
 						}
 						
 						//check whether the trust is >= 0 before including
-						if (((Integer) identity.getProperty(treeOwnerTrustProperty)) >= 0)
+						if (identity.hasProperty(treeOwnerTrustProperty))
 						{
-							addIdentityReplyFields(directScore, identity, Integer.toString(i), true, trusterID);
-							i += 1;
+							if (((Integer) identity.getProperty(treeOwnerTrustProperty)) >= 0)
+							{
+								addIdentityReplyFields(directScore, identity, Integer.toString(i), true, trusterID);
+								i += 1;
+							}
 						}
 					}
 				}
