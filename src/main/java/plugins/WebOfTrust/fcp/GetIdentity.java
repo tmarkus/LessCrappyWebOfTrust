@@ -36,6 +36,7 @@ public class GetIdentity extends FCPBase {
 		}
 		
 		addIdentityReplyFields(direct_trust_rel, identity, "", true, trusterID);
+		addIdentityReplyFields(direct_trust_rel, identity, "0", true, trusterID); //0 suffix to make it similar to GetIdentities*
 		
 		return reply;
 	}
