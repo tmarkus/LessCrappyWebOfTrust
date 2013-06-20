@@ -49,10 +49,11 @@ public class CypherQuery extends Toadlet implements LinkEnabledCallback {
 			
 			HTMLNode textarea = new HTMLNode("textarea");
 			textarea.addAttribute("name", "query");
-			textarea.addAttribute("cols", "60");
+			textarea.addAttribute("cols", "100");
 			textarea.addAttribute("rows", "20");
-			textarea.setContent("Please enter a valid neo4j cypher query.");
-			
+			textarea.setContent("START digger3=node:node_auto_index(id=\"zALLY9pbzMNicVn280HYqS2UkK0ZfX5LiTcln-cLrMU\")\n" + 
+								"MATCH (digger3)<-[:TRUSTS]-(identity)\n" +
+								"RETURN identity.name, identity.edition order by identity.firstFetched;\n");			
 			form.addChild(textarea);
 			form.addChild(Utils.getInput("submit", "", "submit"));
 			contentDiv.addChild(form);

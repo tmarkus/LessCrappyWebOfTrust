@@ -71,6 +71,12 @@ public class Overview extends Toadlet implements LinkEnabledCallback {
 			link.addChild(new HTMLNode("b", "Manage local identities"));
 			contentDiv.addChild(link);
 			contentDiv.addChild("br");
+
+			HTMLNode querylink = new HTMLNode("a");
+			querylink.addAttribute("href", WebOfTrust.basePath + "/query/");
+			querylink.addChild(new HTMLNode("b", "Query interface"));
+			contentDiv.addChild(querylink);
+			
 			contentDiv.addChild("br");
 			
 			contentDiv.addChild("b", "Here are some statistics to oogle");
