@@ -34,9 +34,11 @@ public class GetIdentity extends FCPBase {
 		{
 			if (rel.getEndNode().equals(identity)) direct_trust_rel = rel;
 		}
-		
+
+                if (identity != null) {
 		addIdentityReplyFields(direct_trust_rel, identity, "", true, trusterID);
 		addIdentityReplyFields(direct_trust_rel, identity, "0", true, trusterID); //0 suffix to make it similar to GetIdentities*
+                }
 		
 		return reply;
 	}
