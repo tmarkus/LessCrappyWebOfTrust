@@ -36,7 +36,7 @@ public class GetIdentitiesByPartialNickname extends GetIdentity {
 		
 		//find all identities for given context
 		reply.putSingle("Message", "Identities");
-		int i = 0;
+		int numIdentities = 0;
 
 		//find trusterID
 		final Node treeOwnerNode = nodeIndex.get(IVertex.ID, trusterID).getSingle();
@@ -81,18 +81,21 @@ public class GetIdentitiesByPartialNickname extends GetIdentity {
 						{
 							if (((Integer) identity.getProperty(treeOwnerTrustProperty)) >= 0)
 							{
-								addIdentityReplyFields(directScore, identity, Integer.toString(i), true, trusterID);
-								i += 1;
+								addIdentityReplyFields(directScore, identity, Integer.toString(numIdentities), true, trusterID);
+								numIdentities += 1;
 							}
 						}
 					}
 				}
 
-				if (i > maxIdentities) throw new IllegalStateException("Number of matched identies exceeds maxIdentities");
+				if (numIdentities > maxIdentities) continue;
 			}
 		}
 		
-		if (WebOfTrust.DEBUG) System.out.println("GetIdentitiesByPartialNickname returned " + i + " identities for the context: " + context);
+		reply.put("IdentitiesMatched", numIdentities);
+		
+		
+		if (WebOfTrust.DEBUG) System.out.println("GetIdentitiesByPartialNickname returned " + numIdentities + " identities for the context: " + context);
 		
 		return reply;
 	}
