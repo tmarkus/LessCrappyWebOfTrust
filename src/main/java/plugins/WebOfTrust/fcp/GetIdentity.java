@@ -9,6 +9,7 @@ import plugins.WebOfTrust.datamodel.IContext;
 import plugins.WebOfTrust.datamodel.IEdge;
 import plugins.WebOfTrust.datamodel.IVertex;
 import plugins.WebOfTrust.datamodel.Rel;
+import plugins.WebOfTrust.exceptions.UnknownIdentityException;
 
 import freenet.support.SimpleFieldSet;
 
@@ -19,7 +20,7 @@ public class GetIdentity extends FCPBase {
 	}
 
 	@Override
-	public SimpleFieldSet handle(SimpleFieldSet input) {
+	public SimpleFieldSet handle(SimpleFieldSet input) throws UnknownIdentityException {
 		
 		final String trusterID = input.get("Truster"); 
 		final String identityID = input.get("Identity");

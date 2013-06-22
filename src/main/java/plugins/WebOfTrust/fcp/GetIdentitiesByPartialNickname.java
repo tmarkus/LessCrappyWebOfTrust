@@ -10,6 +10,7 @@ import plugins.WebOfTrust.WebOfTrust;
 import plugins.WebOfTrust.datamodel.IContext;
 import plugins.WebOfTrust.datamodel.IVertex;
 import plugins.WebOfTrust.datamodel.Rel;
+import plugins.WebOfTrust.exceptions.UnknownIdentityException;
 
 import freenet.node.FSParseException;
 import freenet.support.SimpleFieldSet;
@@ -21,7 +22,7 @@ public class GetIdentitiesByPartialNickname extends GetIdentity {
 	}
 
 	@Override
-	public SimpleFieldSet handle(SimpleFieldSet input) {
+	public SimpleFieldSet handle(SimpleFieldSet input) throws UnknownIdentityException {
 
 		final String trusterID = input.get("Truster");
 		final String partialNickname = input.get("PartialNickname").trim();
@@ -40,6 +41,9 @@ public class GetIdentitiesByPartialNickname extends GetIdentity {
 
 		//find trusterID
 		final Node treeOwnerNode = nodeIndex.get(IVertex.ID, trusterID).getSingle();
+		
+		if (treeOwnerNode == null) throw new UnknownIdentityException("No such local identity '" + trusterID + "'.");
+		
 		final String treeOwnerTrustProperty = IVertex.TRUST+"_"+treeOwnerNode.getProperty(IVertex.ID);
 		final Node contextNode = nodeIndex.get(IContext.NAME, context).getSingle();
 		 
