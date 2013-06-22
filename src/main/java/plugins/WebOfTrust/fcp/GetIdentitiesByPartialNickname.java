@@ -40,6 +40,13 @@ public class GetIdentitiesByPartialNickname extends GetIdentity {
 
 		//find trusterID
 		final Node treeOwnerNode = nodeIndex.get(IVertex.ID, trusterID).getSingle();
+
+		if (treeOwnerNode == null) {
+			reply.putOverwrite("Message", "Error");
+			reply.putOverwrite("Description", "No such local identity '" + trusterID + "'.");
+			return reply;
+		}
+
 		final String treeOwnerTrustProperty = IVertex.TRUST+"_"+treeOwnerNode.getProperty(IVertex.ID);
 		final Node contextNode = nodeIndex.get(IContext.NAME, context).getSingle();
 		 
