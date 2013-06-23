@@ -51,9 +51,11 @@ public class CypherQuery extends Toadlet implements LinkEnabledCallback {
 			textarea.addAttribute("name", "query");
 			textarea.addAttribute("cols", "100");
 			textarea.addAttribute("rows", "20");
-			textarea.setContent("START digger3=node:node_auto_index(id=\"zALLY9pbzMNicVn280HYqS2UkK0ZfX5LiTcln-cLrMU\")\n" + 
-								"MATCH (digger3)<-[:TRUSTS]-(identity)\n" +
-								"RETURN identity.name, identity.edition order by identity.firstFetched;\n");			
+			textarea.setContent("START digger3=node:node_auto_index(id=\"zALLY9pbzMNicVn280HYqS2UkK0ZfX5LiTcln-cLrMU\") \n" + 
+								"MATCH (digger3)<-[:TRUSTS]-(identity) \n" +
+								"WHERE has(identity.name) AND has(identity.edition) AND has(identity.firstFetched) \n" +
+								"RETURN identity.name, identity.edition ORDER BY identity.firstFetched;\n");			
+			
 			form.addChild(textarea);
 			form.addChild(Utils.getInput("submit", "", "submit"));
 			contentDiv.addChild(form);
