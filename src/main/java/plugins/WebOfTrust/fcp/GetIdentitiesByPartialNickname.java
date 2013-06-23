@@ -92,7 +92,7 @@ public class GetIdentitiesByPartialNickname extends GetIdentity {
 					}
 				}
 
-				if (numIdentities > maxIdentities) continue;
+				if (numIdentities > maxIdentities) break;
 			}
 		}
 		
