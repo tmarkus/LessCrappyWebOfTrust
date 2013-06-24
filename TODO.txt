@@ -1,3 +1,4 @@
+- improve the error message for a nonexistent identity in GetIdentity (via operheim1)
 - don't remove-add all edges on an identity trustlist update, kinda inefficient for the database
 - lock the database when doing trust calculations OR wrap everything in 1 transaction and keep stuff in RAM
 - implement incremental trust updates
