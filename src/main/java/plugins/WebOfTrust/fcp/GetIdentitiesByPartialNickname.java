@@ -87,15 +87,16 @@ public class GetIdentitiesByPartialNickname extends GetIdentity {
 							{
 								addIdentityReplyFields(directScore, identity, Integer.toString(numIdentities), true, trusterID);
 								numIdentities += 1;
+								if (numIdentities >= maxIdentities) break;
 							}
 						}
 					}
 				}
-
-				if (numIdentities > maxIdentities) break;
 			}
 		}
-		
+
+		assert numIdentities <= maxIdentities;
+
 		reply.put("IdentitiesMatched", numIdentities);
 		
 		
