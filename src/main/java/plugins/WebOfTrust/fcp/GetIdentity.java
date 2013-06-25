@@ -72,16 +72,13 @@ public class GetIdentity extends FCPBase {
 			reply.putOverwrite("Rank"+index, Byte.toString((Byte) identity.getProperty(IVertex.DISTANCE+"_"+treeOwnerID)));
 		}
 		
-		if(identity.hasProperty(IVertex.CONTEXT_NAME))
+		int contextCounter=0;
+		for(final Relationship contextRel : identity.getRelationships(Direction.OUTGOING, Rel.HAS_CONTEXT))
 		{
-			int contextCounter=0;
-			for(final Relationship contextRel : identity.getRelationships(Direction.OUTGOING, Rel.HAS_CONTEXT))
-			{
-				final String context = (String) contextRel.getEndNode().getProperty(IContext.NAME);
-				if (index.equals(""))	reply.putOverwrite("Context" + contextCounter, context);
-				else					reply.putOverwrite("Contexts" + index + ".Context" + contextCounter++, context);
-				contextCounter += 1;
-			}
+			final String context = (String) contextRel.getEndNode().getProperty(IContext.NAME);
+			if (index.equals(""))	reply.putOverwrite("Context" + contextCounter, context);
+			else					reply.putOverwrite("Contexts" + index + ".Context" + contextCounter++, context);
+			contextCounter += 1;
 		}
 
 		int propertiesCounter = 0;
