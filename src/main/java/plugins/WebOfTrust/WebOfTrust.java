@@ -6,7 +6,6 @@ import java.util.logging.Logger;
 
 import org.neo4j.graphdb.GraphDatabaseService;
 import org.neo4j.graphdb.factory.GraphDatabaseFactory;
-import org.neo4j.graphdb.factory.GraphDatabaseSetting;
 import org.neo4j.graphdb.factory.GraphDatabaseSettings;
 import org.neo4j.graphdb.index.IndexProvider;
 import org.neo4j.index.lucene.LuceneIndexProvider;
@@ -15,6 +14,7 @@ import org.neo4j.kernel.impl.cache.CacheProvider;
 import org.neo4j.kernel.impl.cache.SoftCacheProvider;
 
 import plugins.WebOfTrust.datamodel.IContext;
+import plugins.WebOfTrust.datamodel.IEdge;
 import plugins.WebOfTrust.datamodel.IVertex;
 import plugins.WebOfTrust.pages.CypherQuery;
 import plugins.WebOfTrust.pages.IdenticonGenerator;
@@ -119,25 +119,32 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		ArrayList<CacheProvider> cacheList = new ArrayList<CacheProvider>();
 		cacheList.add( new SoftCacheProvider() );
  
+        /* FIXME: initialization code for neo4j 1.9.1, that doesn't work
+		//the kernel extensions
+        LuceneKernelExtensionFactory lucene = new LuceneKernelExtensionFactory();
+        List<KernelExtensionFactory<?>> extensions = new ArrayList<KernelExtensionFactory<?>>();
+        extensions.add( lucene );
+ 		*/
+        
 		//the index providers
-		IndexProvider lucene = new LuceneIndexProvider();
-		ArrayList<IndexProvider> provs = new ArrayList<IndexProvider>();
-		provs.add( lucene );
-		ListIndexIterable providers = new ListIndexIterable();
-		providers.setIndexProviders( provs );
- 
+        IndexProvider lucene = new LuceneIndexProvider();
+        ArrayList<IndexProvider> provs = new ArrayList<IndexProvider>();
+        provs.add( lucene );
+        ListIndexIterable providers = new ListIndexIterable();
+        providers.setIndexProviders( provs );
+		
+        
 		//the database setup
 		GraphDatabaseFactory gdbf = new GraphDatabaseFactory();
-		gdbf.setIndexProviders( providers );
+		gdbf.setIndexProviders(providers);
+		//gdbf.setKernelExtensions( extensions ); FIXME: lucene indexes for 1.9.1
 		gdbf.setCacheProviders( cacheList );
-		
-		//db = gdbf.newEmbeddedDatabase(db_path);
 		
 		db = gdbf.newEmbeddedDatabaseBuilder( db_path )
 		.setConfig( GraphDatabaseSettings.node_keys_indexable, IVertex.ID+","+IVertex.OWN_IDENTITY+","+IContext.NAME+","+IVertex.NAME)
-//	    .setConfig( GraphDatabaseSettings.relationship_keys_indexable, IEdge.SCORE )
-	    .setConfig( GraphDatabaseSettings.node_auto_indexing, GraphDatabaseSetting.TRUE )
-	    .setConfig( GraphDatabaseSettings.relationship_auto_indexing, GraphDatabaseSetting.TRUE )
+	    .setConfig( GraphDatabaseSettings.relationship_keys_indexable, IEdge.SCORE )
+	    .setConfig( GraphDatabaseSettings.node_auto_indexing, "true" )
+	    .setConfig( GraphDatabaseSettings.relationship_auto_indexing, "true" )
 	    .setConfig( GraphDatabaseSettings.keep_logical_logs, "2 days") 
 	    .newGraphDatabase();
 		
