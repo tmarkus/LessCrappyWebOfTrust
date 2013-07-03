@@ -302,6 +302,9 @@ public class IdentityManagement extends Toadlet implements LinkEnabledCallback {
 			
 			IdentityUpdater.getPeerIdentity(db, seedKey); //try to get from the db it and add it otherwise	
 			SetTrust.setTrust(db, nodeIndex, id, seedID, "100", "Initial seed identity");
+		
+			//start fetching it
+			main.getRequestScheduler().addBacklog(new FreenetURI(key));
 		}
 	
 		//wake up the request scheduler
