@@ -26,6 +26,9 @@ public class GetIdentitiesByPartialNickname extends GetIdentity {
 
 		final String trusterID = input.get("Truster");
 		final String partialNickname = input.get("PartialNickname").trim();
+		if (partialNickname.isEmpty()) {
+			throw new IllegalArgumentException("PartialNickname cannot be empty.");
+		}
 		final String partialID = input.get("PartialID").trim();
 		final String context = input.get("Context");
 		final int maxIdentities;
