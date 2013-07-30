@@ -28,7 +28,7 @@ public class GetIdentitiesByPartialNickname extends GetIdentity {
 		final String partialNickname = input.get("PartialNickname").trim();
 		final String partialID = input.get("PartialID").trim();
 		final String context = input.get("Context");
-		int maxIdentities = 0; 
+		final int maxIdentities;
 		try {
 			maxIdentities = input.getInt("MaxIdentities");
 		} catch (FSParseException e) {
