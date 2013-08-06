@@ -75,6 +75,7 @@ public class ShowIdentity extends Toadlet implements LinkEnabledCallback {
 			HTMLNode form = new HTMLNode("form");
 			form.addAttribute("action", "#");
 			form.addAttribute("method", "post");
+			form.addChild(Utils.getInput("hidden", "formPassword", ctx.getFormPassword()));
 			form.addChild(Utils.getInput("hidden", "action", "modify_properties"));
 			form.addChild(Utils.getInput("hidden", "identity", id));
 
@@ -133,6 +134,7 @@ public class ShowIdentity extends Toadlet implements LinkEnabledCallback {
 					HTMLNode context_form = new HTMLNode("form");
 					context_form.addAttribute("action", WebOfTrust.basePath+"/ShowIdentity?id="+id);
 					context_form.addAttribute("method", "post");
+					form.addChild(Utils.getInput("hidden", "formPassword", ctx.getFormPassword()));
 					context_form.addChild(Utils.getInput("submit", "", "Remove"));
 					context_form.addChild(Utils.getInput("hidden", "action", "remove_context"));
 					context_form.addChild(Utils.getInput("hidden", "context", context));
@@ -166,6 +168,7 @@ public class ShowIdentity extends Toadlet implements LinkEnabledCallback {
 				// TODO: why not use # here like above?
 				form.addAttribute("action", WebOfTrust.basePath+"/ShowIdentity?id="+id);
 				form.addAttribute("method", "post");
+				form.addChild(Utils.getInput("hidden", "formPassword", ctx.getFormPassword()));
 				HTMLNode fieldset = new HTMLNode("fieldset");
 				fieldset.addChild("legend", (String) own_vertex.getProperty(IVertex.NAME));
 				fieldset.addChild(Utils.getInput("hidden", "action", "set_trust"));
@@ -228,6 +231,7 @@ public class ShowIdentity extends Toadlet implements LinkEnabledCallback {
 						form = new HTMLNode("form");
 						form.addAttribute("action", WebOfTrust.basePath+"/ShowIdentity?id="+id + "#"+(i-1));
 						form.addAttribute("method", "post");
+						form.addChild(Utils.getInput("hidden", "formPassword", ctx.getFormPassword()));
 						form.addChild(Utils.getInput("submit", "", "Remove"));
 						form.addChild(Utils.getInput("hidden", "action", "remove_edge"));
 						form.addChild(Utils.getInput("hidden", "edge_id", Long.toString(edge.getId())));

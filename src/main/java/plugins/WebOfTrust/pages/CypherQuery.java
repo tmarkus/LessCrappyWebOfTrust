@@ -46,6 +46,7 @@ public class CypherQuery extends Toadlet implements LinkEnabledCallback {
 			HTMLNode form = new HTMLNode("form");
 			form.addAttribute("action", "");
 			form.addAttribute("method", "post");
+			form.addChild(Utils.getInput("hidden", "formPassword", ctx.getFormPassword()));
 			
 			HTMLNode textarea = new HTMLNode("textarea");
 			textarea.addAttribute("name", "query");
