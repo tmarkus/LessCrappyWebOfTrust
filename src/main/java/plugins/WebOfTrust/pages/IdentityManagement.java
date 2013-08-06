@@ -94,6 +94,7 @@ public class IdentityManagement extends Toadlet implements LinkEnabledCallback {
 			form = new HTMLNode("form");
 			form.addAttribute("action", "restore.html");
 			form.addAttribute("method", "post");
+			form.addChild(Utils.getInput("hidden", "formPassword", ctx.getFormPassword()));
 			form.addChild(Utils.getInput("hidden", "action", "delete"));
 			form.addChild(Utils.getInput("hidden", "id", (String) own_vertex.getProperty(IVertex.ID)));
 			form.addChild(Utils.getInput("submit", "", "delete"));
@@ -107,6 +108,7 @@ public class IdentityManagement extends Toadlet implements LinkEnabledCallback {
 		form = new HTMLNode("form");
 		form.addAttribute("action", "restore.html");
 		form.addAttribute("method", "post");
+		form.addChild(Utils.getInput("hidden", "formPassword", ctx.getFormPassword()));
 		HTMLNode fieldset = new HTMLNode("fieldSet");
 		fieldset.addChild("legend", "Restore an identity");
 		fieldset.addChild(Utils.getInput("hidden", "action", "restore"));
@@ -124,6 +126,7 @@ public class IdentityManagement extends Toadlet implements LinkEnabledCallback {
 		form = new HTMLNode("form");
 		form.addAttribute("action", "restore.html");
 		form.addAttribute("method", "post");
+		form.addChild(Utils.getInput("hidden", "formPassword", ctx.getFormPassword()));
 		fieldset = new HTMLNode("fieldSet");
 		fieldset.addChild("legend", "Create an identity");
 		fieldset.addChild(Utils.getInput("hidden", "action", "create"));
