@@ -200,7 +200,7 @@ public class RequestScheduler extends Thread {
 	}
 
 	private void maintenance() {
-		if (getInFlightSize() <= MAX_MAINTENANCE_REQUESTS)
+		while(MAX_REQUESTS > getBacklogSize())
 		{
 			for(final Node own_identity : nodeIndex.get(IVertex.OWN_IDENTITY, true))
 			{
