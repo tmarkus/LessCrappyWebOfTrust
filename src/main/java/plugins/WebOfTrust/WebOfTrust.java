@@ -20,6 +20,7 @@ import plugins.WebOfTrust.pages.CypherQuery;
 import plugins.WebOfTrust.pages.IdenticonGenerator;
 import plugins.WebOfTrust.pages.IdentityManagement;
 import plugins.WebOfTrust.pages.Overview;
+import plugins.WebOfTrust.pages.SessionManagement;
 import plugins.WebOfTrust.pages.ShowIdentity;
 import plugins.WebOfTrust.web.CSSFileReaderToadlet;
 import freenet.client.FetchContext;
@@ -176,6 +177,8 @@ public class WebOfTrust implements FredPlugin, FredPluginThreadless, FredPluginF
 		newToadlets.add(new IdentityManagement(this, pr.getHLSimpleClient(), basePath+"/restore", db));
 		newToadlets.add(new IdenticonGenerator(pr.getHLSimpleClient(), basePath+"/GetIdenticon"));
 		newToadlets.add(new CypherQuery(pr.getHLSimpleClient(), basePath+"/query", this));
+		newToadlets.add(new SessionManagement(this, pr.getHLSimpleClient(), basePath+"/LogIn", db));
+		newToadlets.add(new SessionManagement(this, pr.getHLSimpleClient(), basePath+"/LogOut", db));
 		
 		// create fproxy menu items
 		tc.register(oc, "WebOfTrust.menuName.name", basePath + "/", true, "WebOfTrust.mainPage", "WebOfTrust.mainPage.tooltip", WebOfTrust.allowFullAccessOnly, oc);

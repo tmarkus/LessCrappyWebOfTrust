@@ -4,7 +4,7 @@ LCWot - Less Crappy Web of Trust
 
 == Introduction
 
-LCWoT was created in a few days in response to the suckyness that is WoT. More specifically, the fact that it locked up when trying to create two identities. I tried to look at the code and fix it, but it was just too horrible so I decided to roll my own. To this day, I haven't yet managed to switch back. However, because LCWoT was written in only a few days the code is messy and there is no actual `design' or framework to speak of. However, it generally works; and pretty is pretty speedy as well.
+LCWoT was created in a few days in response to the suckyness that is WoT. More specifically, the fact that it locked up when trying to create two identities. I tried to look at the code and fix it, but it was just too horrible so I decided to roll my own. To this day, I haven't yet managed to switch back. However, because LCWoT was written in only a few days the code is messy and there is no actual `design' or framework to speak of. However, it generally works; and is pretty speedy as well.
 
 == What does it do?
 
@@ -15,21 +15,25 @@ LCWoT was created in a few days in response to the suckyness that is WoT. More s
 
 NOTE: LCWoT does not murder harddrives as much as WoT does
 
+WARNING: You cannot run LCWoT and WoT at the same time due to how the Freenet plugin API works.
+
 == What does it *not* do?
 
 * Introductions (so you *cannot* announce a new +Identity+ using LCWoT). However, I've seen screenshots of an additional plugin that allows for this.
 * It doesn't do incremental trust calculation, trust updates take place once per hour (keeps the code simple)
 * USK subscriptions, because these are horribly broken.
+* Automatically import identities from an existing WoT setup
 
 == Testimonials
 
 * Ratchet: "Last time I bootstrapped it, it *was* amazingly fast."
 * SeekingFor: "LCWoT is amazingly fast on bootstrapping"
 * dafuq: "i don't even want to have WoT anywhere near my disk."
+* dafuq: "LCWoT works much faster and uses less resources"
 
 == Where can I get it?
 
-* Inserted version: link:lcwot-0.1.2-jar-with-dependencies.jar[lcwot-0.1.2-jar-with-dependencies.jar]
+* Inserted version: link:/freenet:CHK@rD8cp30saM5vahvUBByQnu5wMOSyr3OLRjnGE0mnEE4,NTgssEVKFQ5wEZfiKltEaraTh48rxxl-QrQhr\~wGRBI,AAMC--8/lcwot-0.1.2-jar-with-dependencies.jar[lcwot-0.1.2-jar-with-dependencies.jar]
 * Source code: https://github.com/tmarkus/LessCrappyWebOfTrust/ 
 
 NOTE: I gladly accept patches!
