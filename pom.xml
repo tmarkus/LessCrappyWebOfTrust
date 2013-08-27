@@ -94,7 +94,7 @@
 		<dependency>
 			<groupId>org.freenetproject</groupId>
 			<artifactId>freenet-ext</artifactId>
-			<version>27</version>
+			<version>26</version>
 			<scope>provided</scope>
 		</dependency>
 	</dependencies>
