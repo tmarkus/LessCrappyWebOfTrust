@@ -30,7 +30,11 @@ import freenet.keys.FreenetURI;
 public class RequestScheduler extends Thread {
 
 	public static final int MAX_REQUESTS = 10; 
-	public static final int QUICKLY_CLEAR_BIG_BACKLOG_THRESHOLD = 5;
+	// FIXME as maintenance() adds one requests for each own
+	// ^ identity QUICKLY_CLEAR_BIG_BACKLOG_THRESHOLD should be dynamically
+	// ^ calculated like MAX_REQUESTS + sum(own identities) as in idle
+	// ^ state the maximum value of backlog would be MAX_REQUESTS - 1 + sum(own identities)
+	public static final int QUICKLY_CLEAR_BIG_BACKLOG_THRESHOLD = MAX_REQUESTS + 5;
 	
 	private static final int MAX_MAINTENANCE_REQUESTS = 1; 
 	private static final double PROBABILITY_OF_FETCHING_DIRECTLY_TRUSTED_IDENTITY = 0.7;
@@ -200,7 +204,7 @@ public class RequestScheduler extends Thread {
 	}
 
 	private void maintenance() {
-		if (getInFlightSize() <= MAX_MAINTENANCE_REQUESTS)
+		while(MAX_REQUESTS > getBacklogSize())
 		{
 			for(final Node own_identity : nodeIndex.get(IVertex.OWN_IDENTITY, true))
 			{
