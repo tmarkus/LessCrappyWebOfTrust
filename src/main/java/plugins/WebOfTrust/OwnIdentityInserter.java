@@ -36,23 +36,24 @@ import org.neo4j.graphdb.Relationship;
 import org.neo4j.graphdb.Transaction;
 import org.neo4j.graphdb.index.ReadableIndex;
 import org.w3c.dom.DOMImplementation;
-
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-
-import com.db4o.ObjectContainer;
 
 import freenet.client.HighLevelSimpleClient;
 import freenet.client.InsertBlock;
 import freenet.client.InsertContext;
 import freenet.client.InsertException;
 import freenet.client.async.BaseClientPutter;
+import freenet.client.async.ClientContext;
 import freenet.client.async.ClientPutCallback;
 import freenet.client.async.ClientPutter;
 import freenet.keys.FreenetURI;
+import freenet.node.RequestClient;
 import freenet.node.RequestStarter;
 import freenet.support.api.Bucket;
+import freenet.support.api.RandomAccessBucket;
 import freenet.support.io.Closer;
+import freenet.support.io.ResumeFailedException;
 
 
 
@@ -90,7 +91,8 @@ public class OwnIdentityInserter implements Runnable, ClientPutCallback  {
 				{
 					//create the bucket
 					final String xml = createXML(own_vertex, null);
-					final Bucket bucket = wot.getPR().getNode().clientCore.persistentTempBucketFactory.makeBucket(xml.length());
+					final RandomAccessBucket bucket = wot.getPR().getNode().clientCore.tempBucketFactory.makeBucket(xml.length());
+					
 					createXML(own_vertex, bucket);
 					bucket.setReadOnly();
 
@@ -113,8 +115,7 @@ public class OwnIdentityInserter implements Runnable, ClientPutCallback  {
 
 					//insert the damn thing
 					System.out.println("INSERTING OWN IDENTITY: " + ownID);
-					ClientPutter pu = hl.insert(ib, false, null, false, ictx, this, RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS);
-					
+					ClientPutter pu = hl.insert(ib, null, false, ictx, this, RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS);
 					//update the time when we stored it in the database (as to disallow inserting it every second)
 
 					own_vertex.setProperty(IVertex.LAST_INSERT, System.currentTimeMillis());
@@ -153,45 +154,6 @@ public class OwnIdentityInserter implements Runnable, ClientPutCallback  {
 			tx.finish();
 		}
 	}
-	
-	@Override
-	public void onSuccess(BaseClientPutter cp, ObjectContainer oc) {
-
-		System.out.println("IDENTITY INSERT COMPLETE FOR URI: " + cp.getURI().toASCIIString());
-		
-		ReadableIndex<Node> nodeIndex = db.index().getNodeAutoIndexer().getAutoIndex();
-		Node own_vertex = nodeIndex.get(IVertex.ID, ownID).getSingle();
-		
-		//update the insert and request uris in the database
-		Transaction tx = db.beginTx();
-		try {
-			FreenetURI newRequestURI = new FreenetURI( (String) own_vertex.getProperty(IVertex.REQUEST_URI));
-			FreenetURI newInsertURI = new FreenetURI( (String) own_vertex.getProperty(IVertex.INSERT_URI));
-			
-			long new_edition = cp.getURI().getEdition();
-			newRequestURI = newRequestURI.setSuggestedEdition(new_edition);
-			newInsertURI = newInsertURI.setSuggestedEdition(new_edition);
-			
-			own_vertex.setProperty(IVertex.EDITION, cp.getURI().getEdition());
-			own_vertex.setProperty(IVertex.REQUEST_URI, newRequestURI.toASCIIString());
-			own_vertex.setProperty(IVertex.INSERT_URI, newInsertURI.toASCIIString());
-			
-			//update the hash value after these updates (otherwise infinite insert
-			own_vertex.setProperty(IVertex.HASH, calculateIdentityHash(own_vertex));
-		
-			tx.success();
-		} catch (MalformedURLException e) {
-			e.printStackTrace();
-		} catch (NoSuchAlgorithmException e) {
-			e.printStackTrace();
-		}
-		finally
-		{
-			Closer.close(((ClientPutter) cp).getData());
-			tx.finish();
-		}
-	}
-	
 	
 	private static String calculateIdentityHash(Node own_vertex) throws NoSuchAlgorithmException
 	{
@@ -354,15 +316,19 @@ public class OwnIdentityInserter implements Runnable, ClientPutCallback  {
 		
 		return resultStringWriter.toString();
 	}
-
 	
 	@Override
-	public void onMajorProgress(ObjectContainer arg0) {
+	public RequestClient getRequestClient() {
+		return wot.getRequestScheduler().getRequestClient();
 	}
 
 	@Override
-	public void onFailure(InsertException ie, BaseClientPutter cp, ObjectContainer oc) {
+	public void onResume(ClientContext arg0) throws ResumeFailedException {
+	}
 
+	@Override
+	public void onFailure(InsertException ie, BaseClientPutter cp) {
+	
 		Closer.close(((ClientPutter) cp).getData());
 		
 		System.out.println("Failed to insert own identity, please investigate!");
@@ -373,16 +339,52 @@ public class OwnIdentityInserter implements Runnable, ClientPutCallback  {
 	}
 
 	@Override
-	public void onFetchable(BaseClientPutter arg0, ObjectContainer arg1) {
+	public void onFetchable(BaseClientPutter arg0) {
 	}
 
 	@Override
-	public void onGeneratedMetadata(Bucket arg0, BaseClientPutter arg1,ObjectContainer arg2) {
+	public void onGeneratedMetadata(Bucket arg0, BaseClientPutter arg1) {
+	}
+
+	@Override
+	public void onGeneratedURI(FreenetURI arg0, BaseClientPutter arg1) {
+	}
+
+	@Override
+	public void onSuccess(BaseClientPutter cp) {
+		System.out.println("IDENTITY INSERT COMPLETE FOR URI: " + cp.getURI().toASCIIString());
 		
-	}
-
-	@Override
-	public void onGeneratedURI(FreenetURI arg0, BaseClientPutter arg1, ObjectContainer arg2) {
+		ReadableIndex<Node> nodeIndex = db.index().getNodeAutoIndexer().getAutoIndex();
+		Node own_vertex = nodeIndex.get(IVertex.ID, ownID).getSingle();
+		
+		//update the insert and request uris in the database
+		Transaction tx = db.beginTx();
+		try {
+			FreenetURI newRequestURI = new FreenetURI( (String) own_vertex.getProperty(IVertex.REQUEST_URI));
+			FreenetURI newInsertURI = new FreenetURI( (String) own_vertex.getProperty(IVertex.INSERT_URI));
+			
+			long new_edition = cp.getURI().getEdition();
+			newRequestURI = newRequestURI.setSuggestedEdition(new_edition);
+			newInsertURI = newInsertURI.setSuggestedEdition(new_edition);
+			
+			own_vertex.setProperty(IVertex.EDITION, cp.getURI().getEdition());
+			own_vertex.setProperty(IVertex.REQUEST_URI, newRequestURI.toASCIIString());
+			own_vertex.setProperty(IVertex.INSERT_URI, newInsertURI.toASCIIString());
+			
+			//update the hash value after these updates (otherwise infinite insert
+			own_vertex.setProperty(IVertex.HASH, calculateIdentityHash(own_vertex));
+		
+			tx.success();
+		} catch (MalformedURLException e) {
+			e.printStackTrace();
+		} catch (NoSuchAlgorithmException e) {
+			e.printStackTrace();
+		}
+		finally
+		{
+			Closer.close(((ClientPutter) cp).getData());
+			tx.finish();
+		}
 	}
 
 }

@@ -12,7 +12,6 @@ import org.neo4j.graphdb.index.IndexHits;
 import org.neo4j.graphdb.index.ReadableIndex;
 
 import plugins.WebOfTrust.IdentityUpdater;
-import plugins.WebOfTrust.IdentityUpdaterRequestClient;
 import plugins.WebOfTrust.WebOfTrust;
 import plugins.WebOfTrust.RequestScheduler;
 import plugins.WebOfTrust.datamodel.IVertex;
@@ -209,7 +208,6 @@ public class IdentityManagement extends Toadlet implements LinkEnabledCallback {
 	 */
 	
 	private void restoreIdentity(FreenetURI insertURI) throws FetchException, MalformedURLException, KeyDecodeException, InsertException {
-		IdentityUpdaterRequestClient rc = new IdentityUpdaterRequestClient();
 		HighLevelSimpleClient hl = main.getHL();
 		RequestScheduler rs = main.getRequestScheduler();
 		ClientGetCallback cc = new IdentityUpdater(rs, db, hl, true);  
@@ -273,7 +271,7 @@ public class IdentityManagement extends Toadlet implements LinkEnabledCallback {
 			System.out.println("Starting to fetch your own identity");
 			
 			HighLevelSimpleClient hl_high_prio = main.getPR().getNode().clientCore.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS, false, true);
-			rs.addInFlight(hl_high_prio.fetch(requestURI, 200000, rc, cc, hl_high_prio.getFetchContext()));
+			rs.addInFlight(hl_high_prio.fetch(requestURI, 200000, cc, hl_high_prio.getFetchContext()));
 	
 			//wake up the request scheduler
 			rs.interrupt();

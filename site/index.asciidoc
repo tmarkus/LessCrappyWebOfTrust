@@ -33,7 +33,7 @@ WARNING: You cannot run LCWoT and WoT at the same time due to how the Freenet pl
 
 == Where can I get it?
 
-* Inserted version: link:/freenet:CHK@rD8cp30saM5vahvUBByQnu5wMOSyr3OLRjnGE0mnEE4,NTgssEVKFQ5wEZfiKltEaraTh48rxxl-QrQhr\~wGRBI,AAMC--8/lcwot-0.1.2-jar-with-dependencies.jar[lcwot-0.1.2-jar-with-dependencies.jar]
+* Inserted version: link:/freenet:CHK@rD8cp30saM5vahvUBByQnu5wMOSyr3OLRjnGE0mnEE4,NTgssEVKFQ5wEZfiKltEaraTh48rxxl-QrQhr\~wGRBI,AAMC-\-8/lcwot-0.1.2-jar-with-dependencies.jar[lcwot-0.1.2-jar-with-dependencies.jar]
 * Source code: https://github.com/tmarkus/LessCrappyWebOfTrust/ 
 
 NOTE: I gladly accept patches!

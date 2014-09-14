@@ -1,7 +1,5 @@
 package plugins.WebOfTrust;
 
-import com.db4o.ObjectContainer;
-
 import freenet.node.RequestClient;
 
 public class IdentityUpdaterRequestClient implements RequestClient  {
@@ -15,11 +13,4 @@ public class IdentityUpdaterRequestClient implements RequestClient  {
 	public boolean realTimeFlag() {
 		return true;
 	}
-
-	
-	
-	@Override
-	public void removeFrom(ObjectContainer arg0) {
-	}
-
 }

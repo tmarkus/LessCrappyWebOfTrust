@@ -119,6 +119,13 @@ public class Identicon {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+		finally {
+			try {
+				bitStream.close();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
 		return backgroundImage;
 	}
 

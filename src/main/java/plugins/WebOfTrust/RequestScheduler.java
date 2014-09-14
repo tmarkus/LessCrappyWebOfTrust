@@ -130,7 +130,7 @@ public class RequestScheduler extends Thread {
 			{
 				ClientGetter getter = iter.next();
 				iter.remove();
-				getter.cancel(null, main.getPR().getNode().clientCore.clientContext);
+				getter.cancel(main.getPR().getNode().clientCore.clientContext);
 			}
 		}
 		System.err.println("All requests canceled.");
@@ -176,7 +176,7 @@ public class RequestScheduler extends Thread {
 
 			//fetch the identity
 			try {
-				addInFlight(hl.fetch(next, WebOfTrust.FETCH_MAX_FILE_SIZE, rc, cc, fc));
+				addInFlight(hl.fetch(next, WebOfTrust.FETCH_MAX_FILE_SIZE, cc, fc));
 			} catch (FetchException e) {
 				System.out.println("Failed to retrieve: " + next.toASCIIString());
 				e.printStackTrace();
@@ -375,6 +375,10 @@ public class RequestScheduler extends Thread {
 		synchronized (inFlight) {
 			return inFlight.size();	
 		}
+	}
+
+	public IdentityUpdaterRequestClient getRequestClient() {
+		return rc;
 	}
 
 }

@@ -9,7 +9,6 @@ import org.neo4j.cypher.javacompat.ExecutionEngine;
 import org.neo4j.cypher.javacompat.ExecutionResult;
 
 import plugins.WebOfTrust.WebOfTrust;
-import plugins.WebOfTrust.datamodel.IVertex;
 import plugins.WebOfTrust.util.Utils;
 import freenet.client.HighLevelSimpleClient;
 import freenet.clients.http.LinkEnabledCallback;
@@ -18,7 +17,6 @@ import freenet.clients.http.Toadlet;
 import freenet.clients.http.ToadletContext;
 import freenet.clients.http.ToadletContextClosedException;
 import freenet.support.HTMLNode;
-import freenet.support.MultiValueTable;
 import freenet.support.api.HTTPRequest;
 
 public class CypherQuery extends Toadlet implements LinkEnabledCallback {

@@ -21,14 +21,15 @@ import plugins.WebOfTrust.datamodel.IVertex;
 import plugins.WebOfTrust.datamodel.Rel;
 import plugins.WebOfTrust.util.Utils;
 
-import com.db4o.ObjectContainer;
-
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
 import freenet.client.HighLevelSimpleClient;
+import freenet.client.async.ClientContext;
 import freenet.client.async.ClientGetCallback;
 import freenet.client.async.ClientGetter;
 import freenet.keys.FreenetURI;
+import freenet.node.RequestClient;
+import freenet.support.io.ResumeFailedException;
 
 public class IdentityUpdater implements ClientGetCallback{
 
@@ -46,25 +47,29 @@ public class IdentityUpdater implements ClientGetCallback{
 	}
 
 	@Override
-	public void onMajorProgress(ObjectContainer oc) {
+	public RequestClient getRequestClient() {
+		return rs.getRequestClient();
+	}
+
+	@Override
+	public void onResume(ClientContext arg0) throws ResumeFailedException {
 		System.out.println("Something happened!");
 	}
 
 	@Override
-	public void onFailure(FetchException fe, ClientGetter cg, ObjectContainer oc) {
-
+	public void onFailure(FetchException fe, ClientGetter cg) {
 		//deregister our request
 		rs.removeInFlight(cg);
 
-		if (fe.mode == FetchException.PERMANENT_REDIRECT)
+
+		if (fe.mode == FetchException.FetchExceptionMode.PERMANENT_REDIRECT)
 		{
 			rs.addBacklog(fe.newURI);
 		}
 	}
 
 	@Override
-	public synchronized void onSuccess(FetchResult fr, ClientGetter cg, ObjectContainer oc) {
-
+	public void onSuccess(FetchResult fr, ClientGetter cg) {
 		try
 		{
 			//register that we're updating an identity
@@ -91,6 +96,7 @@ public class IdentityUpdater implements ClientGetCallback{
 			rs.updating = false; //always mark the requestscheduler as being finished with updating
 		}
 	}
+
 
 	private synchronized void addTrustRelations(Document doc, FreenetURI freenetURI) throws MalformedURLException, DOMException
 	{
@@ -348,5 +354,4 @@ public class IdentityUpdater implements ClientGetCallback{
 			identity.createRelationshipTo(contextNode, Rel.HAS_CONTEXT);
 		}
 	}
-
 }

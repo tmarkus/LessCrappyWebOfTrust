@@ -17,7 +17,6 @@
 package plugins.WebOfTrust.util;
 
 import java.util.Random;
-import java.util.Set;
 import java.lang.StringBuilder;
 
 public class RandomName
